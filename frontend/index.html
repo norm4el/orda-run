@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OrdaRun Mini App</title>
+
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+
+      #map {
+        width: 100vw;
+        height: 100vh;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <button id="stopBtn" type="button">Stop</button>
+
+    <script>
+      const tg = window.Telegram?.WebApp;
+
+      if (tg) {
+        tg.ready();
+        tg.expand();
+      }
+
+      const map = L.map('map').setView([47.79, 67.71], 14);
+      const stopBtn = document.getElementById('stopBtn');
+      const encodedPolyline = window.encodedPolyline;
+
+      async function loadTerritories() {
+        const userId = tg?.initDataUnsafe?.user?.id ?? 123456789;
+
+        try {
+          const response = await fetch(`/api/territories/${userId}`);
+          const result = await response.json();
+
+          if (result.success === true) {
+            for (const geoJsonObject of result.data) {
+              L.geoJSON(geoJsonObject, {
+                style: {
+                  color: '#007bff',
+                  weight: 2,
+                  fillColor: '#007bff',
+                  fillOpacity: 0.4,
+                },
+              }).addTo(map);
+            }
+          }
+        } catch (error) {
+          console.error('Failed to load territories:', error);
+        }
+      }
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
+      }).addTo(map);
+
+      void loadTerritories();
+
+      stopBtn?.addEventListener('click', async () => {
+        const telegramId = tg?.initDataUnsafe?.user?.id;
+
+        if (!telegramId) {
+          tg?.showAlert('Пожалуйста, откройте приложение внутри Telegram');
+          return;
+        }
+
+        await fetch('/api/test-capture', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            telegram_id: telegramId,
+            polyline: encodedPolyline,
+            initData: tg?.initData,
+          }),
+        });
+      });
+    </script>
+  </body>
+</html>
