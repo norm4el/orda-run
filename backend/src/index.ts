@@ -12,15 +12,11 @@ const app = express();
 const port = Number(process.env.PORT ?? 3000);
 const webhookPath = process.env.BOT_WEBHOOK_PATH ?? '/telegram/webhook';
 
-// Используем текущую рабочую директорию
-const __dirname = process.cwd();
-
 app.use(express.json());
 
-// Отдаем статику из папки public (куда Docker скопирует фронтенд)
+// Теперь __dirname используется как системная переменная, конфликт устранен
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Fallback для React/Vite маршрутизации
 app.get('*', (_req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
