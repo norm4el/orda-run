@@ -39,6 +39,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const dotenv = __importStar(require("dotenv"));
 dotenv.config(); // Должно быть в самой первой строке!
 const express_1 = __importDefault(require("express"));
+const path_1 = __importDefault(require("path"));
 const grammy_1 = require("grammy");
 const api_1 = require("./api");
 const strava_1 = require("./api/strava");
@@ -51,6 +52,7 @@ app.use(express_1.default.json());
 app.get('/ping', (_req, res) => {
     res.json({ ok: true });
 });
+app.use(express_1.default.static(path_1.default.resolve(__dirname, '../../frontend')));
 app.use('/api', api_1.apiRouter);
 app.use('/strava', strava_1.stravaRouter);
 app.use(webhookPath, (0, grammy_1.webhookCallback)(bot_1.bot, 'express'));
