@@ -14,7 +14,7 @@ const webhookPath = process.env.BOT_WEBHOOK_PATH ?? '/telegram/webhook';
 
 app.use(express.json());
 
-// Теперь __dirname используется как системная переменная, конфликт устранен
+// Теперь __dirname это /app/backend/dist, а public лежит в /app/backend/dist/public
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('*', (_req, res) => {
