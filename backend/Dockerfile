@@ -1,14 +1,18 @@
-FROM node:18
+FROM node:18 AS builder
 WORKDIR /app
 
-# Копируем и устанавливаем зависимости
-COPY backend/package*.json ./
-RUN npm install --production
+# Копируем всё содержимое проекта в контейнер
+COPY . .
 
-# Копируем код бэкенда
-COPY backend/ .
+# Собираем фронтенд
+RUN cd frontend && npm install && npm run build
 
-# Копируем собранный фронтенд в папку public
-COPY frontend/dist ./public
+# Собираем бэкенд
+RUN cd backend && npm install --production
 
+# Копируем собранный фронтенд в папку public бэкенда
+RUN cp -r frontend/dist backend/public
+
+# Запускаем бэкенд
+WORKDIR /app/backend
 CMD ["node", "dist/index.js"]
