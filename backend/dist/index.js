@@ -37,22 +37,25 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const dotenv = __importStar(require("dotenv"));
-dotenv.config(); // Должно быть в самой первой строке!
+dotenv.config();
 const express_1 = __importDefault(require("express"));
 const path_1 = __importDefault(require("path"));
 const grammy_1 = require("grammy");
 const api_1 = require("./api");
 const strava_1 = require("./api/strava");
 const bot_1 = require("./bot");
-dotenv.config();
 const app = (0, express_1.default)();
 const port = Number(process.env.PORT ?? 3000);
 const webhookPath = process.env.BOT_WEBHOOK_PATH ?? '/telegram/webhook';
+// Используем текущую рабочую директорию
+const __dirname = process.cwd();
 app.use(express_1.default.json());
-app.get('/ping', (_req, res) => {
-    res.json({ ok: true });
+// Отдаем статику из папки public (куда Docker скопирует фронтенд)
+app.use(express_1.default.static(path_1.default.join(__dirname, 'public')));
+// Fallback для React/Vite маршрутизации
+app.get('*', (_req, res) => {
+    res.sendFile(path_1.default.join(__dirname, 'public', 'index.html'));
 });
-app.use(express_1.default.static(path_1.default.resolve(__dirname, '../../frontend')));
 app.use('/api', api_1.apiRouter);
 app.use('/strava', strava_1.stravaRouter);
 app.use(webhookPath, (0, grammy_1.webhookCallback)(bot_1.bot, 'express'));

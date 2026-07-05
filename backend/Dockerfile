@@ -1,8 +1,14 @@
 FROM node:18
 WORKDIR /app
-COPY package*.json ./
+
+# Копируем и устанавливаем зависимости
+COPY backend/package*.json ./
 RUN npm install --production
-COPY . .
-# Копируем собранный фронтенд в папку public бэкенда
-COPY ../frontend/dist ./public 
+
+# Копируем код бэкенда
+COPY backend/ .
+
+# Копируем собранный фронтенд в папку public
+COPY frontend/dist ./public
+
 CMD ["node", "dist/index.js"]
