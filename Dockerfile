@@ -12,6 +12,7 @@ WORKDIR /app/backend
 COPY backend/package*.json ./
 RUN npm ci
 COPY backend/ ./
+RUN chmod +x ./node_modules/.bin/tsc
 RUN npm run build
 
 # --- Stage 3: Install Production Dependencies for Backend ---
