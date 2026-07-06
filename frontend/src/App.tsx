@@ -32,6 +32,7 @@ function App() {
   const [territories, setTerritories] = useState<TerritoryFeatureCollection | null>(null);
   const [routes, setRoutes] = useState<RouteFeatureCollection | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('map');
+  const [liveCoordinates, setLiveCoordinates] = useState<[number, number][]>([]);
 
   useEffect(() => {
     const telegram = window.Telegram?.WebApp;
@@ -166,7 +167,7 @@ function App() {
   return (
     <main className="app-shell">
       <div className={`map-container ${activeTab !== 'map' && activeTab !== 'record' ? 'hidden-map' : ''}`}>
-        <MapArea territories={territories} routes={routes} currentUser={currentUser} />
+        <MapArea territories={territories} routes={routes} currentUser={currentUser} liveCoordinates={liveCoordinates} />
       </div>
       
       {activeTab === 'profile' && (
@@ -178,10 +179,15 @@ function App() {
       )}
 
       {activeTab === 'record' && (
-        <RecordTab currentUser={currentUser} onRunFinished={() => {
-          reloadMapData();
-          setActiveTab('map');
-        }} />
+        <RecordTab 
+          currentUser={currentUser} 
+          onCoordinatesUpdate={setLiveCoordinates}
+          onRunFinished={() => {
+            setLiveCoordinates([]);
+            reloadMapData();
+            setActiveTab('map');
+          }} 
+        />
       )}
 
       {activeTab === 'map' && (

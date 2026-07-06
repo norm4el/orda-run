@@ -65,7 +65,7 @@ export function LeaderboardTab({ currentUser }: Props) {
             >
               <span className="leaderboard-rank">#{index + 1}</span>
               <span className="leaderboard-name">{item.displayName}</span>
-              <span className="leaderboard-score">{item.score}</span>
+              <span className="leaderboard-score">{(item.score / 1000000).toFixed(2)} км²</span>
             </div>
           ))}
           {data.length === 0 && (

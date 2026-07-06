@@ -24,6 +24,10 @@ const emptyRoutesData: RouteFeatureCollection = {
   features: [],
 };
 
+const liveRouteSourceId = 'live-route-source';
+const liveRouteLayerId = 'live-route-layer';
+const livePointLayerId = 'live-point-layer';
+
 export type TerritoryFeatureCollection = FeatureCollection<
   Geometry,
   { id: string; owner_id: string }
@@ -38,14 +42,16 @@ type MapAreaProps = {
   territories: TerritoryFeatureCollection | null;
   routes: RouteFeatureCollection | null;
   currentUser: AuthenticatedUser | null;
+  liveCoordinates?: [number, number][];
 };
 
-export function MapArea({ territories, routes, currentUser }: MapAreaProps) {
+export function MapArea({ territories, routes, currentUser, liveCoordinates }: MapAreaProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const territoriesRef = useRef<TerritoryFeatureCollection | null>(territories);
   const routesRef = useRef<RouteFeatureCollection | null>(routes);
   const currentUserRef = useRef<AuthenticatedUser | null>(currentUser);
+  const liveCoordinatesRef = useRef<[number, number][] | undefined>(liveCoordinates);
   const [isDarkTheme, setIsDarkTheme] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSoundEnabled, setIsSoundEnabled] = useState(true);
@@ -57,6 +63,13 @@ export function MapArea({ territories, routes, currentUser }: MapAreaProps) {
   useEffect(() => {
     routesRef.current = routes;
   }, [routes]);
+
+  useEffect(() => {
+    liveCoordinatesRef.current = liveCoordinates;
+    if (mapRef.current) {
+      syncLiveRoute(mapRef.current);
+    }
+  }, [liveCoordinates]);
 
   useEffect(() => {
     currentUserRef.current = currentUser;
@@ -133,6 +146,45 @@ export function MapArea({ territories, routes, currentUser }: MapAreaProps) {
         },
       });
     }
+
+    if (!map.getSource(liveRouteSourceId)) {
+      map.addSource(liveRouteSourceId, {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: [],
+        },
+      });
+    }
+
+    if (!map.getLayer(liveRouteLayerId)) {
+      map.addLayer({
+        id: liveRouteLayerId,
+        type: 'line',
+        source: liveRouteSourceId,
+        paint: {
+          'line-color': '#00ffaa',
+          'line-width': 5,
+          'line-opacity': 0.9,
+          'line-dasharray': [2, 2],
+        },
+      });
+    }
+
+    if (!map.getLayer(livePointLayerId)) {
+      map.addLayer({
+        id: livePointLayerId,
+        type: 'circle',
+        source: liveRouteSourceId,
+        paint: {
+          'circle-radius': 8,
+          'circle-color': '#00ffaa',
+          'circle-stroke-width': 3,
+          'circle-stroke-color': '#ffffff',
+        },
+        filter: ['==', '$type', 'Point'],
+      });
+    }
   };
 
   const syncTerritories = (map: maplibregl.Map) => {
@@ -143,6 +195,48 @@ export function MapArea({ territories, routes, currentUser }: MapAreaProps) {
   const syncRoutes = (map: maplibregl.Map) => {
     const source = map.getSource(routesSourceId) as maplibregl.GeoJSONSource | undefined;
     source?.setData(routesRef.current ?? emptyRoutesData);
+  };
+
+  const syncLiveRoute = (map: maplibregl.Map) => {
+    const source = map.getSource(liveRouteSourceId) as maplibregl.GeoJSONSource | undefined;
+    if (!source) return;
+
+    const coords = liveCoordinatesRef.current || [];
+    
+    // Coordinates from geolocation are [lat, lng], GeoJSON needs [lng, lat]
+    const geoJsonCoords = coords.map(c => [c[1], c[0]]);
+
+    const features: any[] = [];
+
+    if (geoJsonCoords.length >= 2) {
+      features.push({
+        type: 'Feature',
+        geometry: {
+          type: 'LineString',
+          coordinates: geoJsonCoords,
+        },
+        properties: {},
+      });
+    }
+
+    if (geoJsonCoords.length >= 1) {
+      const lastPoint = geoJsonCoords[geoJsonCoords.length - 1];
+      features.push({
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: lastPoint,
+        },
+        properties: {},
+      });
+      // Optionally pan to the user's location
+      map.easeTo({ center: [lastPoint[0], lastPoint[1]] as [number, number], duration: 1000 });
+    }
+
+    source.setData({
+      type: 'FeatureCollection',
+      features,
+    });
   };
 
   const syncThemePaint = (map: maplibregl.Map) => {

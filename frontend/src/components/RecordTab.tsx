@@ -4,6 +4,7 @@ import type { AuthenticatedUser } from '../App';
 
 type Props = {
   currentUser: AuthenticatedUser | null;
+  onCoordinatesUpdate: (coords: [number, number][]) => void;
   onRunFinished: () => void;
 };
 
@@ -28,7 +29,7 @@ function formatTime(seconds: number) {
   return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
 
-export function RecordTab({ currentUser, onRunFinished }: Props) {
+export function RecordTab({ currentUser, onCoordinatesUpdate, onRunFinished }: Props) {
   const [isTracking, setIsTracking] = useState(false);
   const [coordinates, setCoordinates] = useState<[number, number][]>([]);
   const [distanceMeters, setDistanceMeters] = useState(0);
@@ -47,7 +48,8 @@ export function RecordTab({ currentUser, onRunFinished }: Props) {
   useEffect(() => {
     coordsRef.current = coordinates;
     distanceRef.current = distanceMeters;
-  }, [coordinates, distanceMeters]);
+    onCoordinatesUpdate(coordinates);
+  }, [coordinates, distanceMeters, onCoordinatesUpdate]);
 
   const requestWakeLock = async () => {
     try {
