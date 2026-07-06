@@ -1,6 +1,19 @@
 import { useEffect, useState } from 'react';
 import { MapArea, type TerritoryFeatureCollection } from './MapArea';
 
+type AuthenticatedUser = {
+  id: string;
+  telegramId: string;
+  username: string | null;
+  firstName: string | null;
+  displayName: string | null;
+  stravaAccessToken: string | null;
+  stravaRefreshToken: string | null;
+  stravaExpiresAt: number | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
 type TerritoryResponse = {
   id: string;
   owner_id: string;
@@ -8,25 +21,61 @@ type TerritoryResponse = {
 };
 
 function App() {
-  const [telegramId, setTelegramId] = useState<number | null>(null);
+  const [currentUser, setCurrentUser] = useState<AuthenticatedUser | null>(null);
+  const [authMessage, setAuthMessage] = useState<string>('Авторизация вне Telegram');
   const [territories, setTerritories] = useState<TerritoryFeatureCollection | null>(null);
 
   useEffect(() => {
     const telegram = window.Telegram?.WebApp;
 
     if (!telegram) {
+      setCurrentUser(null);
+      setAuthMessage('Авторизация вне Telegram');
       return;
     }
 
     telegram.ready();
     telegram.expand();
-    setTelegramId(telegram.initDataUnsafe?.user?.id ?? null);
+
+    const initData = telegram.initData;
+
+    if (!initData) {
+      setCurrentUser(null);
+      setAuthMessage('Авторизация вне Telegram');
+      return;
+    }
+
+    async function authorize() {
+      try {
+        const response = await fetch('/api/auth', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ initData }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Auth failed: ${response.status}`);
+        }
+
+        const user = (await response.json()) as AuthenticatedUser;
+        setCurrentUser(user);
+        setAuthMessage(user.displayName ?? 'Авторизация выполнена');
+      } catch (error) {
+        console.error(error);
+        setCurrentUser(null);
+        setAuthMessage('Не удалось авторизоваться');
+      }
+    }
+
+    void authorize();
   }, []);
 
   useEffect(() => {
     async function loadTerritories() {
       try {
-        const response = await fetch('http://localhost:3000/api/territories');
+        const response = await fetch('/api/territories');
 
         if (!response.ok) {
           throw new Error(`Failed to load territories: ${response.status}`);
@@ -56,9 +105,9 @@ function App() {
 
   return (
     <main className="app-shell">
-      <MapArea territories={territories} currentUserId={telegramId} />
+      <MapArea territories={territories} currentUserId={currentUser?.id ?? null} />
       <div className="hud">
-        <div className="hud__chip">Telegram ID: {telegramId ?? 'not available'}</div>
+        <div className="hud__chip">{authMessage}</div>
       </div>
     </main>
   );

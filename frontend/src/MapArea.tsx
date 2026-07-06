@@ -23,27 +23,25 @@ export type TerritoryFeatureCollection = FeatureCollection<
 
 type MapAreaProps = {
   territories: TerritoryFeatureCollection | null;
-  currentUserId: number | null;
+  currentUserId: string | null;
 };
 
 export function MapArea({ territories, currentUserId }: MapAreaProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const territoriesRef = useRef<TerritoryFeatureCollection | null>(territories);
-  const currentUserIdRef = useRef<string | null>(currentUserId === null ? null : String(currentUserId));
+  const currentUserIdRef = useRef<string | null>(currentUserId);
   const [isDarkTheme, setIsDarkTheme] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSoundEnabled, setIsSoundEnabled] = useState(true);
-
-  const currentUserIdAsString = currentUserId === null ? null : String(currentUserId);
 
   useEffect(() => {
     territoriesRef.current = territories;
   }, [territories]);
 
   useEffect(() => {
-    currentUserIdRef.current = currentUserIdAsString;
-  }, [currentUserIdAsString]);
+    currentUserIdRef.current = currentUserId;
+  }, [currentUserId]);
 
   const applyTerritoryStyle = (map: maplibregl.Map) => {
     if (!map.getSource(territorySourceId)) {
@@ -166,7 +164,7 @@ export function MapArea({ territories, currentUserId }: MapAreaProps) {
     }
 
     syncThemePaint(map);
-  }, [currentUserIdAsString]);
+  }, [currentUserId]);
 
   useEffect(() => {
     const map = mapRef.current;

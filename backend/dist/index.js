@@ -38,27 +38,41 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const dotenv = __importStar(require("dotenv"));
 dotenv.config();
+const fs_1 = __importDefault(require("fs"));
 const cors_1 = __importDefault(require("cors"));
 const express_1 = __importDefault(require("express"));
 const path_1 = __importDefault(require("path"));
 const grammy_1 = require("grammy");
 const api_1 = require("./api");
 const strava_1 = require("./api/strava");
+const schema_1 = require("./db/schema");
 const bot_1 = require("./bot");
 const app = (0, express_1.default)();
 const port = Number(process.env.PORT ?? 3000);
 const webhookPath = process.env.BOT_WEBHOOK_PATH ?? '/telegram/webhook';
+const spaDirectoryCandidates = [
+    path_1.default.resolve(__dirname, 'public'),
+    path_1.default.resolve(process.cwd(), 'dist', 'public'),
+    path_1.default.resolve(process.cwd(), '..', 'frontend', 'dist'),
+];
+const spaDirectory = spaDirectoryCandidates.find((candidate) => fs_1.default.existsSync(path_1.default.join(candidate, 'index.html')));
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
-// Теперь __dirname это /app/backend/dist, а public лежит в /app/backend/dist/public
-app.use(express_1.default.static(path_1.default.join(__dirname, 'public')));
+if (spaDirectory) {
+    app.use(express_1.default.static(spaDirectory));
+}
 app.use('/api', api_1.apiRouter);
 app.use('/strava', strava_1.stravaRouter);
 app.use(webhookPath, (0, grammy_1.webhookCallback)(bot_1.bot, 'express'));
 app.get('*', (_req, res) => {
-    res.sendFile(path_1.default.join(__dirname, 'public', 'index.html'));
+    if (!spaDirectory) {
+        res.status(404).send('Frontend build not found');
+        return;
+    }
+    res.sendFile(path_1.default.join(spaDirectory, 'index.html'));
 });
 async function start() {
+    await (0, schema_1.ensureDatabaseSchema)();
     if (process.env.BOT_WEBHOOK_URL) {
         await bot_1.bot.api.setWebhook(new URL(webhookPath, process.env.BOT_WEBHOOK_URL).toString());
     }

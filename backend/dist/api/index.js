@@ -2,11 +2,79 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.apiRouter = void 0;
 const express_1 = require("express");
+const init_data_node_1 = require("@tma.js/init-data-node");
 const db_1 = require("../db");
 const territory_1 = require("../db/territory");
 exports.apiRouter = (0, express_1.Router)();
+const INIT_DATA_MAX_AGE_SECONDS = 24 * 60 * 60;
+function mapUserRow(row) {
+    return row;
+}
 exports.apiRouter.get('/ping', (_req, res) => {
     res.json({ ok: true });
+});
+exports.apiRouter.post('/auth', async (req, res) => {
+    const initData = req.body?.initData;
+    if (typeof initData !== 'string' || initData.length === 0) {
+        res.status(400).json({ error: 'initData is required' });
+        return;
+    }
+    const botToken = process.env.BOT_TOKEN;
+    if (!botToken) {
+        res.status(500).json({ error: 'BOT_TOKEN is not set' });
+        return;
+    }
+    let telegramUser;
+    try {
+        (0, init_data_node_1.validate)(initData, botToken, { expiresIn: INIT_DATA_MAX_AGE_SECONDS });
+        const initDataPayload = (0, init_data_node_1.parse)(initData);
+        telegramUser = initDataPayload.user;
+        if (!telegramUser?.id || !telegramUser.first_name) {
+            throw new Error('Unauthorized');
+        }
+    }
+    catch (error) {
+        console.error('auth validation error:', error);
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+    }
+    try {
+        const result = await (0, db_1.query)(`
+                INSERT INTO users (
+                    telegram_id,
+                    username,
+                    first_name,
+                    display_name
+                )
+                VALUES ($1, $2, $3, $4)
+                ON CONFLICT (telegram_id) DO UPDATE
+                SET username = EXCLUDED.username,
+                    first_name = COALESCE(users.first_name, EXCLUDED.first_name),
+                    display_name = COALESCE(users.display_name, EXCLUDED.display_name, users.first_name, EXCLUDED.first_name),
+                    updated_at = NOW()
+                RETURNING
+                    id,
+                    telegram_id AS "telegramId",
+                    username,
+                    first_name AS "firstName",
+                    display_name AS "displayName",
+                    strava_access_token AS "stravaAccessToken",
+                    strava_refresh_token AS "stravaRefreshToken",
+                    strava_expires_at AS "stravaExpiresAt",
+                    created_at AS "createdAt",
+                    updated_at AS "updatedAt"
+            `, [String(telegramUser.id), telegramUser.username ?? null, telegramUser.first_name, telegramUser.first_name]);
+        if (result.rowCount === 0 || !result.rows[0]) {
+            res.status(500).json({ error: 'Failed to authorize user' });
+            return;
+        }
+        res.json(mapUserRow(result.rows[0]));
+    }
+    catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to authorize user';
+        console.error('auth db error:', error);
+        res.status(500).json({ error: message });
+    }
 });
 exports.apiRouter.get('/territories', async (_req, res) => {
     const result = await (0, db_1.query)(`

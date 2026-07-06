@@ -6,9 +6,12 @@ declare global {
       WebApp?: {
         ready: () => void;
         expand: () => void;
+        initData: string;
         initDataUnsafe?: {
           user?: {
             id?: number;
+            username?: string;
+            first_name?: string;
           };
         };
       };
