@@ -38,6 +38,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const dotenv = __importStar(require("dotenv"));
 dotenv.config();
+const cors_1 = __importDefault(require("cors"));
 const express_1 = __importDefault(require("express"));
 const path_1 = __importDefault(require("path"));
 const grammy_1 = require("grammy");
@@ -47,15 +48,16 @@ const bot_1 = require("./bot");
 const app = (0, express_1.default)();
 const port = Number(process.env.PORT ?? 3000);
 const webhookPath = process.env.BOT_WEBHOOK_PATH ?? '/telegram/webhook';
+app.use((0, cors_1.default)());
 app.use(express_1.default.json());
-// Теперь __dirname используется как системная переменная, конфликт устранен
+// Теперь __dirname это /app/backend/dist, а public лежит в /app/backend/dist/public
 app.use(express_1.default.static(path_1.default.join(__dirname, 'public')));
-app.get('*', (_req, res) => {
-    res.sendFile(path_1.default.join(__dirname, 'public', 'index.html'));
-});
 app.use('/api', api_1.apiRouter);
 app.use('/strava', strava_1.stravaRouter);
 app.use(webhookPath, (0, grammy_1.webhookCallback)(bot_1.bot, 'express'));
+app.get('*', (_req, res) => {
+    res.sendFile(path_1.default.join(__dirname, 'public', 'index.html'));
+});
 async function start() {
     if (process.env.BOT_WEBHOOK_URL) {
         await bot_1.bot.api.setWebhook(new URL(webhookPath, process.env.BOT_WEBHOOK_URL).toString());
