@@ -13,6 +13,8 @@ export type AuthenticatedUser = {
   stravaAccessToken: string | null;
   stravaRefreshToken: string | null;
   stravaExpiresAt: number | null;
+  colorSelf: string;
+  colorOthers: string;
   createdAt: string;
   updatedAt: string;
 };

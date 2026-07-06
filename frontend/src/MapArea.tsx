@@ -241,7 +241,7 @@ export function MapArea({ territories, routes, currentUser }: MapAreaProps) {
     }
 
     syncThemePaint(map);
-  }, [currentUserId]);
+  }, [currentUser]);
 
   useEffect(() => {
     const map = mapRef.current;
