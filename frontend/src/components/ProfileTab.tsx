@@ -51,6 +51,25 @@ export function ProfileTab({ currentUser, onUserUpdate }: Props) {
     }
   };
 
+  const handleStravaClick = () => {
+    const clientId = import.meta.env.VITE_STRAVA_CLIENT_ID;
+    if (!clientId) {
+      alert('VITE_STRAVA_CLIENT_ID is missing');
+      return;
+    }
+    const redirectUri = 'https://ordarun.app/api/strava/callback';
+    const url = `https://www.strava.com/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=activity:read_all&state=${currentUser.telegramId}`;
+    
+    console.log('Strava Auth URL:', url);
+
+    const telegram = (window as any).Telegram?.WebApp;
+    if (telegram?.openLink) {
+      telegram.openLink(url);
+    } else {
+      window.location.href = url;
+    }
+  };
+
   return (
     <div className="content-area">
       <h2 className="tab-title">Профиль</h2>
@@ -92,15 +111,7 @@ export function ProfileTab({ currentUser, onUserUpdate }: Props) {
               type="button"
               className="btn-primary"
               style={{ background: 'linear-gradient(135deg, #fc4c02 0%, #e04300 100%)', boxShadow: '0 4px 12px rgba(252, 76, 2, 0.3)' }}
-              onClick={() => {
-                const clientId = import.meta.env.VITE_STRAVA_CLIENT_ID;
-                if (!clientId) {
-                  alert('VITE_STRAVA_CLIENT_ID is missing');
-                  return;
-                }
-                const redirectUri = 'https://ordarun.app/api/strava/callback';
-                window.location.href = `https://www.strava.com/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=activity:read_all&state=${currentUser.telegramId}`;
-              }}
+              onClick={handleStravaClick}
             >
               Подключить Strava
             </button>
