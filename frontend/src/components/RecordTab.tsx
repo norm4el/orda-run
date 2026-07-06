@@ -179,11 +179,17 @@ export function RecordTab({ currentUser, onCoordinatesUpdate, onRunFinished }: P
   const currentPace = distanceMeters > 0 ? (elapsedSeconds / 60) / (distanceMeters / 1000) : 0;
   const paceMins = Math.floor(currentPace);
   const paceSecs = Math.floor((currentPace - paceMins) * 60);
-  const formattedPace = distanceMeters > 0 ? `${paceMins}:${paceSecs.toString().padStart(2, '0')} /км` : '0:00 /км';
+
 
   return (
-    <div className="tab-container" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: 'calc(100vh - 72px)', zIndex: 1000, padding: '20px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', alignItems: 'center', pointerEvents: 'none' }}>
-      <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '30px', pointerEvents: 'auto', background: 'rgba(7, 17, 31, 0.7)', padding: '10px 20px', borderRadius: '16px', backdropFilter: 'blur(10px)' }}>Тренировка</h2>
+    <div className="tab-container" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: 'calc(100vh - 72px)', zIndex: 1000, padding: '20px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', pointerEvents: 'none', paddingTop: '40px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+        <h2 style={{ fontSize: '16px', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '2px', color: 'var(--text-dim)', margin: 0 }}>Трекер</h2>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-dim)' }}>
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </div>
       
       {error && (
         <div style={{ background: '#ff4444', color: 'white', padding: '10px', borderRadius: '8px', marginBottom: '20px', width: '100%', textAlign: 'center', pointerEvents: 'auto' }}>
@@ -191,64 +197,64 @@ export function RecordTab({ currentUser, onCoordinatesUpdate, onRunFinished }: P
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', width: '100%', boxSizing: 'border-box', marginBottom: '40px', pointerEvents: 'auto' }}>
-        <div style={{ background: 'rgba(7, 17, 31, 0.8)', backdropFilter: 'blur(10px)', padding: '20px', borderRadius: '16px', textAlign: 'center' }}>
-          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#00ffaa' }}>{distanceKm}</div>
-          <div style={{ fontSize: '14px', color: '#888' }}>километров</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '30px', width: '100%', pointerEvents: 'none', background: 'var(--surface)', padding: '30px', borderRadius: '32px', boxShadow: '0 12px 40px rgba(0,0,0,0.5)', zIndex: 10 }}>
+        <div>
+          <div style={{ fontSize: '12px', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Километры</div>
+          <div style={{ fontSize: '42px', fontWeight: '500', color: 'var(--text-main)', lineHeight: '1' }}>{distanceKm}</div>
         </div>
-        <div style={{ background: 'rgba(7, 17, 31, 0.8)', backdropFilter: 'blur(10px)', padding: '20px', borderRadius: '16px', textAlign: 'center' }}>
-          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#00ffaa' }}>{formatTime(elapsedSeconds)}</div>
-          <div style={{ fontSize: '14px', color: '#888' }}>время</div>
+        <div>
+          <div style={{ fontSize: '12px', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Время</div>
+          <div style={{ fontSize: '42px', fontWeight: '500', color: 'var(--text-main)', lineHeight: '1' }}>{formatTime(elapsedSeconds)}</div>
         </div>
-        <div style={{ gridColumn: '1 / -1', background: 'rgba(7, 17, 31, 0.8)', backdropFilter: 'blur(10px)', padding: '20px', borderRadius: '16px', textAlign: 'center' }}>
-          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#00ffaa' }}>{formattedPace}</div>
-          <div style={{ fontSize: '14px', color: '#888' }}>текущий темп</div>
+        <div>
+          <div style={{ fontSize: '12px', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Темп</div>
+          <div style={{ fontSize: '28px', fontWeight: '500', color: 'var(--text-main)', display: 'flex', alignItems: 'baseline', gap: '4px' }}>{distanceMeters > 0 ? `${paceMins}:${paceSecs.toString().padStart(2, '0')}` : '0:00'} <span style={{ fontSize: '16px', color: 'var(--text-dim)' }}>/км</span></div>
+        </div>
+        <div>
+          <div style={{ fontSize: '12px', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Калории</div>
+          <div style={{ fontSize: '28px', fontWeight: '500', color: 'var(--text-main)' }}>{Math.floor(distanceMeters * 0.07)}</div>
         </div>
       </div>
 
       <div style={{ flex: 1 }} />
 
-      {!isTracking ? (
-        coordinates.length > 0 ? (
-          <div style={{ display: 'flex', gap: '10px', width: '100%', boxSizing: 'border-box', pointerEvents: 'auto' }}>
-            <button
-              onClick={() => { setCoordinates([]); setDistanceMeters(0); setElapsedSeconds(0); }}
-              className="btn btn-secondary"
-              style={{ flex: 1, padding: '20px', fontSize: '18px', background: 'rgba(7, 17, 31, 0.9)', backdropFilter: 'blur(10px)', border: 'none', borderRadius: '12px', color: '#fff' }}
-            >
-              Сбросить
-            </button>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', marginTop: 'auto', marginBottom: '20px', gap: '30px', pointerEvents: 'auto', zIndex: 10 }}>
+        <div style={{ color: 'var(--text-dim)', padding: '15px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '50%' }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        </div>
+        
+        {!isTracking ? (
+          coordinates.length > 0 ? (
             <button
               onClick={saveRun}
               disabled={isSaving}
-              className="btn btn-primary"
-              style={{ flex: 2, padding: '20px', fontSize: '18px', background: '#00ffaa', color: '#000', border: 'none', borderRadius: '12px' }}
+              style={{ width: '120px', height: '120px', borderRadius: '50%', fontSize: '16px', fontWeight: '500', background: 'var(--primary)', color: '#000', pointerEvents: 'auto', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', textTransform: 'uppercase', letterSpacing: '1px', cursor: 'pointer' }}
             >
-              {isSaving ? 'Сохраняем...' : 'Сохранить и захватить'}
+              {isSaving ? 'ОЖИДАЙТЕ' : 'ЗАХВАТ'}
             </button>
-          </div>
+          ) : (
+            <button
+              onClick={startTracking}
+              style={{ width: '120px', height: '120px', borderRadius: '50%', fontSize: '16px', fontWeight: '500', background: 'transparent', color: 'var(--primary)', border: '2px solid var(--primary)', pointerEvents: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', textTransform: 'uppercase', letterSpacing: '1px', cursor: 'pointer' }}
+            >
+              СТАРТ
+            </button>
+          )
         ) : (
           <button
-            onClick={startTracking}
-            className="btn btn-primary"
-            style={{ width: '200px', height: '200px', borderRadius: '50%', fontSize: '32px', fontWeight: 'bold', background: '#00ffaa', color: '#000', boxShadow: '0 10px 30px rgba(0, 255, 170, 0.3)', pointerEvents: 'auto', border: 'none' }}
+            onClick={stopTracking}
+            style={{ width: '120px', height: '120px', borderRadius: '50%', fontSize: '16px', fontWeight: '500', background: 'transparent', color: 'var(--primary)', border: '2px solid var(--primary)', pointerEvents: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', textTransform: 'uppercase', letterSpacing: '1px', cursor: 'pointer' }}
           >
-            СТАРТ
+            ПАУЗА
           </button>
-        )
-      ) : (
-        <button
-          onClick={stopTracking}
-          className="btn btn-primary"
-          style={{ width: '200px', height: '200px', borderRadius: '50%', fontSize: '32px', fontWeight: 'bold', background: '#ff4444', color: '#fff', boxShadow: '0 10px 30px rgba(255, 68, 68, 0.3)', pointerEvents: 'auto', border: 'none' }}
-        >
-          СТОП
-        </button>
-      )}
-      
-      <div style={{ marginTop: '20px', fontSize: '12px', color: '#bbb', textAlign: 'center', padding: '10px 20px', background: 'rgba(7, 17, 31, 0.7)', borderRadius: '8px', backdropFilter: 'blur(10px)', pointerEvents: 'auto' }}>
-        Держите экран включенным во время бега. iOS/Android могут остановить запись, если экран погаснет.
+        )}
+        
+        <div style={{ color: 'var(--text-dim)', padding: '15px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '50%' }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle></svg>
+        </div>
       </div>
+      
+
     </div>
   );
 }

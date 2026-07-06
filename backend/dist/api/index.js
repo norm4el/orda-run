@@ -61,6 +61,7 @@ exports.apiRouter.post('/auth', async (req, res) => {
                     strava_access_token AS "stravaAccessToken",
                     strava_refresh_token AS "stravaRefreshToken",
                     strava_expires_at AS "stravaExpiresAt",
+                    influence_points AS "influencePoints",
                     color_self AS "colorSelf",
                     color_others AS "colorOthers",
                     created_at AS "createdAt",
@@ -161,6 +162,42 @@ exports.apiRouter.post('/test-capture', async (req, res) => {
         res.status(500).json({ error: message });
     }
 });
+exports.apiRouter.post('/runs/manual', async (req, res) => {
+    const telegramId = req.body?.telegram_id;
+    const polylineString = req.body?.polyline;
+    const distance = req.body?.distance || 0;
+    const duration = req.body?.duration || 0;
+    if (!telegramId || !polylineString) {
+        res.status(400).json({ error: 'telegram_id and polyline are required' });
+        return;
+    }
+    try {
+        const userResult = await (0, db_1.query)(`SELECT id FROM users WHERE telegram_id = $1`, [String(telegramId)]);
+        if (userResult.rowCount === 0 || !userResult.rows[0]) {
+            res.status(404).json({ error: 'User not found' });
+            return;
+        }
+        const userId = userResult.rows[0].id;
+        // Save the manual route
+        const decodedPoints = require('@mapbox/polyline').decode(polylineString);
+        await (0, db_1.query)(`
+                INSERT INTO routes (user_id, strava_activity_id, coordinates)
+                VALUES ($1, $2, $3)
+                ON CONFLICT (strava_activity_id) DO NOTHING
+            `, [userId, Date.now(), JSON.stringify(decodedPoints)]);
+        const result = await (0, territory_1.captureTerritory)(userId, polylineString);
+        res.json({
+            ok: true,
+            user_id: userId,
+            ...result,
+        });
+    }
+    catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        console.error('manual run error:', error);
+        res.status(500).json({ error: message });
+    }
+});
 exports.apiRouter.put('/user/update', async (req, res) => {
     const telegramId = req.body?.telegram_id;
     const displayName = req.body?.displayName;
@@ -189,6 +226,7 @@ exports.apiRouter.put('/user/update', async (req, res) => {
                     strava_expires_at AS "stravaExpiresAt",
                     color_self AS "colorSelf",
                     color_others AS "colorOthers",
+                    influence_points AS "influencePoints",
                     created_at AS "createdAt",
                     updated_at AS "updatedAt"
             `, [String(displayName), String(colorSelf), String(colorOthers), String(telegramId)]);

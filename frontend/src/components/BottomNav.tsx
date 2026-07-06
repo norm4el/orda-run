@@ -27,7 +27,6 @@ export function BottomNav({ activeTab, onChange }: Props) {
           <line x1="9" y1="3" x2="9" y2="18"></line>
           <line x1="15" y1="6" x2="15" y2="21"></line>
         </svg>
-        <span>Карта</span>
       </button>
 
       <button
@@ -47,7 +46,6 @@ export function BottomNav({ activeTab, onChange }: Props) {
         >
           <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
         </svg>
-        <span>Трекер</span>
       </button>
 
       <button
@@ -67,7 +65,6 @@ export function BottomNav({ activeTab, onChange }: Props) {
         >
           <path d="M12 20v-6M6 20V10M18 20V4" />
         </svg>
-        <span>Топ</span>
       </button>
 
       <button
@@ -88,7 +85,6 @@ export function BottomNav({ activeTab, onChange }: Props) {
           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
           <circle cx="12" cy="7" r="4"></circle>
         </svg>
-        <span>Профиль</span>
       </button>
     </nav>
   );

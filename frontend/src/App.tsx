@@ -14,6 +14,7 @@ export type AuthenticatedUser = {
   stravaAccessToken: string | null;
   stravaRefreshToken: string | null;
   stravaExpiresAt: number | null;
+  influencePoints: number;
   colorSelf: string;
   colorOthers: string;
   createdAt: string;
@@ -191,9 +192,42 @@ function App() {
       )}
 
       {activeTab === 'map' && (
-        <div className="hud">
-          <div className="hud__chip">{authMessage}</div>
-        </div>
+        <>
+          <div className="hud">
+            {authMessage && authMessage !== 'Авторизация вне Telegram' && (
+              <div className="hud__chip" style={{ marginBottom: '10px' }}>{authMessage}</div>
+            )}
+          </div>
+          {currentUser && (
+            <div style={{
+              position: 'absolute',
+              bottom: '90px',
+              left: '16px',
+              right: '16px',
+              background: 'var(--surface)',
+              borderRadius: '20px',
+              padding: '20px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+              zIndex: 1000,
+              pointerEvents: 'auto'
+            }}>
+              <div>
+                <div style={{ fontSize: '12px', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>Твоя Орда</div>
+                <div style={{ fontSize: '28px', fontWeight: 'bold', color: 'var(--text-main)', display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                  {(currentUser.influencePoints / 1000000).toFixed(2)} <span style={{ fontSize: '16px', color: 'var(--text-dim)', fontWeight: 'normal' }}>км²</span>
+                </div>
+              </div>
+              <div style={{ color: 'var(--text-dim)' }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       <BottomNav activeTab={activeTab} onChange={setActiveTab} />

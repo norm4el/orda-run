@@ -83,8 +83,8 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates }: M
       });
     }
 
-    const colorSelf = currentUserRef.current?.colorSelf ?? '#f97316';
-    const colorOthers = currentUserRef.current?.colorOthers ?? '#ef4444';
+    const colorSelf = '#d8a760'; // Gold
+    const colorOthers = '#2c5a5a'; // Teal
     const ownerMatch = currentUserRef.current?.id ?? '__none__';
 
     if (!map.getLayer(territoryFillLayerId)) {
@@ -163,7 +163,7 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates }: M
         type: 'line',
         source: liveRouteSourceId,
         paint: {
-          'line-color': '#00ffaa',
+          'line-color': '#d8a760',
           'line-width': 5,
           'line-opacity': 0.9,
           'line-dasharray': [2, 2],
@@ -178,7 +178,7 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates }: M
         source: liveRouteSourceId,
         paint: {
           'circle-radius': 8,
-          'circle-color': '#00ffaa',
+          'circle-color': '#d8a760',
           'circle-stroke-width': 3,
           'circle-stroke-color': '#ffffff',
         },

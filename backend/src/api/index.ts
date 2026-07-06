@@ -96,6 +96,7 @@ apiRouter.post('/auth', async (req, res) => {
                     strava_access_token AS "stravaAccessToken",
                     strava_refresh_token AS "stravaRefreshToken",
                     strava_expires_at AS "stravaExpiresAt",
+                    influence_points AS "influencePoints",
                     color_self AS "colorSelf",
                     color_others AS "colorOthers",
                     created_at AS "createdAt",
@@ -316,6 +317,7 @@ apiRouter.put('/user/update', async (req, res) => {
                     strava_expires_at AS "stravaExpiresAt",
                     color_self AS "colorSelf",
                     color_others AS "colorOthers",
+                    influence_points AS "influencePoints",
                     created_at AS "createdAt",
                     updated_at AS "updatedAt"
             `,

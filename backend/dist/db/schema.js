@@ -75,7 +75,7 @@ async function ensureDatabaseSchema() {
       IF TG_OP = 'DELETE' THEN
         UPDATE users
         SET influence_points = (
-          SELECT COALESCE(SUM(ST_Area(polygon::geography)), 0)::int
+          SELECT COALESCE(ST_Area(ST_Union(polygon)::geography), 0)::int
           FROM territories
           WHERE owner_id = OLD.owner_id
         )
@@ -84,7 +84,7 @@ async function ensureDatabaseSchema() {
       ELSE
         UPDATE users
         SET influence_points = (
-          SELECT COALESCE(SUM(ST_Area(polygon::geography)), 0)::int
+          SELECT COALESCE(ST_Area(ST_Union(polygon)::geography), 0)::int
           FROM territories
           WHERE owner_id = NEW.owner_id
         )
@@ -104,7 +104,7 @@ async function ensureDatabaseSchema() {
     await _1.pool.query(`
     UPDATE users u
     SET influence_points = (
-      SELECT COALESCE(SUM(ST_Area(polygon::geography)), 0)::int
+      SELECT COALESCE(ST_Area(ST_Union(polygon)::geography), 0)::int
       FROM territories t
       WHERE t.owner_id = u.id
     )

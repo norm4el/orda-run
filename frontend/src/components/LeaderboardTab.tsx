@@ -59,13 +59,14 @@ export function LeaderboardTab({ currentUser }: Props) {
               key={item.id} 
               className="leaderboard-item"
               style={{
-                borderColor: item.id === currentUser?.id ? 'rgba(91, 179, 255, 0.5)' : undefined,
-                background: item.id === currentUser?.id ? 'rgba(91, 179, 255, 0.1)' : undefined
+                borderColor: item.id === currentUser?.id ? 'var(--primary)' : 'transparent',
+                background: item.id === currentUser?.id ? 'rgba(216, 167, 96, 0.05)' : 'transparent',
+                borderRadius: '8px'
               }}
             >
-              <span className="leaderboard-rank">#{index + 1}</span>
+              <span className="leaderboard-rank" style={{ color: item.id === currentUser?.id ? 'var(--primary)' : undefined }}>{index + 1}</span>
               <span className="leaderboard-name">{item.displayName}</span>
-              <span className="leaderboard-score">{(item.score / 1000000).toFixed(2)} км²</span>
+              <span className="leaderboard-score" style={{ color: item.id === currentUser?.id ? 'var(--primary)' : 'var(--text-dim)', fontSize: '14px' }}>{(item.score / 1000000).toFixed(2)} км²</span>
             </div>
           ))}
           {data.length === 0 && (
