@@ -11,6 +11,21 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+  backend:
+    build: ./backend
+    env_file:
+      - ./backend/.env
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80" # Или твой порт для Nginx/Vite
+    depends_on:
+      - backend
 
 volumes:
   pgdata:
