@@ -74,6 +74,20 @@ function App() {
     }
 
     void authorize();
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        void authorize();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleVisibilityChange);
+    };
   }, []);
 
   useEffect(() => {

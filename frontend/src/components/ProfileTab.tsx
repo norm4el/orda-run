@@ -52,13 +52,8 @@ export function ProfileTab({ currentUser, onUserUpdate }: Props) {
   };
 
   const handleStravaClick = () => {
-    const clientId = import.meta.env.VITE_STRAVA_CLIENT_ID;
-    if (!clientId) {
-      alert('VITE_STRAVA_CLIENT_ID is missing');
-      return;
-    }
-    const redirectUri = 'https://ordarun.app/api/strava/callback';
-    const url = `https://www.strava.com/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=activity:read_all&state=${currentUser.telegramId}`;
+    // Используем динамический origin (работает и локально, и на проде)
+    const url = `${window.location.origin}/api/strava/auth?telegram_id=${currentUser.telegramId}`;
     
     console.log('Strava Auth URL:', url);
 
