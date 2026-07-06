@@ -236,6 +236,55 @@ apiRouter.post('/test-capture', async (req, res) => {
     }
 });
 
+apiRouter.post('/runs/manual', async (req, res) => {
+    const telegramId = req.body?.telegram_id;
+    const polylineString = req.body?.polyline;
+    const distance = req.body?.distance || 0;
+    const duration = req.body?.duration || 0;
+
+    if (!telegramId || !polylineString) {
+        res.status(400).json({ error: 'telegram_id and polyline are required' });
+        return;
+    }
+
+    try {
+        const userResult = await query<{ id: string }>(
+            `SELECT id FROM users WHERE telegram_id = $1`,
+            [String(telegramId)],
+        );
+
+        if (userResult.rowCount === 0 || !userResult.rows[0]) {
+            res.status(404).json({ error: 'User not found' });
+            return;
+        }
+
+        const userId = userResult.rows[0].id;
+
+        // Save the manual route
+        const decodedPoints = require('@mapbox/polyline').decode(polylineString);
+        await query(
+            `
+                INSERT INTO routes (owner_id, strava_activity_id, coordinates, distance, moving_time, start_date)
+                VALUES ($1, $2, $3, $4, $5, NOW())
+                ON CONFLICT (strava_activity_id) DO NOTHING
+            `,
+            [userId, `manual_${Date.now()}`, JSON.stringify(decodedPoints), distance, duration]
+        );
+
+        const result = await captureTerritory(userId, polylineString);
+
+        res.json({
+            ok: true,
+            user_id: userId,
+            ...result,
+        });
+    } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        console.error('manual run error:', error);
+        res.status(500).json({ error: message });
+    }
+});
+
 apiRouter.put('/user/update', async (req, res) => {
     const telegramId = req.body?.telegram_id;
     const displayName = req.body?.displayName;

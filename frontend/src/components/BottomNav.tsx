@@ -1,4 +1,4 @@
-export type TabType = 'map' | 'leaderboard' | 'profile';
+export type TabType = 'map' | 'record' | 'leaderboard' | 'profile';
 
 type Props = {
   activeTab: TabType;
@@ -28,6 +28,26 @@ export function BottomNav({ activeTab, onChange }: Props) {
           <line x1="15" y1="6" x2="15" y2="21"></line>
         </svg>
         <span>Карта</span>
+      </button>
+
+      <button
+        type="button"
+        className={`bottom-nav-btn ${activeTab === 'record' ? 'active' : ''}`}
+        onClick={() => onChange('record')}
+      >
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+        </svg>
+        <span>Трекер</span>
       </button>
 
       <button

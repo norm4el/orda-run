@@ -3,6 +3,7 @@ import { MapArea, type TerritoryFeatureCollection, type RouteFeatureCollection }
 import { BottomNav, type TabType } from './components/BottomNav';
 import { ProfileTab } from './components/ProfileTab';
 import { LeaderboardTab } from './components/LeaderboardTab';
+import { RecordTab } from './components/RecordTab';
 
 export type AuthenticatedUser = {
   id: string;
@@ -174,6 +175,13 @@ function App() {
       
       {activeTab === 'leaderboard' && (
         <LeaderboardTab currentUser={currentUser} />
+      )}
+
+      {activeTab === 'record' && (
+        <RecordTab currentUser={currentUser} onRunFinished={() => {
+          reloadMapData();
+          setActiveTab('map');
+        }} />
       )}
 
       {activeTab === 'map' && (
