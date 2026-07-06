@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { MapArea, type TerritoryFeatureCollection, type RouteFeatureCollection } from './MapArea';
 import { BottomNav, type TabType } from './components/BottomNav';
 import { ProfileTab } from './components/ProfileTab';
@@ -91,7 +91,7 @@ function App() {
     };
   }, []);
 
-  useEffect(() => {
+  const reloadMapData = useCallback(() => {
     async function loadTerritories() {
       try {
         const response = await fetch('/api/territories');
@@ -119,10 +119,6 @@ function App() {
       }
     }
 
-    void loadTerritories();
-  }, []);
-
-  useEffect(() => {
     async function loadRoutes() {
       try {
         const response = await fetch('/api/routes');
@@ -156,17 +152,22 @@ function App() {
       }
     }
 
+    void loadTerritories();
     void loadRoutes();
   }, []);
+
+  useEffect(() => {
+    reloadMapData();
+  }, [reloadMapData]);
 
   return (
     <main className="app-shell">
       <div className={`map-container ${activeTab !== 'map' ? 'hidden-map' : ''}`}>
-        <MapArea territories={territories} routes={routes} currentUserId={currentUser?.id ?? null} />
+        <MapArea territories={territories} routes={routes} currentUser={currentUser} />
       </div>
       
       {activeTab === 'profile' && (
-        <ProfileTab currentUser={currentUser} onUserUpdate={setCurrentUser} />
+        <ProfileTab currentUser={currentUser} onUserUpdate={setCurrentUser} reloadMapData={reloadMapData} />
       )}
       
       {activeTab === 'leaderboard' && (

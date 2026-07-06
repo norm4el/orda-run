@@ -24,6 +24,8 @@ type AuthenticatedUserResponse = {
     stravaAccessToken: string | null;
     stravaRefreshToken: string | null;
     stravaExpiresAt: number | null;
+    colorSelf: string;
+    colorOthers: string;
     createdAt: string;
     updatedAt: string;
 };
@@ -94,6 +96,8 @@ apiRouter.post('/auth', async (req, res) => {
                     strava_access_token AS "stravaAccessToken",
                     strava_refresh_token AS "stravaRefreshToken",
                     strava_expires_at AS "stravaExpiresAt",
+                    color_self AS "colorSelf",
+                    color_others AS "colorOthers",
                     created_at AS "createdAt",
                     updated_at AS "updatedAt"
             `,
@@ -235,9 +239,11 @@ apiRouter.post('/test-capture', async (req, res) => {
 apiRouter.put('/user/update', async (req, res) => {
     const telegramId = req.body?.telegram_id;
     const displayName = req.body?.displayName;
+    const colorSelf = req.body?.colorSelf;
+    const colorOthers = req.body?.colorOthers;
 
-    if (!telegramId || !displayName) {
-        res.status(400).json({ error: 'telegram_id and displayName are required' });
+    if (!telegramId || !displayName || !colorSelf || !colorOthers) {
+        res.status(400).json({ error: 'telegram_id, displayName, colorSelf, colorOthers are required' });
         return;
     }
 
@@ -245,8 +251,11 @@ apiRouter.put('/user/update', async (req, res) => {
         const result = await query<AuthenticatedUserResponse>(
             `
                 UPDATE users
-                SET display_name = $1, updated_at = NOW()
-                WHERE telegram_id = $2
+                SET display_name = $1, 
+                    color_self = $2,
+                    color_others = $3,
+                    updated_at = NOW()
+                WHERE telegram_id = $4
                 RETURNING
                     id,
                     telegram_id AS "telegramId",
@@ -256,10 +265,12 @@ apiRouter.put('/user/update', async (req, res) => {
                     strava_access_token AS "stravaAccessToken",
                     strava_refresh_token AS "stravaRefreshToken",
                     strava_expires_at AS "stravaExpiresAt",
+                    color_self AS "colorSelf",
+                    color_others AS "colorOthers",
                     created_at AS "createdAt",
                     updated_at AS "updatedAt"
             `,
-            [String(displayName), String(telegramId)]
+            [String(displayName), String(colorSelf), String(colorOthers), String(telegramId)]
         );
 
         if (result.rowCount === 0 || !result.rows[0]) {

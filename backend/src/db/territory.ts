@@ -24,9 +24,27 @@ export async function captureTerritory(userId: string, polylineString: string) {
         WITH input_line AS (
           SELECT ST_GeomFromText($2, 4326) AS geom
         ),
-        new_zone AS (
+        buffered_line AS (
           SELECT ST_Buffer(geom::geography, 30)::geometry AS geom
           FROM input_line
+        ),
+        nodes AS (
+          SELECT ST_Node(geom) AS geom
+          FROM input_line
+        ),
+        enclosed_polys AS (
+          SELECT (ST_Dump(ST_Polygonize(geom))).geom AS geom
+          FROM nodes
+        ),
+        combined_enclosed AS (
+          SELECT ST_Union(geom) AS geom
+          FROM enclosed_polys
+        ),
+        new_zone AS (
+          SELECT ST_Union(
+            (SELECT geom FROM buffered_line),
+            COALESCE((SELECT geom FROM combined_enclosed), ST_GeomFromText('GEOMETRYCOLLECTION EMPTY', 4326))
+          ) AS geom
         ),
         locked_territories AS (
           SELECT t.id

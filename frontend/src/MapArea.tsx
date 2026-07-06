@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react';
 import type { FeatureCollection, Geometry } from 'geojson';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import type { AuthenticatedUser } from './App';
 
 const mapCenter: [number, number] = [71.43, 51.13];
 const mapZoom = 13;
@@ -36,15 +37,15 @@ export type RouteFeatureCollection = FeatureCollection<
 type MapAreaProps = {
   territories: TerritoryFeatureCollection | null;
   routes: RouteFeatureCollection | null;
-  currentUserId: string | null;
+  currentUser: AuthenticatedUser | null;
 };
 
-export function MapArea({ territories, routes, currentUserId }: MapAreaProps) {
+export function MapArea({ territories, routes, currentUser }: MapAreaProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const territoriesRef = useRef<TerritoryFeatureCollection | null>(territories);
   const routesRef = useRef<RouteFeatureCollection | null>(routes);
-  const currentUserIdRef = useRef<string | null>(currentUserId);
+  const currentUserRef = useRef<AuthenticatedUser | null>(currentUser);
   const [isDarkTheme, setIsDarkTheme] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSoundEnabled, setIsSoundEnabled] = useState(true);
@@ -58,8 +59,8 @@ export function MapArea({ territories, routes, currentUserId }: MapAreaProps) {
   }, [routes]);
 
   useEffect(() => {
-    currentUserIdRef.current = currentUserId;
-  }, [currentUserId]);
+    currentUserRef.current = currentUser;
+  }, [currentUser]);
 
   const applyTerritoryStyle = (map: maplibregl.Map) => {
     if (!map.getSource(territorySourceId)) {
@@ -69,6 +70,10 @@ export function MapArea({ territories, routes, currentUserId }: MapAreaProps) {
       });
     }
 
+    const colorSelf = currentUserRef.current?.colorSelf ?? '#f97316';
+    const colorOthers = currentUserRef.current?.colorOthers ?? '#ef4444';
+    const ownerMatch = currentUserRef.current?.id ?? '__none__';
+
     if (!map.getLayer(territoryFillLayerId)) {
       map.addLayer({
         id: territoryFillLayerId,
@@ -77,9 +82,9 @@ export function MapArea({ territories, routes, currentUserId }: MapAreaProps) {
         paint: {
           'fill-color': [
             'case',
-            ['==', ['get', 'owner_id'], currentUserIdRef.current ?? '__none__'],
-            '#22c55e',
-            '#ef4444',
+            ['==', ['get', 'owner_id'], ownerMatch],
+            colorSelf,
+            colorOthers,
           ],
           'fill-opacity': 0.2,
         },
@@ -94,9 +99,9 @@ export function MapArea({ territories, routes, currentUserId }: MapAreaProps) {
         paint: {
           'line-color': [
             'case',
-            ['==', ['get', 'owner_id'], currentUserIdRef.current ?? '__none__'],
-            '#16a34a',
-            '#dc2626',
+            ['==', ['get', 'owner_id'], ownerMatch],
+            colorSelf,
+            colorOthers,
           ],
           'line-width': 2,
           'line-opacity': 0.9,
@@ -117,7 +122,12 @@ export function MapArea({ territories, routes, currentUserId }: MapAreaProps) {
         type: 'line',
         source: routesSourceId,
         paint: {
-          'line-color': '#f97316', // Orange for Strava runs
+          'line-color': [
+            'case',
+            ['==', ['get', 'owner_id'], ownerMatch],
+            colorSelf,
+            colorOthers,
+          ],
           'line-width': 3,
           'line-opacity': 0.8,
         },
@@ -140,20 +150,32 @@ export function MapArea({ territories, routes, currentUserId }: MapAreaProps) {
       return;
     }
 
-    const ownerMatch = currentUserIdRef.current ?? '__none__';
+    const colorSelf = currentUserRef.current?.colorSelf ?? '#f97316';
+    const colorOthers = currentUserRef.current?.colorOthers ?? '#ef4444';
+    const ownerMatch = currentUserRef.current?.id ?? '__none__';
 
     map.setPaintProperty(territoryFillLayerId, 'fill-color', [
       'case',
       ['==', ['get', 'owner_id'], ownerMatch],
-      '#22c55e',
-      '#ef4444',
+      colorSelf,
+      colorOthers,
     ]);
+
     map.setPaintProperty(territoryLineLayerId, 'line-color', [
       'case',
       ['==', ['get', 'owner_id'], ownerMatch],
-      '#16a34a',
-      '#dc2626',
+      colorSelf,
+      colorOthers,
     ]);
+
+    if (map.getLayer(routesLineLayerId)) {
+      map.setPaintProperty(routesLineLayerId, 'line-color', [
+        'case',
+        ['==', ['get', 'owner_id'], ownerMatch],
+        colorSelf,
+        colorOthers,
+      ]);
+    }
   };
 
   useEffect(() => {

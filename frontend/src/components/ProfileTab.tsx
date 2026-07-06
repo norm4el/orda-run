@@ -4,11 +4,14 @@ import type { AuthenticatedUser } from '../App';
 type Props = {
   currentUser: AuthenticatedUser | null;
   onUserUpdate: (user: AuthenticatedUser) => void;
+  reloadMapData: () => void;
 };
 
-export function ProfileTab({ currentUser, onUserUpdate }: Props) {
+export function ProfileTab({ currentUser, onUserUpdate, reloadMapData }: Props) {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(currentUser?.displayName ?? '');
+  const [colorSelf, setColorSelf] = useState(currentUser?.colorSelf ?? '#f97316');
+  const [colorOthers, setColorOthers] = useState(currentUser?.colorOthers ?? '#ef4444');
   const [isSaving, setIsSaving] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
 
@@ -33,7 +36,9 @@ export function ProfileTab({ currentUser, onUserUpdate }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           telegram_id: currentUser.telegramId,
-          displayName: editName.trim() 
+          displayName: editName.trim(),
+          colorSelf,
+          colorOthers,
         }),
       });
 
@@ -83,6 +88,7 @@ export function ProfileTab({ currentUser, onUserUpdate }: Props) {
       }
 
       showMsg('Пробежки успешно синхронизированы! Вернитесь на карту, чтобы увидеть их.');
+      reloadMapData();
     } catch (err) {
       console.error(err);
       const telegram = (window as any).Telegram?.WebApp;
@@ -120,6 +126,34 @@ export function ProfileTab({ currentUser, onUserUpdate }: Props) {
             />
           ) : (
             <span className="profile-value">{currentUser.displayName ?? 'Без имени'}</span>
+          )}
+        </div>
+
+        <div className="profile-field">
+          <span className="profile-label">Цвет ваших зон</span>
+          {isEditing ? (
+            <input
+              type="color"
+              style={{ width: '40px', height: '30px', padding: 0, border: 'none', background: 'none' }}
+              value={colorSelf}
+              onChange={(e) => setColorSelf(e.target.value)}
+            />
+          ) : (
+            <div style={{ width: '24px', height: '24px', borderRadius: '4px', backgroundColor: currentUser.colorSelf ?? '#f97316' }} />
+          )}
+        </div>
+
+        <div className="profile-field">
+          <span className="profile-label">Цвет чужих зон</span>
+          {isEditing ? (
+            <input
+              type="color"
+              style={{ width: '40px', height: '30px', padding: 0, border: 'none', background: 'none' }}
+              value={colorOthers}
+              onChange={(e) => setColorOthers(e.target.value)}
+            />
+          ) : (
+            <div style={{ width: '24px', height: '24px', borderRadius: '4px', backgroundColor: currentUser.colorOthers ?? '#ef4444' }} />
           )}
         </div>
 

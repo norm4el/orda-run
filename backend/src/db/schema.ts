@@ -28,6 +28,8 @@ export async function ensureDatabaseSchema() {
       ADD COLUMN IF NOT EXISTS strava_access_token TEXT,
       ADD COLUMN IF NOT EXISTS strava_refresh_token TEXT,
       ADD COLUMN IF NOT EXISTS strava_expires_at INTEGER,
+      ADD COLUMN IF NOT EXISTS color_self TEXT NOT NULL DEFAULT '#f97316',
+      ADD COLUMN IF NOT EXISTS color_others TEXT NOT NULL DEFAULT '#ef4444',
       ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   `);
