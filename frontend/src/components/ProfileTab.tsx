@@ -5,9 +5,21 @@ type Props = {
   currentUser: AuthenticatedUser | null;
   onUserUpdate: (user: AuthenticatedUser) => void;
   reloadMapData: () => void;
+  isDarkTheme?: boolean;
+  setIsDarkTheme?: (val: boolean | ((prev: boolean) => boolean)) => void;
+  isSoundEnabled?: boolean;
+  setIsSoundEnabled?: (val: boolean | ((prev: boolean) => boolean)) => void;
 };
 
-export function ProfileTab({ currentUser, onUserUpdate, reloadMapData }: Props) {
+export function ProfileTab({ 
+  currentUser, 
+  onUserUpdate, 
+  reloadMapData,
+  isDarkTheme = true,
+  setIsDarkTheme,
+  isSoundEnabled = true,
+  setIsSoundEnabled
+}: Props) {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(currentUser?.displayName ?? '');
   const [colorSelf, setColorSelf] = useState(currentUser?.colorSelf ?? '#d8a760');
@@ -231,6 +243,36 @@ export function ProfileTab({ currentUser, onUserUpdate, reloadMapData }: Props) 
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: '24px', fontWeight: '500', color: 'var(--text-main)', marginBottom: '4px' }}>{(currentUser.influencePoints / 1000000).toFixed(2)}</div>
             <div style={{ fontSize: '12px', color: 'var(--text-dim)', textTransform: 'uppercase' }}>КМ²</div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: '40px' }}>
+        <h3 style={{ fontSize: '14px', fontWeight: '500', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '20px' }}>Настройки Приложения</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '12px 15px', borderRadius: '8px' }}>
+            <div>
+              <div style={{ fontWeight: '500', color: 'var(--text-main)' }}>Тема карты</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-dim)' }}>{isDarkTheme ? 'Темная' : 'Светлая'}</div>
+            </div>
+            <button 
+              onClick={() => setIsDarkTheme?.(prev => !prev)} 
+              style={{ background: 'transparent', border: '1px solid var(--primary)', color: 'var(--primary)', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold' }}
+            >
+              СМЕНИТЬ
+            </button>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '12px 15px', borderRadius: '8px' }}>
+            <div>
+              <div style={{ fontWeight: '500', color: 'var(--text-main)' }}>Звук</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-dim)' }}>Уведомления и эффекты</div>
+            </div>
+            <button 
+              onClick={() => setIsSoundEnabled?.(prev => !prev)} 
+              style={{ background: 'transparent', border: `1px solid ${isSoundEnabled ? 'var(--primary)' : 'var(--text-dim)'}`, color: isSoundEnabled ? 'var(--primary)' : 'var(--text-dim)', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold' }}
+            >
+              {isSoundEnabled ? 'ВКЛ' : 'ВЫКЛ'}
+            </button>
           </div>
         </div>
       </div>

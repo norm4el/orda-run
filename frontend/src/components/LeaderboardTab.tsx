@@ -14,11 +14,14 @@ type Props = {
 export function LeaderboardTab({ currentUser }: Props) {
   const [data, setData] = useState<LeaderboardEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [mode, setMode] = useState<'personal' | 'orda'>('personal');
 
   useEffect(() => {
     async function loadLeaderboard() {
+      setIsLoading(true);
       try {
-        const response = await fetch('/api/leaderboard');
+        const endpoint = mode === 'personal' ? '/api/leaderboard' : '/api/orda/leaderboard';
+        const response = await fetch(endpoint);
         if (!response.ok) throw new Error('Failed to load leaderboard');
         
         const result = await response.json();
@@ -42,11 +45,26 @@ export function LeaderboardTab({ currentUser }: Props) {
     }
 
     void loadLeaderboard();
-  }, [currentUser]);
+  }, [currentUser, mode]);
 
   return (
     <div className="content-area">
       <h2 className="tab-title">Лидерборд</h2>
+
+      <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '4px', marginBottom: '20px' }}>
+        <button 
+          onClick={() => setMode('personal')}
+          style={{ flex: 1, padding: '8px', borderRadius: '8px', background: mode === 'personal' ? 'rgba(255,255,255,0.1)' : 'transparent', color: mode === 'personal' ? '#fff' : 'rgba(255,255,255,0.5)', border: 'none', fontSize: '14px', fontWeight: '500', transition: 'all 0.2s' }}
+        >
+          Личный
+        </button>
+        <button 
+          onClick={() => setMode('orda')}
+          style={{ flex: 1, padding: '8px', borderRadius: '8px', background: mode === 'orda' ? 'rgba(255,255,255,0.1)' : 'transparent', color: mode === 'orda' ? '#fff' : 'rgba(255,255,255,0.5)', border: 'none', fontSize: '14px', fontWeight: '500', transition: 'all 0.2s' }}
+        >
+          Орды
+        </button>
+      </div>
       
       {isLoading ? (
         <div style={{ color: '#8c9eb5', textAlign: 'center', marginTop: '40px' }}>
@@ -59,14 +77,16 @@ export function LeaderboardTab({ currentUser }: Props) {
               key={item.id} 
               className="leaderboard-item"
               style={{
-                borderColor: item.id === currentUser?.id ? 'var(--primary)' : 'transparent',
-                background: item.id === currentUser?.id ? 'rgba(216, 167, 96, 0.05)' : 'transparent',
+                borderColor: (mode === 'personal' && item.id === currentUser?.id) || (mode === 'orda' && item.id === currentUser?.ordaId) ? 'var(--primary)' : 'transparent',
+                background: (mode === 'personal' && item.id === currentUser?.id) || (mode === 'orda' && item.id === currentUser?.ordaId) ? 'rgba(216, 167, 96, 0.05)' : 'transparent',
                 borderRadius: '8px'
               }}
             >
               <span className="leaderboard-rank" style={{ color: item.id === currentUser?.id ? 'var(--primary)' : undefined }}>{index + 1}</span>
               <span className="leaderboard-name">{item.displayName}</span>
-              <span className="leaderboard-score" style={{ color: item.id === currentUser?.id ? 'var(--primary)' : 'var(--text-dim)', fontSize: '14px' }}>{(item.score / 1000000).toFixed(2)} км²</span>
+              <span className="leaderboard-score" style={{ color: (mode === 'personal' && item.id === currentUser?.id) || (mode === 'orda' && item.id === currentUser?.ordaId) ? 'var(--primary)' : 'var(--text-dim)', fontSize: '14px' }}>
+                {(item.score / 1000000).toFixed(2)} км²
+              </span>
             </div>
           ))}
           {data.length === 0 && (

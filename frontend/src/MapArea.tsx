@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import type { CSSProperties } from 'react';
 import type { FeatureCollection, Geometry } from 'geojson';
 import maplibregl from 'maplibre-gl';
@@ -44,18 +44,16 @@ type MapAreaProps = {
   currentUser: AuthenticatedUser | null;
   liveCoordinates?: [number, number][];
   ordaMode?: boolean;
+  isDarkTheme?: boolean;
 };
 
-export function MapArea({ territories, routes, currentUser, liveCoordinates, ordaMode = false }: MapAreaProps) {
+export function MapArea({ territories, routes, currentUser, liveCoordinates, ordaMode = false, isDarkTheme = true }: MapAreaProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const territoriesRef = useRef<TerritoryFeatureCollection | null>(territories);
   const routesRef = useRef<RouteFeatureCollection | null>(routes);
   const currentUserRef = useRef<AuthenticatedUser | null>(currentUser);
   const liveCoordinatesRef = useRef<[number, number][] | undefined>(liveCoordinates);
-  const [isDarkTheme, setIsDarkTheme] = useState(true);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isSoundEnabled, setIsSoundEnabled] = useState(true);
 
   useEffect(() => {
     territoriesRef.current = territories;
@@ -393,50 +391,6 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates, ord
   return (
     <div style={styles.shell}>
       <div ref={containerRef} style={styles.map} />
-      {isSettingsOpen ? <button type="button" aria-label="Close settings" onClick={() => setIsSettingsOpen(false)} style={styles.backdrop} /> : null}
-      {isSettingsOpen ? (
-        <div style={styles.menu}>
-          <div style={styles.menuHeader}>
-            <div>
-              <div style={styles.menuTitle}>Настройки</div>
-              <div style={styles.menuSubtitle}>Карта и звук</div>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setIsDarkTheme((current) => !current)}
-            style={styles.menuItem}
-          >
-            <div>
-              <div style={styles.menuItemTitle}>Тема карты</div>
-              <div style={styles.menuItemDescription}>{isDarkTheme ? 'Dark Matter' : 'Voyager'}</div>
-            </div>
-            <div style={styles.menuToggle}>{isDarkTheme ? 'Темная' : 'Светлая'}</div>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setIsSoundEnabled((current) => !current)}
-            style={styles.menuItem}
-          >
-            <div>
-              <div style={styles.menuItemTitle}>Звук</div>
-              <div style={styles.menuItemDescription}>Уведомления и эффекты</div>
-            </div>
-            <div style={styles.menuToggle}>{isSoundEnabled ? 'Вкл' : 'Выкл'}</div>
-          </button>
-        </div>
-      ) : null}
-      <button
-        type="button"
-        onClick={() => setIsSettingsOpen((current) => !current)}
-        aria-label={isSettingsOpen ? 'Close settings' : 'Open settings'}
-        title={isSettingsOpen ? 'Закрыть настройки' : 'Открыть настройки'}
-        style={styles.themeButton}
-      >
-        <span style={styles.themeButtonIcon}>⚙</span>
-      </button>
     </div>
   );
 }
@@ -451,100 +405,5 @@ const styles: Record<string, CSSProperties> = {
   map: {
     width: '100%',
     height: '100%',
-  },
-  themeButton: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    zIndex: 1000,
-    width: 48,
-    height: 48,
-    border: '1px solid rgba(255, 255, 255, 0.18)',
-    borderRadius: 999,
-    background: 'rgba(10, 14, 24, 0.78)',
-    color: '#f8fafc',
-    display: 'grid',
-    placeItems: 'center',
-    boxShadow: '0 14px 30px rgba(0, 0, 0, 0.35)',
-    backdropFilter: 'blur(14px)',
-    cursor: 'pointer',
-    transition: 'transform 160ms ease, background-color 160ms ease, box-shadow 160ms ease',
-  },
-  backdrop: {
-    position: 'absolute',
-    inset: 0,
-    zIndex: 999,
-    border: 'none',
-    background: 'transparent',
-    cursor: 'default',
-  },
-  menu: {
-    position: 'absolute',
-    top: 72,
-    right: 16,
-    zIndex: 1001,
-    width: 280,
-    padding: 14,
-    borderRadius: 20,
-    border: '1px solid rgba(255, 255, 255, 0.12)',
-    background: 'rgba(9, 14, 24, 0.92)',
-    boxShadow: '0 18px 40px rgba(0, 0, 0, 0.42)',
-    backdropFilter: 'blur(18px)',
-    display: 'grid',
-    gap: 10,
-  },
-  menuHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingBottom: 4,
-  },
-  menuTitle: {
-    color: '#f8fafc',
-    fontSize: 16,
-    fontWeight: 700,
-    letterSpacing: '-0.01em',
-  },
-  menuSubtitle: {
-    color: 'rgba(226, 232, 240, 0.7)',
-    fontSize: 12,
-    marginTop: 2,
-  },
-  menuItem: {
-    width: '100%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-    padding: '12px 14px',
-    borderRadius: 14,
-    border: '1px solid rgba(255, 255, 255, 0.08)',
-    background: 'rgba(255, 255, 255, 0.04)',
-    color: '#f8fafc',
-    textAlign: 'left',
-    cursor: 'pointer',
-  },
-  menuItemTitle: {
-    fontSize: 14,
-    fontWeight: 600,
-  },
-  menuItemDescription: {
-    marginTop: 2,
-    fontSize: 12,
-    color: 'rgba(226, 232, 240, 0.68)',
-  },
-  menuToggle: {
-    flexShrink: 0,
-    padding: '6px 10px',
-    borderRadius: 999,
-    background: 'rgba(255, 255, 255, 0.08)',
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 700,
-  },
-  themeButtonIcon: {
-    fontSize: 20,
-    lineHeight: 1,
-    transform: 'translateY(-0.5px)',
   },
 };

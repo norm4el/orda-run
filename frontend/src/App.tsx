@@ -37,6 +37,8 @@ function App() {
   const [activeTab, setActiveTab] = useState<TabType>('map');
   const [liveCoordinates, setLiveCoordinates] = useState<[number, number][]>([]);
   const [ordaMode, setOrdaMode] = useState<boolean>(false);
+  const [isDarkTheme, setIsDarkTheme] = useState(true);
+  const [isSoundEnabled, setIsSoundEnabled] = useState(true);
 
   useEffect(() => {
     const telegram = window.Telegram?.WebApp;
@@ -168,11 +170,19 @@ function App() {
   return (
     <main className="app-shell">
       <div className={`map-container ${activeTab !== 'map' && activeTab !== 'record' ? 'hidden-map' : ''}`}>
-        <MapArea territories={territories} routes={routes} currentUser={currentUser} liveCoordinates={liveCoordinates} ordaMode={ordaMode} />
+        <MapArea territories={territories} routes={routes} currentUser={currentUser} liveCoordinates={liveCoordinates} ordaMode={ordaMode} isDarkTheme={isDarkTheme} />
       </div>
       
       {activeTab === 'profile' && (
-        <ProfileTab currentUser={currentUser} onUserUpdate={setCurrentUser} reloadMapData={reloadMapData} />
+        <ProfileTab 
+          currentUser={currentUser} 
+          onUserUpdate={setCurrentUser} 
+          reloadMapData={reloadMapData} 
+          isDarkTheme={isDarkTheme}
+          setIsDarkTheme={setIsDarkTheme}
+          isSoundEnabled={isSoundEnabled}
+          setIsSoundEnabled={setIsSoundEnabled}
+        />
       )}
       
       {activeTab === 'leaderboard' && (

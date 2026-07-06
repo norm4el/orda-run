@@ -380,6 +380,30 @@ apiRouter.get('/leaderboard', async (req, res) => {
 
 // --- ORDA API ---
 
+apiRouter.get('/orda/leaderboard', async (req, res) => {
+    try {
+        const result = await query<{ id: string; name: string; score: number }>(
+            `SELECT o.id, o.name, COALESCE(SUM(u.influence_points), 0) AS score
+             FROM ordas o
+             LEFT JOIN users u ON u.orda_id = o.id
+             GROUP BY o.id, o.name
+             ORDER BY score DESC
+             LIMIT 10`
+        );
+        
+        const mapped = result.rows.map((o) => ({
+            id: o.id,
+            displayName: o.name || 'Без имени',
+            score: Number(o.score)
+        }));
+
+        res.json(mapped);
+    } catch (error) {
+        console.error('orda/leaderboard error:', error);
+        res.status(500).json({ error: 'Failed to get orda leaderboard' });
+    }
+});
+
 apiRouter.get('/orda/list', async (_req, res) => {
     try {
         const result = await query(
