@@ -70,6 +70,50 @@ export async function ensureDatabaseSchema() {
   `);
 
   await pool.query(`
+    CREATE OR REPLACE FUNCTION recalculate_influence_points()
+    RETURNS TRIGGER AS $$
+    BEGIN
+      IF TG_OP = 'DELETE' THEN
+        UPDATE users
+        SET influence_points = (
+          SELECT COALESCE(SUM(ST_Area(polygon::geography)), 0)::int
+          FROM territories
+          WHERE owner_id = OLD.owner_id
+        )
+        WHERE id = OLD.owner_id;
+        RETURN OLD;
+      ELSE
+        UPDATE users
+        SET influence_points = (
+          SELECT COALESCE(SUM(ST_Area(polygon::geography)), 0)::int
+          FROM territories
+          WHERE owner_id = NEW.owner_id
+        )
+        WHERE id = NEW.owner_id;
+        RETURN NEW;
+      END IF;
+    END;
+    $$ LANGUAGE plpgsql;
+  `);
+
+  await pool.query('DROP TRIGGER IF EXISTS territories_influence_trigger ON territories');
+  await pool.query(`
+    CREATE TRIGGER territories_influence_trigger
+    AFTER INSERT OR UPDATE OR DELETE ON territories
+    FOR EACH ROW
+    EXECUTE FUNCTION recalculate_influence_points()
+  `);
+
+  await pool.query(`
+    UPDATE users u
+    SET influence_points = (
+      SELECT COALESCE(SUM(ST_Area(polygon::geography)), 0)::int
+      FROM territories t
+      WHERE t.owner_id = u.id
+    )
+  `);
+
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS routes (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import axios from 'axios';
 import polyline from '@mapbox/polyline';
 import { query } from '../db';
+import { captureTerritory } from '../db/territory';
 
 const STRAVA_AUTH_URL = 'https://www.strava.com/oauth/authorize';
 const STRAVA_TOKEN_URL = 'https://www.strava.com/oauth/token';
@@ -99,22 +100,7 @@ stravaRouter.post('/sync', async (req, res) => {
   }
 
   try {
-    const userResult = await query<{ strava_access_token: string }>(
-      'SELECT strava_access_token FROM users WHERE telegram_id = $1',
-      [String(telegramId)]
-    );
-
-    if (userResult.rowCount === 0 || !userResult.rows[0]) {
-      res.status(404).send('User not found');
-      return;
-    }
-
-    const accessToken = userResult.rows[0].strava_access_token;
-    if (!accessToken) {
-      res.status(400).send('Strava not connected');
-      return;
-    }
-
+    const accessToken = await ensureValidStravaToken(String(telegramId));
     await fetchAndSaveActivities(String(telegramId), accessToken);
     res.json({ success: true });
   } catch (error) {
@@ -122,6 +108,58 @@ stravaRouter.post('/sync', async (req, res) => {
     res.status(500).send('Error syncing with Strava');
   }
 });
+
+async function ensureValidStravaToken(telegramId: string): Promise<string> {
+  const userResult = await query<{ strava_access_token: string, strava_refresh_token: string, strava_expires_at: number }>(
+    'SELECT strava_access_token, strava_refresh_token, strava_expires_at FROM users WHERE telegram_id = $1',
+    [telegramId]
+  );
+
+  if (userResult.rowCount === 0 || !userResult.rows[0]) {
+    throw new Error('User not found');
+  }
+
+  const { strava_access_token, strava_refresh_token, strava_expires_at } = userResult.rows[0];
+
+  if (!strava_access_token || !strava_refresh_token) {
+    throw new Error('Strava not connected');
+  }
+
+  // Refresh if token expires in less than 5 minutes
+  if (Date.now() / 1000 > strava_expires_at - 300) {
+    const clientId = process.env.STRAVA_CLIENT_ID;
+    const clientSecret = process.env.STRAVA_CLIENT_SECRET;
+
+    if (!clientId || !clientSecret) {
+      throw new Error('STRAVA_CLIENT_ID or STRAVA_CLIENT_SECRET is missing');
+    }
+
+    const response = await axios.post(STRAVA_TOKEN_URL, {
+      client_id: clientId,
+      client_secret: clientSecret,
+      grant_type: 'refresh_token',
+      refresh_token: strava_refresh_token,
+    });
+
+    const tokenData = response.data;
+    
+    await query(
+      `
+        UPDATE users
+        SET strava_access_token = $1,
+            strava_refresh_token = $2,
+            strava_expires_at = $3,
+            updated_at = NOW()
+        WHERE telegram_id = $4
+      `,
+      [tokenData.access_token, tokenData.refresh_token, tokenData.expires_at, telegramId],
+    );
+
+    return tokenData.access_token;
+  }
+
+  return strava_access_token;
+}
 
 async function fetchAndSaveActivities(telegramId: string, accessToken: string) {
   try {
@@ -137,10 +175,15 @@ async function fetchAndSaveActivities(telegramId: string, accessToken: string) {
 
     const userId = userResult.rows[0].id;
 
+    const oneWeekAgo = Math.floor(Date.now() / 1000) - 7 * 24 * 60 * 60;
+
     const response = await axios.get('https://www.strava.com/api/v3/athlete/activities', {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
+      params: {
+        after: oneWeekAgo,
+      }
     });
 
     const activities = response.data;
@@ -150,15 +193,23 @@ async function fetchAndSaveActivities(telegramId: string, accessToken: string) {
         // Decode to array of [lat, lng]
         const coordinates = polyline.decode(activity.map.summary_polyline);
 
-        // Store in DB, ignoring duplicates (ON CONFLICT DO NOTHING)
-        await query(
+        const insertResult = await query(
           `
             INSERT INTO routes (user_id, strava_activity_id, coordinates)
             VALUES ($1, $2, $3)
             ON CONFLICT (strava_activity_id) DO NOTHING
+            RETURNING id
           `,
           [userId, activity.id, JSON.stringify(coordinates)]
         );
+
+        if (insertResult.rowCount && insertResult.rowCount > 0) {
+          try {
+            await captureTerritory(userId, activity.map.summary_polyline);
+          } catch (err) {
+            console.error(`Failed to capture territory for activity ${activity.id}:`, err);
+          }
+        }
       }
     }
   } catch (error: any) {

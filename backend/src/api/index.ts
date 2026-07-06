@@ -280,14 +280,14 @@ apiRouter.get('/leaderboard', async (req, res) => {
         // We get actual users from DB so the current user will be at the top if they are the first one returned by ASC 
         // (or we can just ORDER BY id to get a stable list where the current user is guaranteed to be there).
         // Let's just return real users with fake scores.
-        const result = await query<{ id: string; display_name: string }>(
-            `SELECT id, display_name FROM users ORDER BY created_at ASC LIMIT 10`
+        const result = await query<{ id: string; display_name: string; influence_points: number }>(
+            `SELECT id, display_name, influence_points FROM users ORDER BY influence_points DESC, created_at ASC LIMIT 10`
         );
         
-        const mapped = result.rows.map((u, i) => ({
+        const mapped = result.rows.map((u) => ({
             id: u.id,
             displayName: u.display_name || 'Без имени',
-            score: 15000 - (i * 1000)
+            score: u.influence_points
         }));
 
         res.json(mapped);
