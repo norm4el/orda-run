@@ -40,32 +40,39 @@ exports.apiRouter.post('/auth', async (req, res) => {
     }
     try {
         const result = await (0, db_1.query)(`
-                INSERT INTO users (
-                    telegram_id,
-                    username,
-                    first_name,
-                    display_name
+                WITH upsert AS (
+                    INSERT INTO users (
+                        telegram_id,
+                        username,
+                        first_name,
+                        display_name
+                    )
+                    VALUES ($1, $2, $3, $4)
+                    ON CONFLICT (telegram_id) DO UPDATE
+                    SET username = EXCLUDED.username,
+                        first_name = COALESCE(users.first_name, EXCLUDED.first_name),
+                        display_name = COALESCE(users.display_name, EXCLUDED.display_name, users.first_name, EXCLUDED.first_name),
+                        updated_at = NOW()
+                    RETURNING *
                 )
-                VALUES ($1, $2, $3, $4)
-                ON CONFLICT (telegram_id) DO UPDATE
-                SET username = EXCLUDED.username,
-                    first_name = COALESCE(users.first_name, EXCLUDED.first_name),
-                    display_name = COALESCE(users.display_name, EXCLUDED.display_name, users.first_name, EXCLUDED.first_name),
-                    updated_at = NOW()
-                RETURNING
-                    id,
-                    telegram_id AS "telegramId",
-                    username,
-                    first_name AS "firstName",
-                    display_name AS "displayName",
-                    strava_access_token AS "stravaAccessToken",
-                    strava_refresh_token AS "stravaRefreshToken",
-                    strava_expires_at AS "stravaExpiresAt",
-                    influence_points AS "influencePoints",
-                    color_self AS "colorSelf",
-                    color_others AS "colorOthers",
-                    created_at AS "createdAt",
-                    updated_at AS "updatedAt"
+                SELECT
+                    u.id,
+                    u.telegram_id AS "telegramId",
+                    u.username,
+                    u.first_name AS "firstName",
+                    u.display_name AS "displayName",
+                    u.strava_access_token AS "stravaAccessToken",
+                    u.strava_refresh_token AS "stravaRefreshToken",
+                    u.strava_expires_at AS "stravaExpiresAt",
+                    u.influence_points AS "influencePoints",
+                    u.color_self AS "colorSelf",
+                    u.color_others AS "colorOthers",
+                    u.orda_id AS "ordaId",
+                    o.name AS "ordaName",
+                    u.created_at AS "createdAt",
+                    u.updated_at AS "updatedAt"
+                FROM upsert u
+                LEFT JOIN ordas o ON u.orda_id = o.id
             `, [String(telegramUser.id), telegramUser.username ?? null, telegramUser.first_name, telegramUser.first_name]);
         if (result.rowCount === 0 || !result.rows[0]) {
             res.status(500).json({ error: 'Failed to authorize user' });
@@ -82,10 +89,12 @@ exports.apiRouter.post('/auth', async (req, res) => {
 exports.apiRouter.get('/territories', async (_req, res) => {
     const result = await (0, db_1.query)(`
             SELECT
-                id,
-                owner_id,
-                ST_AsGeoJSON(polygon)::json AS polygon
-            FROM territories
+                t.id,
+                t.owner_id,
+                u.orda_id AS owner_orda_id,
+                ST_AsGeoJSON(t.polygon)::json AS polygon
+            FROM territories t
+            JOIN users u ON t.owner_id = u.id
         `);
     res.json(result.rows);
 });
@@ -209,26 +218,33 @@ exports.apiRouter.put('/user/update', async (req, res) => {
     }
     try {
         const result = await (0, db_1.query)(`
-                UPDATE users
-                SET display_name = $1, 
-                    color_self = $2,
-                    color_others = $3,
-                    updated_at = NOW()
-                WHERE telegram_id = $4
-                RETURNING
-                    id,
-                    telegram_id AS "telegramId",
-                    username,
-                    first_name AS "firstName",
-                    display_name AS "displayName",
-                    strava_access_token AS "stravaAccessToken",
-                    strava_refresh_token AS "stravaRefreshToken",
-                    strava_expires_at AS "stravaExpiresAt",
-                    color_self AS "colorSelf",
-                    color_others AS "colorOthers",
-                    influence_points AS "influencePoints",
-                    created_at AS "createdAt",
-                    updated_at AS "updatedAt"
+                WITH upd AS (
+                    UPDATE users
+                    SET display_name = $1, 
+                        color_self = $2,
+                        color_others = $3,
+                        updated_at = NOW()
+                    WHERE telegram_id = $4
+                    RETURNING *
+                )
+                SELECT
+                    u.id,
+                    u.telegram_id AS "telegramId",
+                    u.username,
+                    u.first_name AS "firstName",
+                    u.display_name AS "displayName",
+                    u.strava_access_token AS "stravaAccessToken",
+                    u.strava_refresh_token AS "stravaRefreshToken",
+                    u.strava_expires_at AS "stravaExpiresAt",
+                    u.color_self AS "colorSelf",
+                    u.color_others AS "colorOthers",
+                    u.influence_points AS "influencePoints",
+                    u.orda_id AS "ordaId",
+                    o.name AS "ordaName",
+                    u.created_at AS "createdAt",
+                    u.updated_at AS "updatedAt"
+                FROM upd u
+                LEFT JOIN ordas o ON u.orda_id = o.id
             `, [String(displayName), String(colorSelf), String(colorOthers), String(telegramId)]);
         if (result.rowCount === 0 || !result.rows[0]) {
             res.status(404).json({ error: 'User not found' });
@@ -258,5 +274,77 @@ exports.apiRouter.get('/leaderboard', async (req, res) => {
     catch (error) {
         console.error('leaderboard error:', error);
         res.status(500).json({ error: 'Failed to get leaderboard' });
+    }
+});
+// --- ORDA API ---
+exports.apiRouter.get('/orda/list', async (_req, res) => {
+    try {
+        const result = await (0, db_1.query)(`SELECT id, name, khan_id, created_at, (SELECT count(*) FROM users WHERE orda_id = ordas.id) as member_count FROM ordas ORDER BY member_count DESC`);
+        res.json(result.rows);
+    }
+    catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Failed to list ordas' });
+    }
+});
+exports.apiRouter.post('/orda/create', async (req, res) => {
+    const { telegram_id, name } = req.body;
+    if (!telegram_id || !name)
+        return res.status(400).json({ error: 'Missing fields' });
+    try {
+        const userRes = await db_1.pool.query('SELECT id FROM users WHERE telegram_id = $1', [String(telegram_id)]);
+        if (userRes.rowCount === 0)
+            return res.status(404).json({ error: 'User not found' });
+        const userId = userRes.rows[0].id;
+        const insertRes = await db_1.pool.query('INSERT INTO ordas (name, khan_id) VALUES ($1, $2) RETURNING id', [name, userId]);
+        const ordaId = insertRes.rows[0].id;
+        await db_1.pool.query('UPDATE users SET orda_id = $1 WHERE id = $2', [ordaId, userId]);
+        res.json({ ok: true, ordaId });
+    }
+    catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Failed to create orda' });
+    }
+});
+exports.apiRouter.post('/orda/join', async (req, res) => {
+    const { telegram_id, orda_id } = req.body;
+    if (!telegram_id || !orda_id)
+        return res.status(400).json({ error: 'Missing fields' });
+    try {
+        const userRes = await db_1.pool.query('SELECT id FROM users WHERE telegram_id = $1', [String(telegram_id)]);
+        if (userRes.rowCount === 0)
+            return res.status(404).json({ error: 'User not found' });
+        const userId = userRes.rows[0].id;
+        await db_1.pool.query('UPDATE users SET orda_id = $1 WHERE id = $2', [orda_id, userId]);
+        res.json({ ok: true });
+    }
+    catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Failed to join orda' });
+    }
+});
+exports.apiRouter.post('/orda/leave', async (req, res) => {
+    const { telegram_id } = req.body;
+    if (!telegram_id)
+        return res.status(400).json({ error: 'Missing telegram_id' });
+    try {
+        const userRes = await db_1.pool.query('SELECT id, orda_id FROM users WHERE telegram_id = $1', [String(telegram_id)]);
+        if (userRes.rowCount === 0)
+            return res.status(404).json({ error: 'User not found' });
+        const { id: userId, orda_id: ordaId } = userRes.rows[0];
+        if (ordaId) {
+            await db_1.pool.query('UPDATE users SET orda_id = NULL WHERE id = $1', [userId]);
+            const khanCheck = await db_1.pool.query('SELECT id FROM ordas WHERE id = $1 AND khan_id = $2', [ordaId, userId]);
+            if (khanCheck.rowCount && khanCheck.rowCount > 0) {
+                // Khan left the Orda. Disband it.
+                await db_1.pool.query('UPDATE users SET orda_id = NULL WHERE orda_id = $1', [ordaId]);
+                await db_1.pool.query('DELETE FROM ordas WHERE id = $1', [ordaId]);
+            }
+        }
+        res.json({ ok: true });
+    }
+    catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Failed to leave orda' });
     }
 });

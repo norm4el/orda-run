@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { AuthenticatedUser } from '../App';
 
 type Props = {
@@ -10,10 +10,79 @@ type Props = {
 export function ProfileTab({ currentUser, onUserUpdate, reloadMapData }: Props) {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(currentUser?.displayName ?? '');
-  const colorSelf = currentUser?.colorSelf ?? '#d8a760';
+  const [colorSelf, setColorSelf] = useState(currentUser?.colorSelf ?? '#d8a760');
   const colorOthers = currentUser?.colorOthers ?? '#2c5a5a';
   const [isSaving, setIsSaving] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [ordas, setOrdas] = useState<{ id: string; name: string; member_count: number }[]>([]);
+  const [newOrdaName, setNewOrdaName] = useState('');
+  const [isOrdaLoading, setIsOrdaLoading] = useState(false);
+
+  useEffect(() => {
+    if (!currentUser?.ordaId) {
+      fetch('/api/orda/list')
+        .then(res => res.json())
+        .then(data => setOrdas(data))
+        .catch(console.error);
+    }
+  }, [currentUser?.ordaId]);
+
+  const handleCreateOrda = async () => {
+    if (!newOrdaName.trim()) return;
+    setIsOrdaLoading(true);
+    try {
+      const response = await fetch('/api/orda/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telegram_id: currentUser!.telegramId, name: newOrdaName.trim() }),
+      });
+      if (response.ok) {
+        const { ordaId } = await response.json();
+        onUserUpdate({ ...currentUser!, ordaId, ordaName: newOrdaName.trim() });
+        setNewOrdaName('');
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsOrdaLoading(false);
+    }
+  };
+
+  const handleJoinOrda = async (ordaId: string, ordaName: string) => {
+    setIsOrdaLoading(true);
+    try {
+      const response = await fetch('/api/orda/join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telegram_id: currentUser!.telegramId, orda_id: ordaId }),
+      });
+      if (response.ok) {
+        onUserUpdate({ ...currentUser!, ordaId, ordaName });
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsOrdaLoading(false);
+    }
+  };
+
+  const handleLeaveOrda = async () => {
+    setIsOrdaLoading(true);
+    try {
+      const response = await fetch('/api/orda/leave', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telegram_id: currentUser!.telegramId }),
+      });
+      if (response.ok) {
+        onUserUpdate({ ...currentUser!, ordaId: null, ordaName: null });
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsOrdaLoading(false);
+    }
+  };
 
   if (!currentUser) {
     return (
@@ -120,13 +189,19 @@ export function ProfileTab({ currentUser, onUserUpdate, reloadMapData }: Props) 
         </div>
         <div style={{ flex: 1 }}>
           {isEditing ? (
-            <input
-              type="text"
-              style={{ background: 'transparent', border: 'none', borderBottom: '1px solid var(--primary)', color: 'var(--text-main)', fontSize: '20px', textTransform: 'uppercase', width: '100%', marginBottom: '10px', outline: 'none' }}
-              value={editName}
-              onChange={(e) => setEditName(e.target.value)}
-              placeholder="Введите имя"
-            />
+            <>
+              <input
+                type="text"
+                style={{ background: 'transparent', border: 'none', borderBottom: '1px solid var(--primary)', color: 'var(--text-main)', fontSize: '20px', textTransform: 'uppercase', width: '100%', marginBottom: '10px', outline: 'none' }}
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder="Введите имя"
+              />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                <span style={{ fontSize: '12px', color: 'var(--text-dim)' }}>ЦВЕТ ТЕРРИТОРИИ</span>
+                <input type="color" value={colorSelf} onChange={(e) => setColorSelf(e.target.value)} style={{ width: '24px', height: '24px', border: 'none', padding: 0, background: 'none' }} />
+              </div>
+            </>
           ) : (
             <div style={{ fontSize: '20px', fontWeight: '500', color: 'var(--text-main)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
               {currentUser.displayName ?? 'NORM CHEL'}
@@ -169,6 +244,56 @@ export function ProfileTab({ currentUser, onUserUpdate, reloadMapData }: Props) 
             </div>
           ))}
         </div>
+      </div>
+
+      <div style={{ marginBottom: '40px' }}>
+        <h3 style={{ fontSize: '14px', fontWeight: '500', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '20px' }}>Управление Ордой</h3>
+        {currentUser.ordaId ? (
+          <div style={{ background: 'rgba(255,255,255,0.05)', padding: '20px', borderRadius: '12px' }}>
+            <div style={{ fontSize: '12px', color: 'var(--text-dim)', marginBottom: '4px' }}>ВЫ СОСТОИТЕ В ОРДЕ</div>
+            <div style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--primary)', marginBottom: '16px' }}>{currentUser.ordaName}</div>
+            <button style={{ width: '100%', padding: '12px', background: 'transparent', border: '1px solid #ef4444', color: '#ef4444', borderRadius: '8px', fontWeight: '500', textTransform: 'uppercase' }} onClick={handleLeaveOrda} disabled={isOrdaLoading}>
+              {isOrdaLoading ? 'ОЖИДАЙТЕ...' : 'ПОКИНУТЬ ОРДУ'}
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div>
+              <div style={{ fontSize: '12px', color: 'var(--text-dim)', marginBottom: '8px' }}>СОЗДАТЬ ОРДУ</div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <input 
+                  type="text" 
+                  value={newOrdaName} 
+                  onChange={e => setNewOrdaName(e.target.value)} 
+                  placeholder="Название Орды" 
+                  style={{ flex: 1, background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '10px', borderRadius: '8px', outline: 'none' }}
+                />
+                <button onClick={handleCreateOrda} disabled={isOrdaLoading || !newOrdaName.trim()} style={{ background: 'var(--primary)', color: '#000', border: 'none', padding: '0 20px', borderRadius: '8px', fontWeight: 'bold' }}>
+                  СОЗДАТЬ
+                </button>
+              </div>
+            </div>
+
+            {ordas.length > 0 && (
+              <div>
+                <div style={{ fontSize: '12px', color: 'var(--text-dim)', marginBottom: '8px' }}>ВСТУПИТЬ В ОРДУ</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {ordas.map(o => (
+                    <div key={o.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '10px 15px', borderRadius: '8px' }}>
+                      <div>
+                        <div style={{ fontWeight: 'bold', color: 'var(--text-main)' }}>{o.name}</div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-dim)' }}>Участников: {o.member_count}</div>
+                      </div>
+                      <button onClick={() => handleJoinOrda(o.id, o.name)} disabled={isOrdaLoading} style={{ background: 'transparent', border: '1px solid var(--primary)', color: 'var(--primary)', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold' }}>
+                        ВСТУПИТЬ
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {isEditing && (

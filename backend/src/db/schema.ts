@@ -22,6 +22,15 @@ export async function ensureDatabaseSchema() {
   `);
 
   await pool.query(`
+    CREATE TABLE IF NOT EXISTS ordas (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      name TEXT NOT NULL,
+      khan_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
     ALTER TABLE users
       ADD COLUMN IF NOT EXISTS username TEXT,
       ADD COLUMN IF NOT EXISTS first_name TEXT,
@@ -30,8 +39,9 @@ export async function ensureDatabaseSchema() {
       ADD COLUMN IF NOT EXISTS strava_refresh_token TEXT,
       ADD COLUMN IF NOT EXISTS strava_expires_at INTEGER,
       ADD COLUMN IF NOT EXISTS strava_athlete_id BIGINT UNIQUE,
-      ADD COLUMN IF NOT EXISTS color_self TEXT NOT NULL DEFAULT '#f97316',
-      ADD COLUMN IF NOT EXISTS color_others TEXT NOT NULL DEFAULT '#ef4444',
+      ADD COLUMN IF NOT EXISTS orda_id UUID REFERENCES ordas(id) ON DELETE SET NULL,
+      ADD COLUMN IF NOT EXISTS color_self TEXT NOT NULL DEFAULT '#d8a760',
+      ADD COLUMN IF NOT EXISTS color_others TEXT NOT NULL DEFAULT '#2c5a5a',
       ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   `);

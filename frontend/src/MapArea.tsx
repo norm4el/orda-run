@@ -30,7 +30,7 @@ const livePointLayerId = 'live-point-layer';
 
 export type TerritoryFeatureCollection = FeatureCollection<
   Geometry,
-  { id: string; owner_id: string }
+  { id: string; owner_id: string; owner_orda_id: string | null }
 >;
 
 export type RouteFeatureCollection = FeatureCollection<
@@ -43,9 +43,10 @@ type MapAreaProps = {
   routes: RouteFeatureCollection | null;
   currentUser: AuthenticatedUser | null;
   liveCoordinates?: [number, number][];
+  ordaMode?: boolean;
 };
 
-export function MapArea({ territories, routes, currentUser, liveCoordinates }: MapAreaProps) {
+export function MapArea({ territories, routes, currentUser, liveCoordinates, ordaMode = false }: MapAreaProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const territoriesRef = useRef<TerritoryFeatureCollection | null>(territories);
@@ -75,6 +76,15 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates }: M
     currentUserRef.current = currentUser;
   }, [currentUser]);
 
+  const ordaModeRef = useRef<boolean>(ordaMode);
+
+  useEffect(() => {
+    ordaModeRef.current = ordaMode;
+    if (mapRef.current && mapRef.current.isStyleLoaded()) {
+      applyTerritoryStyle(mapRef.current);
+    }
+  }, [ordaMode]);
+
   const applyTerritoryStyle = (map: maplibregl.Map) => {
     if (!map.getSource(territorySourceId)) {
       map.addSource(territorySourceId, {
@@ -83,9 +93,41 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates }: M
       });
     }
 
-    const colorSelf = '#d8a760'; // Gold
+    const colorSelf = currentUserRef.current?.colorSelf ?? '#d8a760'; // User chosen color or Gold
     const colorOthers = '#2c5a5a'; // Teal
+    const colorOrda = '#22c55e'; // Green for own Orda members
+    
     const ownerMatch = currentUserRef.current?.id ?? '__none__';
+    const ordaMatch = currentUserRef.current?.ordaId ?? '__none__';
+    const isOrdaMode = ordaModeRef.current;
+
+    // In Orda Mode:
+    // If owner == me -> colorSelf
+    // If owner_orda_id == my_orda -> colorOrda
+    // Else -> colorOthers
+    // In Personal Mode:
+    // If owner == me -> colorSelf
+    // Else -> colorOthers
+
+    let fillColorExpression: maplibregl.ExpressionSpecification;
+    
+    if (isOrdaMode && ordaMatch !== '__none__') {
+      fillColorExpression = [
+        'case',
+        ['==', ['get', 'owner_id'], ownerMatch],
+        colorSelf,
+        ['==', ['get', 'owner_orda_id'], ordaMatch],
+        colorOrda,
+        colorOthers,
+      ];
+    } else {
+      fillColorExpression = [
+        'case',
+        ['==', ['get', 'owner_id'], ownerMatch],
+        colorSelf,
+        colorOthers,
+      ];
+    }
 
     if (!map.getLayer(territoryFillLayerId)) {
       map.addLayer({
@@ -93,15 +135,12 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates }: M
         type: 'fill',
         source: territorySourceId,
         paint: {
-          'fill-color': [
-            'case',
-            ['==', ['get', 'owner_id'], ownerMatch],
-            colorSelf,
-            colorOthers,
-          ],
-          'fill-opacity': 0.2,
+          'fill-color': fillColorExpression,
+          'fill-opacity': 0.4,
         },
       });
+    } else {
+      map.setPaintProperty(territoryFillLayerId, 'fill-color', fillColorExpression);
     }
 
     if (!map.getLayer(territoryLineLayerId)) {
@@ -110,16 +149,12 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates }: M
         type: 'line',
         source: territorySourceId,
         paint: {
-          'line-color': [
-            'case',
-            ['==', ['get', 'owner_id'], ownerMatch],
-            colorSelf,
-            colorOthers,
-          ],
+          'line-color': fillColorExpression,
           'line-width': 2,
-          'line-opacity': 0.9,
         },
       });
+    } else {
+      map.setPaintProperty(territoryLineLayerId, 'line-color', fillColorExpression);
     }
 
     if (!map.getSource(routesSourceId)) {
