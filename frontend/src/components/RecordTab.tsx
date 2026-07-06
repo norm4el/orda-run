@@ -182,7 +182,7 @@ export function RecordTab({ currentUser, onCoordinatesUpdate, onRunFinished }: P
   const formattedPace = distanceMeters > 0 ? `${paceMins}:${paceSecs.toString().padStart(2, '0')} /км` : '0:00 /км';
 
   return (
-    <div className="tab-container" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: 'calc(100vh - 72px)', zIndex: 1000, padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', pointerEvents: 'none' }}>
+    <div className="tab-container" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: 'calc(100vh - 72px)', zIndex: 1000, padding: '20px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', alignItems: 'center', pointerEvents: 'none' }}>
       <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '30px', pointerEvents: 'auto', background: 'rgba(7, 17, 31, 0.7)', padding: '10px 20px', borderRadius: '16px', backdropFilter: 'blur(10px)' }}>Тренировка</h2>
       
       {error && (
@@ -191,7 +191,7 @@ export function RecordTab({ currentUser, onCoordinatesUpdate, onRunFinished }: P
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', width: '100%', marginBottom: '40px', pointerEvents: 'auto' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', width: '100%', boxSizing: 'border-box', marginBottom: '40px', pointerEvents: 'auto' }}>
         <div style={{ background: 'rgba(7, 17, 31, 0.8)', backdropFilter: 'blur(10px)', padding: '20px', borderRadius: '16px', textAlign: 'center' }}>
           <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#00ffaa' }}>{distanceKm}</div>
           <div style={{ fontSize: '14px', color: '#888' }}>километров</div>
@@ -210,7 +210,7 @@ export function RecordTab({ currentUser, onCoordinatesUpdate, onRunFinished }: P
 
       {!isTracking ? (
         coordinates.length > 0 ? (
-          <div style={{ display: 'flex', gap: '10px', width: '100%', pointerEvents: 'auto' }}>
+          <div style={{ display: 'flex', gap: '10px', width: '100%', boxSizing: 'border-box', pointerEvents: 'auto' }}>
             <button
               onClick={() => { setCoordinates([]); setDistanceMeters(0); setElapsedSeconds(0); }}
               className="btn btn-secondary"
