@@ -23,9 +23,32 @@ async function captureTerritory(userId, polylineString) {
         WITH input_line AS (
           SELECT ST_GeomFromText($2, 4326) AS geom
         ),
-        new_zone AS (
+        buffered_line AS (
           SELECT ST_Buffer(geom::geography, 30)::geometry AS geom
           FROM input_line
+        ),
+        closed_lines AS (
+          SELECT ST_AddPoint(geom, ST_StartPoint(geom)) AS geom
+          FROM input_line
+          WHERE geom IS NOT NULL AND ST_NumPoints(geom) >= 2
+        ),
+        nodes AS (
+          SELECT ST_Node(ST_Collect(geom)) AS geom
+          FROM closed_lines
+        ),
+        enclosed_polys AS (
+          SELECT (ST_Dump(ST_Polygonize(geom))).geom AS geom
+          FROM nodes
+        ),
+        combined_enclosed AS (
+          SELECT ST_Union(geom) AS geom
+          FROM enclosed_polys
+        ),
+        new_zone AS (
+          SELECT ST_Union(
+            (SELECT geom FROM buffered_line),
+            COALESCE((SELECT geom FROM combined_enclosed), ST_GeomFromText('GEOMETRYCOLLECTION EMPTY', 4326))
+          ) AS geom
         ),
         locked_territories AS (
           SELECT t.id
@@ -60,8 +83,9 @@ async function captureTerritory(userId, polylineString) {
         ),
         insert_new_zone AS (
           INSERT INTO territories (owner_id, polygon, captured_at)
-          SELECT $1::uuid, z.geom::geometry(Polygon, 4326), NOW()
+          SELECT $1::uuid, (ST_Dump(z.geom)).geom::geometry(Polygon, 4326), NOW()
           FROM new_zone z
+          WHERE z.geom IS NOT NULL AND NOT ST_IsEmpty(z.geom)
           RETURNING id
         )
         SELECT

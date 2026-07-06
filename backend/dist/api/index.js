@@ -61,6 +61,8 @@ exports.apiRouter.post('/auth', async (req, res) => {
                     strava_access_token AS "stravaAccessToken",
                     strava_refresh_token AS "stravaRefreshToken",
                     strava_expires_at AS "stravaExpiresAt",
+                    color_self AS "colorSelf",
+                    color_others AS "colorOthers",
                     created_at AS "createdAt",
                     updated_at AS "updatedAt"
             `, [String(telegramUser.id), telegramUser.username ?? null, telegramUser.first_name, telegramUser.first_name]);
@@ -85,6 +87,16 @@ exports.apiRouter.get('/territories', async (_req, res) => {
             FROM territories
         `);
     res.json(result.rows);
+});
+exports.apiRouter.get('/routes', async (_req, res) => {
+    try {
+        const result = await (0, db_1.query)(`SELECT id, user_id AS owner_id, coordinates FROM routes`);
+        res.json(result.rows);
+    }
+    catch (error) {
+        console.error('routes error:', error);
+        res.status(500).json({ error: 'Failed to fetch routes' });
+    }
 });
 exports.apiRouter.get('/territories/:telegram_id', async (req, res) => {
     try {
@@ -147,5 +159,66 @@ exports.apiRouter.post('/test-capture', async (req, res) => {
         const message = error instanceof Error ? error.message : 'Unknown error';
         console.error('test-capture error:', error);
         res.status(500).json({ error: message });
+    }
+});
+exports.apiRouter.put('/user/update', async (req, res) => {
+    const telegramId = req.body?.telegram_id;
+    const displayName = req.body?.displayName;
+    const colorSelf = req.body?.colorSelf;
+    const colorOthers = req.body?.colorOthers;
+    if (!telegramId || !displayName || !colorSelf || !colorOthers) {
+        res.status(400).json({ error: 'telegram_id, displayName, colorSelf, colorOthers are required' });
+        return;
+    }
+    try {
+        const result = await (0, db_1.query)(`
+                UPDATE users
+                SET display_name = $1, 
+                    color_self = $2,
+                    color_others = $3,
+                    updated_at = NOW()
+                WHERE telegram_id = $4
+                RETURNING
+                    id,
+                    telegram_id AS "telegramId",
+                    username,
+                    first_name AS "firstName",
+                    display_name AS "displayName",
+                    strava_access_token AS "stravaAccessToken",
+                    strava_refresh_token AS "stravaRefreshToken",
+                    strava_expires_at AS "stravaExpiresAt",
+                    color_self AS "colorSelf",
+                    color_others AS "colorOthers",
+                    created_at AS "createdAt",
+                    updated_at AS "updatedAt"
+            `, [String(displayName), String(colorSelf), String(colorOthers), String(telegramId)]);
+        if (result.rowCount === 0 || !result.rows[0]) {
+            res.status(404).json({ error: 'User not found' });
+            return;
+        }
+        res.json(mapUserRow(result.rows[0]));
+    }
+    catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        console.error('user/update error:', error);
+        res.status(500).json({ error: message });
+    }
+});
+exports.apiRouter.get('/leaderboard', async (req, res) => {
+    try {
+        // We get actual users from DB so the current user will be at the top if they are the first one returned by ASC 
+        // (or we can just ORDER BY id to get a stable list where the current user is guaranteed to be there).
+        // Let's just return real users with fake scores.
+        const result = await (0, db_1.query)(`SELECT id, display_name, influence_points FROM users ORDER BY influence_points DESC, created_at ASC LIMIT 10`);
+        const mapped = result.rows.map((u) => ({
+            id: u.id,
+            displayName: u.display_name || 'Без имени',
+            score: u.influence_points
+        }));
+        res.json(mapped);
+    }
+    catch (error) {
+        console.error('leaderboard error:', error);
+        res.status(500).json({ error: 'Failed to get leaderboard' });
     }
 });

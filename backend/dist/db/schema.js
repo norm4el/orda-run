@@ -15,6 +15,7 @@ async function ensureDatabaseSchema() {
       strava_access_token TEXT,
       strava_refresh_token TEXT,
       strava_expires_at INTEGER,
+      strava_athlete_id BIGINT UNIQUE,
       influence_points INT NOT NULL DEFAULT 0,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -28,6 +29,9 @@ async function ensureDatabaseSchema() {
       ADD COLUMN IF NOT EXISTS strava_access_token TEXT,
       ADD COLUMN IF NOT EXISTS strava_refresh_token TEXT,
       ADD COLUMN IF NOT EXISTS strava_expires_at INTEGER,
+      ADD COLUMN IF NOT EXISTS strava_athlete_id BIGINT UNIQUE,
+      ADD COLUMN IF NOT EXISTS color_self TEXT NOT NULL DEFAULT '#f97316',
+      ADD COLUMN IF NOT EXISTS color_others TEXT NOT NULL DEFAULT '#ef4444',
       ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   `);
@@ -62,6 +66,56 @@ async function ensureDatabaseSchema() {
       owner_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       polygon GEOMETRY(Polygon, 4326) NOT NULL,
       captured_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+    await _1.pool.query(`
+    CREATE OR REPLACE FUNCTION recalculate_influence_points()
+    RETURNS TRIGGER AS $$
+    BEGIN
+      IF TG_OP = 'DELETE' THEN
+        UPDATE users
+        SET influence_points = (
+          SELECT COALESCE(SUM(ST_Area(polygon::geography)), 0)::int
+          FROM territories
+          WHERE owner_id = OLD.owner_id
+        )
+        WHERE id = OLD.owner_id;
+        RETURN OLD;
+      ELSE
+        UPDATE users
+        SET influence_points = (
+          SELECT COALESCE(SUM(ST_Area(polygon::geography)), 0)::int
+          FROM territories
+          WHERE owner_id = NEW.owner_id
+        )
+        WHERE id = NEW.owner_id;
+        RETURN NEW;
+      END IF;
+    END;
+    $$ LANGUAGE plpgsql;
+  `);
+    await _1.pool.query('DROP TRIGGER IF EXISTS territories_influence_trigger ON territories');
+    await _1.pool.query(`
+    CREATE TRIGGER territories_influence_trigger
+    AFTER INSERT OR UPDATE OR DELETE ON territories
+    FOR EACH ROW
+    EXECUTE FUNCTION recalculate_influence_points()
+  `);
+    await _1.pool.query(`
+    UPDATE users u
+    SET influence_points = (
+      SELECT COALESCE(SUM(ST_Area(polygon::geography)), 0)::int
+      FROM territories t
+      WHERE t.owner_id = u.id
+    )
+  `);
+    await _1.pool.query(`
+    CREATE TABLE IF NOT EXISTS routes (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      strava_activity_id BIGINT UNIQUE NOT NULL,
+      coordinates JSONB NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
 }

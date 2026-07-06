@@ -28,9 +28,14 @@ export async function captureTerritory(userId: string, polylineString: string) {
           SELECT ST_Buffer(geom::geography, 30)::geometry AS geom
           FROM input_line
         ),
-        nodes AS (
-          SELECT ST_Node(geom) AS geom
+        closed_lines AS (
+          SELECT ST_AddPoint(geom, ST_StartPoint(geom)) AS geom
           FROM input_line
+          WHERE geom IS NOT NULL AND ST_NumPoints(geom) >= 2
+        ),
+        nodes AS (
+          SELECT ST_Node(ST_Collect(geom)) AS geom
+          FROM closed_lines
         ),
         enclosed_polys AS (
           SELECT (ST_Dump(ST_Polygonize(geom))).geom AS geom
@@ -79,8 +84,9 @@ export async function captureTerritory(userId: string, polylineString: string) {
         ),
         insert_new_zone AS (
           INSERT INTO territories (owner_id, polygon, captured_at)
-          SELECT $1::uuid, z.geom::geometry(Polygon, 4326), NOW()
+          SELECT $1::uuid, (ST_Dump(z.geom)).geom::geometry(Polygon, 4326), NOW()
           FROM new_zone z
+          WHERE z.geom IS NOT NULL AND NOT ST_IsEmpty(z.geom)
           RETURNING id
         )
         SELECT

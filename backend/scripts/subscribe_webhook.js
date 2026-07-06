@@ -1,5 +1,6 @@
 const axios = require('axios');
-require('dotenv').config({ path: '../.env' }); // Adjust path to .env if needed
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 async function subscribeWebhook() {
   const clientId = process.env.STRAVA_CLIENT_ID;
@@ -7,7 +8,7 @@ async function subscribeWebhook() {
   const verifyToken = process.env.STRAVA_WEBHOOK_VERIFY_TOKEN;
   
   // ВАЖНО: Замените этот URL на ваш реальный HTTPS адрес (например, ngrok)
-  const callbackUrl = 'https://YOUR_NGROK_ID.ngrok-free.app/api/strava/webhook';
+  const callbackUrl = 'https://ordarun.app/api/strava/webhook';
 
   if (!clientId || !clientSecret || !verifyToken) {
     console.error('Ошибка: не заданы STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET или STRAVA_WEBHOOK_VERIFY_TOKEN в .env');

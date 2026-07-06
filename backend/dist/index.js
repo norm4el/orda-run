@@ -62,7 +62,7 @@ if (spaDirectory) {
     app.use(express_1.default.static(spaDirectory));
 }
 app.use('/api', api_1.apiRouter);
-app.use('/strava', strava_1.stravaRouter);
+app.use('/api/strava', strava_1.stravaRouter);
 app.use(webhookPath, (0, grammy_1.webhookCallback)(bot_1.bot, 'express'));
 app.get('*', (_req, res) => {
     if (!spaDirectory) {
