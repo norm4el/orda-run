@@ -29,7 +29,7 @@ if (spaDirectory) {
 }
 
 app.use('/api', apiRouter);
-app.use('/strava', stravaRouter);
+app.use('/api/strava', stravaRouter);
 app.use(webhookPath, webhookCallback(bot, 'express'));
 
 app.get('*', (_req, res) => {
