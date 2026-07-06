@@ -14,6 +14,7 @@ export async function ensureDatabaseSchema() {
       strava_access_token TEXT,
       strava_refresh_token TEXT,
       strava_expires_at INTEGER,
+      strava_athlete_id BIGINT UNIQUE,
       influence_points INT NOT NULL DEFAULT 0,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -28,6 +29,7 @@ export async function ensureDatabaseSchema() {
       ADD COLUMN IF NOT EXISTS strava_access_token TEXT,
       ADD COLUMN IF NOT EXISTS strava_refresh_token TEXT,
       ADD COLUMN IF NOT EXISTS strava_expires_at INTEGER,
+      ADD COLUMN IF NOT EXISTS strava_athlete_id BIGINT UNIQUE,
       ADD COLUMN IF NOT EXISTS color_self TEXT NOT NULL DEFAULT '#f97316',
       ADD COLUMN IF NOT EXISTS color_others TEXT NOT NULL DEFAULT '#ef4444',
       ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

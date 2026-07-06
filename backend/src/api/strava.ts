@@ -64,7 +64,10 @@ stravaRouter.get('/callback', async (req, res) => {
       access_token: string;
       refresh_token: string;
       expires_at: number;
+      athlete?: { id: number };
     };
+
+    const athleteId = tokenData.athlete?.id || null;
 
     // Update user in DB
     await query(
@@ -73,10 +76,11 @@ stravaRouter.get('/callback', async (req, res) => {
         SET strava_access_token = $1,
             strava_refresh_token = $2,
             strava_expires_at = $3,
+            strava_athlete_id = COALESCE($4, strava_athlete_id),
             updated_at = NOW()
-        WHERE telegram_id = $4
+        WHERE telegram_id = $5
       `,
-      [tokenData.access_token, tokenData.refresh_token, tokenData.expires_at, state],
+      [tokenData.access_token, tokenData.refresh_token, tokenData.expires_at, athleteId, state],
     );
 
     // After saving token, we can trigger the fetch activities right away in the background (or await it)
@@ -101,6 +105,23 @@ stravaRouter.post('/sync', async (req, res) => {
 
   try {
     const accessToken = await ensureValidStravaToken(String(telegramId));
+    
+    // Patch: Fetch and save strava_athlete_id if missing
+    const athleteRes = await query<{ strava_athlete_id: string | null }>(`SELECT strava_athlete_id FROM users WHERE telegram_id = $1`, [String(telegramId)]);
+    if (athleteRes.rows[0] && !athleteRes.rows[0].strava_athlete_id) {
+      try {
+        const stravaAthleteResponse = await axios.get('https://www.strava.com/api/v3/athlete', {
+          headers: { Authorization: `Bearer ${accessToken}` }
+        });
+        if (stravaAthleteResponse.data?.id) {
+          await query(`UPDATE users SET strava_athlete_id = $1 WHERE telegram_id = $2`, [stravaAthleteResponse.data.id, String(telegramId)]);
+          console.log(`Migrated strava_athlete_id for user ${telegramId}`);
+        }
+      } catch (err) {
+        console.error('Failed to fetch athlete ID for migration:', err);
+      }
+    }
+
     await fetchAndSaveActivities(String(telegramId), accessToken);
     res.json({ success: true });
   } catch (error) {
@@ -252,8 +273,59 @@ stravaRouter.post('/webhook', (req, res) => {
 });
 
 async function processNewActivity(activityId: number, stravaOwnerId: number) {
-  // TODO: Найти пользователя в БД по stravaOwnerId (Athlete ID), получить его access_token,
-  // сделать запрос к Strava API для получения геометрии (polyline) маршрута 
-  // и вызвать captureTerritory.
-  console.log(`Processing activity ${activityId} for Strava user ${stravaOwnerId}`);
+  try {
+    const userResult = await query<{ id: string, telegram_id: string }>(
+      `SELECT id, telegram_id FROM users WHERE strava_athlete_id = $1`,
+      [stravaOwnerId]
+    );
+
+    if (userResult.rowCount === 0 || !userResult.rows[0]) {
+      console.error(`[Strava Webhook] User not found for Strava Athlete ID ${stravaOwnerId}`);
+      return;
+    }
+
+    const userId = userResult.rows[0].id;
+    const telegramId = userResult.rows[0].telegram_id;
+
+    // Обеспечиваем свежий токен
+    const accessToken = await ensureValidStravaToken(telegramId);
+
+    // Загружаем данные о конкретной тренировке
+    const response = await axios.get(`https://www.strava.com/api/v3/activities/${activityId}`, {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+
+    const activity = response.data;
+
+    // Если у тренировки есть маршрут (полилиния)
+    if (activity.map?.summary_polyline) {
+      const coordinates = polyline.decode(activity.map.summary_polyline);
+
+      const insertResult = await query(
+        `
+          INSERT INTO routes (user_id, strava_activity_id, coordinates)
+          VALUES ($1, $2, $3)
+          ON CONFLICT (strava_activity_id) DO NOTHING
+          RETURNING id
+        `,
+        [userId, activity.id, JSON.stringify(coordinates)]
+      );
+
+      // Если вставка успешна (маршрут еще не существовал)
+      if (insertResult.rowCount && insertResult.rowCount > 0) {
+        try {
+          await captureTerritory(userId, activity.map.summary_polyline);
+          console.log(`[Strava Webhook] Successfully processed and captured territory for activity ${activity.id}`);
+        } catch (err) {
+          console.error(`[Strava Webhook] Failed to capture territory for activity ${activity.id}:`, err);
+        }
+      } else {
+        console.log(`[Strava Webhook] Activity ${activity.id} already exists`);
+      }
+    } else {
+      console.log(`[Strava Webhook] Activity ${activity.id} has no map/polyline. Skipped.`);
+    }
+  } catch (error: any) {
+    console.error(`[Strava Webhook] Error processing activity ${activityId}:`, error?.response?.data || error);
+  }
 }
