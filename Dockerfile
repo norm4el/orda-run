@@ -1,6 +1,9 @@
 # --- Stage 1: Build Frontend ---
 FROM node:22-alpine AS frontend-builder
 WORKDIR /app/frontend
+
+ARG VITE_STRAVA_CLIENT_ID
+ENV VITE_STRAVA_CLIENT_ID=$VITE_STRAVA_CLIENT_ID
 COPY frontend/package*.json ./
 RUN npm ci
 COPY frontend/ ./
