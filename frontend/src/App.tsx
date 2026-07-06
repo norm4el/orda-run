@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 import { MapArea, type TerritoryFeatureCollection } from './MapArea';
+import { BottomNav, type TabType } from './components/BottomNav';
+import { ProfileTab } from './components/ProfileTab';
+import { LeaderboardTab } from './components/LeaderboardTab';
 
-type AuthenticatedUser = {
+export type AuthenticatedUser = {
   id: string;
   telegramId: string;
   username: string | null;
@@ -24,6 +27,7 @@ function App() {
   const [currentUser, setCurrentUser] = useState<AuthenticatedUser | null>(null);
   const [authMessage, setAuthMessage] = useState<string>('Авторизация вне Telegram');
   const [territories, setTerritories] = useState<TerritoryFeatureCollection | null>(null);
+  const [activeTab, setActiveTab] = useState<TabType>('map');
 
   useEffect(() => {
     const telegram = window.Telegram?.WebApp;
@@ -105,10 +109,25 @@ function App() {
 
   return (
     <main className="app-shell">
-      <MapArea territories={territories} currentUserId={currentUser?.id ?? null} />
-      <div className="hud">
-        <div className="hud__chip">{authMessage}</div>
+      <div className={`map-container ${activeTab !== 'map' ? 'hidden-map' : ''}`}>
+        <MapArea territories={territories} currentUserId={currentUser?.id ?? null} />
       </div>
+      
+      {activeTab === 'profile' && (
+        <ProfileTab currentUser={currentUser} onUserUpdate={setCurrentUser} />
+      )}
+      
+      {activeTab === 'leaderboard' && (
+        <LeaderboardTab currentUser={currentUser} />
+      )}
+
+      {activeTab === 'map' && (
+        <div className="hud">
+          <div className="hud__chip">{authMessage}</div>
+        </div>
+      )}
+
+      <BottomNav activeTab={activeTab} onChange={setActiveTab} />
     </main>
   );
 }

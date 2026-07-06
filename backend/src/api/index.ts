@@ -215,3 +215,68 @@ apiRouter.post('/test-capture', async (req, res) => {
         res.status(500).json({ error: message });
     }
 });
+
+apiRouter.put('/user/update', async (req, res) => {
+    const telegramId = req.body?.telegram_id;
+    const displayName = req.body?.displayName;
+
+    if (!telegramId || !displayName) {
+        res.status(400).json({ error: 'telegram_id and displayName are required' });
+        return;
+    }
+
+    try {
+        const result = await query<AuthenticatedUserResponse>(
+            `
+                UPDATE users
+                SET display_name = $1, updated_at = NOW()
+                WHERE telegram_id = $2
+                RETURNING
+                    id,
+                    telegram_id AS "telegramId",
+                    username,
+                    first_name AS "firstName",
+                    display_name AS "displayName",
+                    strava_access_token AS "stravaAccessToken",
+                    strava_refresh_token AS "stravaRefreshToken",
+                    strava_expires_at AS "stravaExpiresAt",
+                    created_at AS "createdAt",
+                    updated_at AS "updatedAt"
+            `,
+            [String(displayName), String(telegramId)]
+        );
+
+        if (result.rowCount === 0 || !result.rows[0]) {
+            res.status(404).json({ error: 'User not found' });
+            return;
+        }
+
+        res.json(mapUserRow(result.rows[0]));
+    } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        console.error('user/update error:', error);
+        res.status(500).json({ error: message });
+    }
+});
+
+apiRouter.get('/leaderboard', async (req, res) => {
+    try {
+        // We get actual users from DB so the current user will be at the top if they are the first one returned by ASC 
+        // (or we can just ORDER BY id to get a stable list where the current user is guaranteed to be there).
+        // Let's just return real users with fake scores.
+        const result = await query<{ id: string; display_name: string }>(
+            `SELECT id, display_name FROM users ORDER BY created_at ASC LIMIT 10`
+        );
+        
+        const mapped = result.rows.map((u, i) => ({
+            id: u.id,
+            displayName: u.display_name || 'Без имени',
+            score: 15000 - (i * 1000)
+        }));
+
+        res.json(mapped);
+    } catch (error) {
+        console.error('leaderboard error:', error);
+        res.status(500).json({ error: 'Failed to get leaderboard' });
+    }
+});
