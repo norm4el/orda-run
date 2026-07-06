@@ -224,25 +224,36 @@ stravaRouter.get('/webhook', (req, res) => {
 
   const expectedToken = process.env.STRAVA_WEBHOOK_VERIFY_TOKEN;
 
-  if (typeof mode !== 'string' || mode !== 'subscribe') {
-    res.sendStatus(400);
-    return;
-  }
-
-  if (!expectedToken || typeof token !== 'string' || token !== expectedToken) {
+  if (mode === 'subscribe' && token === expectedToken) {
+    console.log('Strava Webhook verified successfully!');
+    // Strava expects a JSON response with the challenge
+    res.status(200).json({ 'hub.challenge': challenge });
+  } else {
+    console.error('Strava Webhook verification failed!');
     res.sendStatus(403);
-    return;
   }
-
-  if (typeof challenge !== 'string') {
-    res.sendStatus(400);
-    return;
-  }
-
-  res.status(200).send(challenge);
 });
 
 stravaRouter.post('/webhook', (req, res) => {
-  console.log(req.body);
+  // Бэкенд должен сразу ответить статусом 200 OK (чтобы Strava не повторяла запрос)
   res.sendStatus(200);
+
+  const { object_type, aspect_type, object_id, owner_id } = req.body;
+
+  // Проверяем, что это создание новой тренировки
+  if (object_type === 'activity' && aspect_type === 'create') {
+    console.log(`[Strava Webhook] New activity created: activity_id=${object_id}, strava_owner_id=${owner_id}`);
+    
+    // Асинхронно передаем ID тренировки и юзера в функцию обработки
+    processNewActivity(object_id, owner_id).catch(err => {
+      console.error('Error processing new webhook activity:', err);
+    });
+  }
 });
+
+async function processNewActivity(activityId: number, stravaOwnerId: number) {
+  // TODO: Найти пользователя в БД по stravaOwnerId (Athlete ID), получить его access_token,
+  // сделать запрос к Strava API для получения геометрии (polyline) маршрута 
+  // и вызвать captureTerritory.
+  console.log(`Processing activity ${activityId} for Strava user ${stravaOwnerId}`);
+}
