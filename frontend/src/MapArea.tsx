@@ -16,20 +16,34 @@ const emptyTerritoryData: TerritoryFeatureCollection = {
   features: [],
 };
 
+const routesSourceId = 'routes-source';
+const routesLineLayerId = 'routes-line';
+const emptyRoutesData: RouteFeatureCollection = {
+  type: 'FeatureCollection',
+  features: [],
+};
+
 export type TerritoryFeatureCollection = FeatureCollection<
+  Geometry,
+  { id: string; owner_id: string }
+>;
+
+export type RouteFeatureCollection = FeatureCollection<
   Geometry,
   { id: string; owner_id: string }
 >;
 
 type MapAreaProps = {
   territories: TerritoryFeatureCollection | null;
+  routes: RouteFeatureCollection | null;
   currentUserId: string | null;
 };
 
-export function MapArea({ territories, currentUserId }: MapAreaProps) {
+export function MapArea({ territories, routes, currentUserId }: MapAreaProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const territoriesRef = useRef<TerritoryFeatureCollection | null>(territories);
+  const routesRef = useRef<RouteFeatureCollection | null>(routes);
   const currentUserIdRef = useRef<string | null>(currentUserId);
   const [isDarkTheme, setIsDarkTheme] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -38,6 +52,10 @@ export function MapArea({ territories, currentUserId }: MapAreaProps) {
   useEffect(() => {
     territoriesRef.current = territories;
   }, [territories]);
+
+  useEffect(() => {
+    routesRef.current = routes;
+  }, [routes]);
 
   useEffect(() => {
     currentUserIdRef.current = currentUserId;
@@ -85,12 +103,36 @@ export function MapArea({ territories, currentUserId }: MapAreaProps) {
         },
       });
     }
+
+    if (!map.getSource(routesSourceId)) {
+      map.addSource(routesSourceId, {
+        type: 'geojson',
+        data: routesRef.current ?? emptyRoutesData,
+      });
+    }
+
+    if (!map.getLayer(routesLineLayerId)) {
+      map.addLayer({
+        id: routesLineLayerId,
+        type: 'line',
+        source: routesSourceId,
+        paint: {
+          'line-color': '#f97316', // Orange for Strava runs
+          'line-width': 3,
+          'line-opacity': 0.8,
+        },
+      });
+    }
   };
 
   const syncTerritories = (map: maplibregl.Map) => {
     const source = map.getSource(territorySourceId) as maplibregl.GeoJSONSource | undefined;
-
     source?.setData(territoriesRef.current ?? emptyTerritoryData);
+  };
+
+  const syncRoutes = (map: maplibregl.Map) => {
+    const source = map.getSource(routesSourceId) as maplibregl.GeoJSONSource | undefined;
+    source?.setData(routesRef.current ?? emptyRoutesData);
   };
 
   const syncThemePaint = (map: maplibregl.Map) => {
@@ -133,6 +175,7 @@ export function MapArea({ territories, currentUserId }: MapAreaProps) {
     map.on('load', () => {
       applyTerritoryStyle(map);
       syncTerritories(map);
+      syncRoutes(map);
       syncThemePaint(map);
     });
 
@@ -159,6 +202,18 @@ export function MapArea({ territories, currentUserId }: MapAreaProps) {
   useEffect(() => {
     const map = mapRef.current;
 
+    if (!map) return;
+
+    if (map.loaded()) {
+      syncRoutes(map);
+    } else {
+      map.once('load', () => syncRoutes(map));
+    }
+  }, [routes]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+
     if (!map || !map.loaded()) {
       return;
     }
@@ -179,6 +234,7 @@ export function MapArea({ territories, currentUserId }: MapAreaProps) {
     map.once('style.load', () => {
       applyTerritoryStyle(map);
       syncTerritories(map);
+      syncRoutes(map);
       syncThemePaint(map);
     });
   }, [isDarkTheme]);

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { MapArea, type TerritoryFeatureCollection } from './MapArea';
+import { MapArea, type TerritoryFeatureCollection, type RouteFeatureCollection } from './MapArea';
 import { BottomNav, type TabType } from './components/BottomNav';
 import { ProfileTab } from './components/ProfileTab';
 import { LeaderboardTab } from './components/LeaderboardTab';
@@ -27,6 +27,7 @@ function App() {
   const [currentUser, setCurrentUser] = useState<AuthenticatedUser | null>(null);
   const [authMessage, setAuthMessage] = useState<string>('Авторизация вне Telegram');
   const [territories, setTerritories] = useState<TerritoryFeatureCollection | null>(null);
+  const [routes, setRoutes] = useState<RouteFeatureCollection | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('map');
 
   useEffect(() => {
@@ -121,10 +122,47 @@ function App() {
     void loadTerritories();
   }, []);
 
+  useEffect(() => {
+    async function loadRoutes() {
+      try {
+        const response = await fetch('/api/routes');
+
+        if (!response.ok) {
+          throw new Error(`Failed to load routes: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        setRoutes({
+          type: 'FeatureCollection',
+          features: data.map((route: any) => {
+            const lngLatCoords = route.coordinates.map((c: any) => [c[1], c[0]]);
+            return {
+              type: 'Feature',
+              geometry: {
+                type: 'LineString',
+                coordinates: lngLatCoords,
+              },
+              properties: {
+                id: route.id,
+                owner_id: route.owner_id,
+              },
+            };
+          }),
+        });
+      } catch (error) {
+        console.error(error);
+        setRoutes({ type: 'FeatureCollection', features: [] });
+      }
+    }
+
+    void loadRoutes();
+  }, []);
+
   return (
     <main className="app-shell">
       <div className={`map-container ${activeTab !== 'map' ? 'hidden-map' : ''}`}>
-        <MapArea territories={territories} currentUserId={currentUser?.id ?? null} />
+        <MapArea territories={territories} routes={routes} currentUserId={currentUser?.id ?? null} />
       </div>
       
       {activeTab === 'profile' && (

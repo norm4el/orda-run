@@ -91,6 +91,38 @@ stravaRouter.get('/callback', async (req, res) => {
   }
 });
 
+stravaRouter.post('/sync', async (req, res) => {
+  const telegramId = req.body?.telegram_id;
+  if (!telegramId) {
+    res.status(400).send('telegram_id is required');
+    return;
+  }
+
+  try {
+    const userResult = await query<{ strava_access_token: string }>(
+      'SELECT strava_access_token FROM users WHERE telegram_id = $1',
+      [String(telegramId)]
+    );
+
+    if (userResult.rowCount === 0 || !userResult.rows[0]) {
+      res.status(404).send('User not found');
+      return;
+    }
+
+    const accessToken = userResult.rows[0].strava_access_token;
+    if (!accessToken) {
+      res.status(400).send('Strava not connected');
+      return;
+    }
+
+    await fetchAndSaveActivities(String(telegramId), accessToken);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Strava sync error:', error);
+    res.status(500).send('Error syncing with Strava');
+  }
+});
+
 async function fetchAndSaveActivities(telegramId: string, accessToken: string) {
   try {
     // Get the user ID from our DB to link routes to them

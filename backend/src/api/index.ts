@@ -131,6 +131,22 @@ apiRouter.get('/territories', async (_req, res) => {
     res.json(result.rows);
 });
 
+apiRouter.get('/routes', async (_req, res) => {
+    try {
+        const result = await query<{
+            id: string;
+            owner_id: string;
+            coordinates: [number, number][];
+        }>(
+            `SELECT id, user_id AS owner_id, coordinates FROM routes`
+        );
+        res.json(result.rows);
+    } catch (error) {
+        console.error('routes error:', error);
+        res.status(500).json({ error: 'Failed to fetch routes' });
+    }
+});
+
 apiRouter.get('/territories/:telegram_id', async (req, res) => {
     try {
         const telegramId = Number(req.params.telegram_id);
