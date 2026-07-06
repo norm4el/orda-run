@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import axios from 'axios';
+import polyline from '@mapbox/polyline';
 import { query } from '../db';
 
 const STRAVA_AUTH_URL = 'https://www.strava.com/oauth/authorize';
@@ -37,7 +39,7 @@ stravaRouter.get('/callback', async (req, res) => {
   const clientId = process.env.STRAVA_CLIENT_ID;
   const clientSecret = process.env.STRAVA_CLIENT_SECRET;
   const code = req.query.code;
-  const state = req.query.state;
+  const state = req.query.state; // We stored telegram_id here
 
   if (!clientId || !clientSecret) {
     res.status(500).send('STRAVA_CLIENT_ID или STRAVA_CLIENT_SECRET не заданы');
@@ -49,46 +51,88 @@ stravaRouter.get('/callback', async (req, res) => {
     return;
   }
 
-  const response = await fetch(STRAVA_TOKEN_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: new URLSearchParams({
+  try {
+    const response = await axios.post(STRAVA_TOKEN_URL, {
       client_id: clientId,
       client_secret: clientSecret,
       code,
       grant_type: 'authorization_code',
-    }),
-  });
+    });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    res.status(502).send(errorText);
-    return;
+    const tokenData = response.data as {
+      access_token: string;
+      refresh_token: string;
+      expires_at: number;
+    };
+
+    // Update user in DB
+    await query(
+      `
+        UPDATE users
+        SET strava_access_token = $1,
+            strava_refresh_token = $2,
+            strava_expires_at = $3,
+            updated_at = NOW()
+        WHERE telegram_id = $4
+      `,
+      [tokenData.access_token, tokenData.refresh_token, tokenData.expires_at, state],
+    );
+
+    // After saving token, we can trigger the fetch activities right away in the background (or await it)
+    await fetchAndSaveActivities(state, tokenData.access_token);
+
+    res
+      .status(200)
+      .type('html')
+      .send('<!doctype html><html><body>Успешно, закрой окно</body></html>');
+  } catch (error: any) {
+    console.error('Strava callback error:', error?.response?.data || error);
+    res.status(502).send('Error communicating with Strava');
   }
-
-  const tokenData = (await response.json()) as {
-    access_token: string;
-    refresh_token: string;
-  };
-
-  await query(
-    `
-      INSERT INTO users (telegram_id, strava_access_token, strava_refresh_token)
-      VALUES ($1, $2, $3)
-      ON CONFLICT (telegram_id) DO UPDATE
-      SET strava_access_token = EXCLUDED.strava_access_token,
-          strava_refresh_token = EXCLUDED.strava_refresh_token
-    `,
-    [state, tokenData.access_token, tokenData.refresh_token],
-  );
-
-  res
-    .status(200)
-    .type('html')
-    .send('<!doctype html><html><body>Успешно, закрой окно</body></html>');
 });
+
+async function fetchAndSaveActivities(telegramId: string, accessToken: string) {
+  try {
+    // Get the user ID from our DB to link routes to them
+    const userResult = await query<{ id: string }>(
+      'SELECT id FROM users WHERE telegram_id = $1',
+      [telegramId]
+    );
+
+    if (userResult.rowCount === 0 || !userResult.rows[0]) {
+      throw new Error(`User not found for telegram_id: ${telegramId}`);
+    }
+
+    const userId = userResult.rows[0].id;
+
+    const response = await axios.get('https://www.strava.com/api/v3/athlete/activities', {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    const activities = response.data;
+
+    for (const activity of activities) {
+      if (activity.map?.summary_polyline) {
+        // Decode to array of [lat, lng]
+        const coordinates = polyline.decode(activity.map.summary_polyline);
+
+        // Store in DB, ignoring duplicates (ON CONFLICT DO NOTHING)
+        await query(
+          `
+            INSERT INTO routes (user_id, strava_activity_id, coordinates)
+            VALUES ($1, $2, $3)
+            ON CONFLICT (strava_activity_id) DO NOTHING
+          `,
+          [userId, activity.id, JSON.stringify(coordinates)]
+        );
+      }
+    }
+  } catch (error: any) {
+    console.error('Error fetching/saving Strava activities:', error?.response?.data || error);
+  }
+}
 
 stravaRouter.get('/webhook', (req, res) => {
   const mode = req.query['hub.mode'];

@@ -39,3 +39,11 @@ CREATE TABLE IF NOT EXISTS territories (
     polygon GEOMETRY(Polygon, 4326) NOT NULL,
     captured_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS routes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    strava_activity_id BIGINT UNIQUE NOT NULL,
+    coordinates JSONB NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);

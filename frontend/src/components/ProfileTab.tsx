@@ -78,6 +78,35 @@ export function ProfileTab({ currentUser, onUserUpdate }: Props) {
           )}
         </div>
 
+        <div className="profile-field" style={{ marginTop: '16px' }}>
+          {currentUser.stravaAccessToken ? (
+            <div style={{ color: '#22c55e', fontWeight: 500, fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+              Strava подключена
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="btn-primary"
+              style={{ background: 'linear-gradient(135deg, #fc4c02 0%, #e04300 100%)', boxShadow: '0 4px 12px rgba(252, 76, 2, 0.3)' }}
+              onClick={() => {
+                const clientId = import.meta.env.VITE_STRAVA_CLIENT_ID;
+                if (!clientId) {
+                  alert('VITE_STRAVA_CLIENT_ID is missing');
+                  return;
+                }
+                const redirectUri = 'https://ordarun.app/api/strava/callback';
+                window.location.href = `https://www.strava.com/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=activity:read_all&state=${currentUser.telegramId}`;
+              }}
+            >
+              Подключить Strava
+            </button>
+          )}
+        </div>
+
         <div style={{ marginTop: '8px' }}>
           {isEditing ? (
             <div style={{ display: 'flex', gap: '12px' }}>
