@@ -193,15 +193,15 @@ export function RecordTab({ currentUser, onCoordinatesUpdate, onRunFinished }: P
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', width: '100%', marginBottom: '40px', pointerEvents: 'auto' }}>
         <div style={{ background: 'rgba(7, 17, 31, 0.8)', backdropFilter: 'blur(10px)', padding: '20px', borderRadius: '16px', textAlign: 'center' }}>
-          <div style={{ fontSize: '32px', fontWeight: 'bold', color: 'var(--primary)' }}>{distanceKm}</div>
+          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#00ffaa' }}>{distanceKm}</div>
           <div style={{ fontSize: '14px', color: '#888' }}>километров</div>
         </div>
         <div style={{ background: 'rgba(7, 17, 31, 0.8)', backdropFilter: 'blur(10px)', padding: '20px', borderRadius: '16px', textAlign: 'center' }}>
-          <div style={{ fontSize: '32px', fontWeight: 'bold', color: 'var(--primary)' }}>{formatTime(elapsedSeconds)}</div>
+          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#00ffaa' }}>{formatTime(elapsedSeconds)}</div>
           <div style={{ fontSize: '14px', color: '#888' }}>время</div>
         </div>
         <div style={{ gridColumn: '1 / -1', background: 'rgba(7, 17, 31, 0.8)', backdropFilter: 'blur(10px)', padding: '20px', borderRadius: '16px', textAlign: 'center' }}>
-          <div style={{ fontSize: '32px', fontWeight: 'bold', color: 'var(--primary)' }}>{formattedPace}</div>
+          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#00ffaa' }}>{formattedPace}</div>
           <div style={{ fontSize: '14px', color: '#888' }}>текущий темп</div>
         </div>
       </div>
@@ -222,7 +222,7 @@ export function RecordTab({ currentUser, onCoordinatesUpdate, onRunFinished }: P
               onClick={saveRun}
               disabled={isSaving}
               className="btn btn-primary"
-              style={{ flex: 2, padding: '20px', fontSize: '18px', background: 'var(--primary)', color: '#000', border: 'none', borderRadius: '12px' }}
+              style={{ flex: 2, padding: '20px', fontSize: '18px', background: '#00ffaa', color: '#000', border: 'none', borderRadius: '12px' }}
             >
               {isSaving ? 'Сохраняем...' : 'Сохранить и захватить'}
             </button>
@@ -231,7 +231,7 @@ export function RecordTab({ currentUser, onCoordinatesUpdate, onRunFinished }: P
           <button
             onClick={startTracking}
             className="btn btn-primary"
-            style={{ width: '200px', height: '200px', borderRadius: '50%', fontSize: '32px', fontWeight: 'bold', background: 'var(--primary)', color: '#000', boxShadow: '0 10px 30px rgba(0, 255, 170, 0.3)', pointerEvents: 'auto', border: 'none' }}
+            style={{ width: '200px', height: '200px', borderRadius: '50%', fontSize: '32px', fontWeight: 'bold', background: '#00ffaa', color: '#000', boxShadow: '0 10px 30px rgba(0, 255, 170, 0.3)', pointerEvents: 'auto', border: 'none' }}
           >
             СТАРТ
           </button>
