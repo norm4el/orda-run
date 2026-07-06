@@ -180,25 +180,25 @@ export function RecordTab({ currentUser, onRunFinished }: Props) {
   const formattedPace = distanceMeters > 0 ? `${paceMins}:${paceSecs.toString().padStart(2, '0')} /км` : '0:00 /км';
 
   return (
-    <div className="tab-container" style={{ padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '30px' }}>Тренировка</h2>
+    <div className="tab-container" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: 'calc(100vh - 72px)', zIndex: 1000, padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', pointerEvents: 'none' }}>
+      <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '30px', pointerEvents: 'auto', background: 'rgba(7, 17, 31, 0.7)', padding: '10px 20px', borderRadius: '16px', backdropFilter: 'blur(10px)' }}>Тренировка</h2>
       
       {error && (
-        <div style={{ background: '#ff4444', color: 'white', padding: '10px', borderRadius: '8px', marginBottom: '20px', width: '100%', textAlign: 'center' }}>
+        <div style={{ background: '#ff4444', color: 'white', padding: '10px', borderRadius: '8px', marginBottom: '20px', width: '100%', textAlign: 'center', pointerEvents: 'auto' }}>
           {error}
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', width: '100%', marginBottom: '40px' }}>
-        <div style={{ background: 'var(--surface)', padding: '20px', borderRadius: '16px', textAlign: 'center' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', width: '100%', marginBottom: '40px', pointerEvents: 'auto' }}>
+        <div style={{ background: 'rgba(7, 17, 31, 0.8)', backdropFilter: 'blur(10px)', padding: '20px', borderRadius: '16px', textAlign: 'center' }}>
           <div style={{ fontSize: '32px', fontWeight: 'bold', color: 'var(--primary)' }}>{distanceKm}</div>
           <div style={{ fontSize: '14px', color: '#888' }}>километров</div>
         </div>
-        <div style={{ background: 'var(--surface)', padding: '20px', borderRadius: '16px', textAlign: 'center' }}>
+        <div style={{ background: 'rgba(7, 17, 31, 0.8)', backdropFilter: 'blur(10px)', padding: '20px', borderRadius: '16px', textAlign: 'center' }}>
           <div style={{ fontSize: '32px', fontWeight: 'bold', color: 'var(--primary)' }}>{formatTime(elapsedSeconds)}</div>
           <div style={{ fontSize: '14px', color: '#888' }}>время</div>
         </div>
-        <div style={{ gridColumn: '1 / -1', background: 'var(--surface)', padding: '20px', borderRadius: '16px', textAlign: 'center' }}>
+        <div style={{ gridColumn: '1 / -1', background: 'rgba(7, 17, 31, 0.8)', backdropFilter: 'blur(10px)', padding: '20px', borderRadius: '16px', textAlign: 'center' }}>
           <div style={{ fontSize: '32px', fontWeight: 'bold', color: 'var(--primary)' }}>{formattedPace}</div>
           <div style={{ fontSize: '14px', color: '#888' }}>текущий темп</div>
         </div>
@@ -208,11 +208,11 @@ export function RecordTab({ currentUser, onRunFinished }: Props) {
 
       {!isTracking ? (
         coordinates.length > 0 ? (
-          <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
+          <div style={{ display: 'flex', gap: '10px', width: '100%', pointerEvents: 'auto' }}>
             <button
               onClick={() => { setCoordinates([]); setDistanceMeters(0); setElapsedSeconds(0); }}
               className="btn btn-secondary"
-              style={{ flex: 1, padding: '20px', fontSize: '18px' }}
+              style={{ flex: 1, padding: '20px', fontSize: '18px', background: 'rgba(7, 17, 31, 0.9)', backdropFilter: 'blur(10px)', border: 'none', borderRadius: '12px', color: '#fff' }}
             >
               Сбросить
             </button>
@@ -220,7 +220,7 @@ export function RecordTab({ currentUser, onRunFinished }: Props) {
               onClick={saveRun}
               disabled={isSaving}
               className="btn btn-primary"
-              style={{ flex: 2, padding: '20px', fontSize: '18px', background: 'var(--primary)', color: '#000' }}
+              style={{ flex: 2, padding: '20px', fontSize: '18px', background: 'var(--primary)', color: '#000', border: 'none', borderRadius: '12px' }}
             >
               {isSaving ? 'Сохраняем...' : 'Сохранить и захватить'}
             </button>
@@ -229,7 +229,7 @@ export function RecordTab({ currentUser, onRunFinished }: Props) {
           <button
             onClick={startTracking}
             className="btn btn-primary"
-            style={{ width: '200px', height: '200px', borderRadius: '50%', fontSize: '32px', fontWeight: 'bold', background: 'var(--primary)', color: '#000', boxShadow: '0 10px 30px rgba(0, 255, 170, 0.3)' }}
+            style={{ width: '200px', height: '200px', borderRadius: '50%', fontSize: '32px', fontWeight: 'bold', background: 'var(--primary)', color: '#000', boxShadow: '0 10px 30px rgba(0, 255, 170, 0.3)', pointerEvents: 'auto', border: 'none' }}
           >
             СТАРТ
           </button>
@@ -238,13 +238,13 @@ export function RecordTab({ currentUser, onRunFinished }: Props) {
         <button
           onClick={stopTracking}
           className="btn btn-primary"
-          style={{ width: '200px', height: '200px', borderRadius: '50%', fontSize: '32px', fontWeight: 'bold', background: '#ff4444', color: '#fff', boxShadow: '0 10px 30px rgba(255, 68, 68, 0.3)' }}
+          style={{ width: '200px', height: '200px', borderRadius: '50%', fontSize: '32px', fontWeight: 'bold', background: '#ff4444', color: '#fff', boxShadow: '0 10px 30px rgba(255, 68, 68, 0.3)', pointerEvents: 'auto', border: 'none' }}
         >
           СТОП
         </button>
       )}
       
-      <div style={{ marginTop: '20px', fontSize: '12px', color: '#666', textAlign: 'center', padding: '0 20px' }}>
+      <div style={{ marginTop: '20px', fontSize: '12px', color: '#bbb', textAlign: 'center', padding: '10px 20px', background: 'rgba(7, 17, 31, 0.7)', borderRadius: '8px', backdropFilter: 'blur(10px)', pointerEvents: 'auto' }}>
         Держите экран включенным во время бега. iOS/Android могут остановить запись, если экран погаснет.
       </div>
     </div>

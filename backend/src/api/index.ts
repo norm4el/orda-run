@@ -264,11 +264,11 @@ apiRouter.post('/runs/manual', async (req, res) => {
         const decodedPoints = require('@mapbox/polyline').decode(polylineString);
         await query(
             `
-                INSERT INTO routes (owner_id, strava_activity_id, coordinates, distance, moving_time, start_date)
-                VALUES ($1, $2, $3, $4, $5, NOW())
+                INSERT INTO routes (user_id, strava_activity_id, coordinates)
+                VALUES ($1, $2, $3)
                 ON CONFLICT (strava_activity_id) DO NOTHING
             `,
-            [userId, `manual_${Date.now()}`, JSON.stringify(decodedPoints), distance, duration]
+            [userId, Date.now(), JSON.stringify(decodedPoints)]
         );
 
         const result = await captureTerritory(userId, polylineString);

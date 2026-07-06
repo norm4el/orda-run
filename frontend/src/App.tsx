@@ -165,7 +165,7 @@ function App() {
 
   return (
     <main className="app-shell">
-      <div className={`map-container ${activeTab !== 'map' ? 'hidden-map' : ''}`}>
+      <div className={`map-container ${activeTab !== 'map' && activeTab !== 'record' ? 'hidden-map' : ''}`}>
         <MapArea territories={territories} routes={routes} currentUser={currentUser} />
       </div>
       
