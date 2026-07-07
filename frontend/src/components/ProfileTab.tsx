@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { AuthenticatedUser } from '../App';
+import { getRankFromPoints } from '../utils/ranks';
 
 type Props = {
   currentUser: AuthenticatedUser | null;
@@ -183,6 +184,8 @@ export function ProfileTab({
     }
   };
 
+  const rank = getRankFromPoints(currentUser.influencePoints);
+
   return (
     <div className="content-area" style={{ padding: '0 20px', paddingTop: '40px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
@@ -220,11 +223,15 @@ export function ProfileTab({
             </div>
           )}
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-dim)', marginBottom: '8px' }}>
-            <span>УРОВЕНЬ 1</span>
-            <span>0 / 1000 XP</span>
+            <span style={{ fontWeight: 'bold', color: 'var(--primary)' }}>{rank.title.toUpperCase()}</span>
+            {rank.nextMilestone ? (
+              <span>{Math.floor(currentUser.influencePoints)} / {rank.nextMilestone} XP</span>
+            ) : (
+              <span>MAX LEVEL</span>
+            )}
           </div>
           <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px' }}>
-            <div style={{ width: '10%', height: '100%', background: 'var(--primary)', borderRadius: '2px' }}></div>
+            <div style={{ width: `${Math.min(100, Math.max(0, rank.progress * 100))}%`, height: '100%', background: 'var(--primary)', borderRadius: '2px' }}></div>
           </div>
         </div>
       </div>

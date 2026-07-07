@@ -141,6 +141,7 @@ apiRouter.get('/territories', async (_req, res) => {
                 t.owner_id,
                 MAX(u.orda_id::text)::uuid AS owner_orda_id,
                 MAX(u.display_name) AS owner_display_name,
+                MAX(u.influence_points) AS owner_influence_points,
                 ST_AsGeoJSON(ST_Union(t.polygon))::json AS polygon
             FROM territories t
             JOIN users u ON t.owner_id = u.id

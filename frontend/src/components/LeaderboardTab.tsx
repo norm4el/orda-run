@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { AuthenticatedUser } from '../App';
+import { getRankFromPoints } from '../utils/ranks';
 
 type LeaderboardEntry = {
   id: string;
@@ -83,7 +84,14 @@ export function LeaderboardTab({ currentUser }: Props) {
               }}
             >
               <span className="leaderboard-rank" style={{ color: item.id === currentUser?.id ? 'var(--primary)' : undefined }}>{index + 1}</span>
-              <span className="leaderboard-name">{item.displayName}</span>
+              <span className="leaderboard-name" style={{ display: 'flex', flexDirection: 'column' }}>
+                <span>{item.displayName}</span>
+                {mode === 'personal' && (
+                  <span style={{ fontSize: '10px', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                    {getRankFromPoints(item.score).title}
+                  </span>
+                )}
+              </span>
               <span className="leaderboard-score" style={{ color: (mode === 'personal' && item.id === currentUser?.id) || (mode === 'orda' && item.id === currentUser?.ordaId) ? 'var(--primary)' : 'var(--text-dim)', fontSize: '14px' }}>
                 {(item.score / 1000000).toFixed(2)} км²
               </span>

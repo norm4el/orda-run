@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react';
 import type { FeatureCollection, Geometry } from 'geojson';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { getRankFromPoints } from './utils/ranks';
 import { area } from '@turf/area';
 import { polygon } from '@turf/helpers';
 import type { AuthenticatedUser } from './App';
@@ -35,7 +36,7 @@ const plannedLineLayerId = 'planned-line-layer';
 
 export type TerritoryFeatureCollection = FeatureCollection<
   Geometry,
-  { id: string; owner_id: string; owner_orda_id: string | null; owner_display_name: string | null }
+  { id: string; owner_id: string; owner_orda_id: string | null; owner_display_name: string | null; owner_influence_points: number }
 >;
 
 export type RouteFeatureCollection = FeatureCollection<
@@ -109,10 +110,19 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates, ord
 
   const applyTerritoryStyle = (map: maplibregl.Map) => {
     if (!map.getSource(territorySourceId)) {
-      map.addSource(territorySourceId, {
-        type: 'geojson',
-        data: territoriesRef.current ?? emptyTerritoryData,
-      });
+        map.addSource(territorySourceId, {
+          type: 'geojson',
+          data: {
+            ...territoriesRef.current!,
+            features: (territoriesRef.current?.features || []).map(f => ({
+              ...f,
+              properties: {
+                ...f.properties,
+                displayNameWithRank: `${f.properties?.owner_display_name || 'Игрок'}\n[${getRankFromPoints(f.properties?.owner_influence_points || 0).title}]`
+              }
+            }))
+          }
+        });
     }
 
     const colorSelf = currentUserRef.current?.colorSelf ?? '#d8a760'; // User chosen color or Gold
@@ -122,14 +132,6 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates, ord
     const ownerMatch = currentUserRef.current?.id ?? '__none__';
     const ordaMatch = currentUserRef.current?.ordaId ?? '__none__';
     const isOrdaMode = ordaModeRef.current;
-
-    // In Orda Mode:
-    // If owner == me -> colorSelf
-    // If owner_orda_id == my_orda -> colorOrda
-    // Else -> colorOthers
-    // In Personal Mode:
-    // If owner == me -> colorSelf
-    // Else -> colorOthers
 
     let fillColorExpression: maplibregl.ExpressionSpecification;
     
@@ -186,11 +188,12 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates, ord
         type: 'symbol',
         source: territorySourceId,
         layout: {
-          'text-field': ['get', 'owner_display_name'],
-          'text-size': 14,
+          'text-field': ['get', 'displayNameWithRank'],
+          'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+          'text-size': 12,
           'text-anchor': 'center',
           'text-justify': 'center',
-          'symbol-placement': 'point', // puts it at the centroid
+          'symbol-placement': 'point',
         },
         paint: {
           'text-color': '#ffffff',
@@ -285,6 +288,41 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates, ord
       });
     }
 
+    if (!map.getLayer('3d-buildings')) {
+      const layers = map.getStyle().layers;
+      let labelLayerId;
+      for (let i = 0; i < layers.length; i++) {
+        const layer = layers[i] as any;
+        if (layer.type === 'symbol' && layer.layout && layer.layout['text-field']) {
+          labelLayerId = layer.id;
+          break;
+        }
+      }
+      
+      try {
+        // Many styles use 'building' source layer from 'openmaptiles' or similar
+        // We need to guess the source name if not known, often it's 'openmaptiles' or the primary source
+        const sources = Object.keys(map.getStyle().sources);
+        const vectorSource = sources.find(s => map.getSource(s)?.type === 'vector');
+        if (vectorSource) {
+          map.addLayer({
+            id: '3d-buildings',
+            source: vectorSource,
+            'source-layer': 'building',
+            type: 'fill-extrusion',
+            minzoom: 15,
+            paint: {
+              'fill-extrusion-color': '#aaa',
+              'fill-extrusion-height': ['get', 'render_height'],
+              'fill-extrusion-base': ['get', 'render_min_height'],
+              'fill-extrusion-opacity': 0.6
+            }
+          }, labelLayerId);
+        }
+      } catch (e) {
+        console.log("3D buildings not supported by current basemap style", e);
+      }
+    }
   };
 
   const syncTerritories = (map: maplibregl.Map) => {

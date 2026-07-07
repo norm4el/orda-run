@@ -28,6 +28,7 @@ type TerritoryResponse = {
   owner_id: string;
   owner_orda_id: string | null;
   owner_display_name: string | null;
+  owner_influence_points: number;
   polygon: GeoJSON.Geometry;
 };
 
@@ -122,6 +123,7 @@ function App() {
               owner_id: territory.owner_id,
               owner_orda_id: territory.owner_orda_id,
               owner_display_name: territory.owner_display_name,
+              owner_influence_points: territory.owner_influence_points,
             },
           })),
         });
