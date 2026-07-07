@@ -136,12 +136,13 @@ apiRouter.get('/territories', async (_req, res) => {
     }>(
         `
             SELECT
-                t.id,
+                t.owner_id AS id,
                 t.owner_id,
-                u.orda_id AS owner_orda_id,
-                ST_AsGeoJSON(t.polygon)::json AS polygon
+                MAX(u.orda_id::text)::uuid AS owner_orda_id,
+                ST_AsGeoJSON(ST_Union(t.polygon))::json AS polygon
             FROM territories t
             JOIN users u ON t.owner_id = u.id
+            GROUP BY t.owner_id
         `,
     );
 
@@ -188,7 +189,7 @@ apiRouter.get('/territories/:telegram_id', async (req, res) => {
             geojson: string;
         }>(
             `
-                SELECT ST_AsGeoJSON(geom) AS geojson
+                SELECT ST_AsGeoJSON(ST_Union(geom)) AS geojson
                 FROM (
                     SELECT polygon AS geom
                     FROM territories

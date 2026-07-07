@@ -33,7 +33,6 @@ const livePointLayerId = 'live-point-layer';
 const plannedRouteSourceId = 'planned-route-source';
 const plannedFillLayerId = 'planned-fill-layer';
 const plannedLineLayerId = 'planned-line-layer';
-const plannedPointLayerId = 'planned-point-layer';
 
 export type TerritoryFeatureCollection = FeatureCollection<
   Geometry,
@@ -281,20 +280,6 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates, ord
       });
     }
 
-    if (!map.getLayer(plannedPointLayerId)) {
-      map.addLayer({
-        id: plannedPointLayerId,
-        type: 'circle',
-        source: plannedRouteSourceId,
-        paint: {
-          'circle-radius': 5,
-          'circle-color': '#22c55e',
-          'circle-stroke-width': 2,
-          'circle-stroke-color': '#ffffff',
-        },
-        filter: ['==', '$type', 'Point'],
-      });
-    }
   };
 
   const syncTerritories = (map: maplibregl.Map) => {
