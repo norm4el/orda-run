@@ -229,6 +229,48 @@ apiRouter.get('/territories/:telegram_id', async (req, res) => {
 });
 
 
+apiRouter.post('/user/disconnect', async (req, res) => {
+    const telegramId = req.body?.telegram_id;
+    if (!telegramId) {
+        res.status(400).json({ error: 'telegram_id is required' });
+        return;
+    }
+
+    try {
+        const userResult = await query<{ id: string }>(
+            `SELECT id FROM users WHERE telegram_id = $1`,
+            [String(telegramId)]
+        );
+
+        if (userResult.rowCount === 0 || !userResult.rows[0]) {
+            res.status(404).json({ error: 'User not found' });
+            return;
+        }
+
+        const userId = userResult.rows[0].id;
+
+        // Delete all territories and runs for this user
+        await query(`DELETE FROM territories WHERE owner_id = $1`, [userId]);
+        await query(`DELETE FROM raw_activities WHERE user_id = $1`, [userId]);
+
+        // Remove Strava tokens and reset influence points
+        await query(
+            `UPDATE users 
+             SET strava_access_token = NULL, 
+                 strava_refresh_token = NULL, 
+                 strava_athlete_id = NULL,
+                 influence_points = 0
+             WHERE id = $1`,
+            [userId]
+        );
+
+        res.json({ success: true, message: 'Disconnected successfully' });
+    } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        console.error('/user/disconnect error:', error);
+        res.status(500).json({ error: message });
+    }
+});
 
 apiRouter.post('/runs/manual', async (req, res) => {
     const telegramId = req.body?.telegram_id;

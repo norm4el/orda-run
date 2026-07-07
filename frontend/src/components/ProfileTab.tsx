@@ -151,6 +151,36 @@ export function ProfileTab({
     }
   };
 
+  const [isDisconnecting, setIsDisconnecting] = useState(false);
+
+  const handleDisconnectStrava = async () => {
+    if (!window.confirm('Вы уверены? Это действие отвяжет Strava и удалит все ваши пробежки и территории из базы данных.')) return;
+    
+    setIsDisconnecting(true);
+    try {
+      const response = await fetch('/api/user/disconnect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telegram_id: currentUser.telegramId }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to disconnect');
+      }
+
+      const telegram = (window as any).Telegram?.WebApp;
+      if (telegram?.showAlert) telegram.showAlert('Аккаунт Strava успешно отключен, а ваши данные удалены.');
+      
+      onUserUpdate({ ...currentUser, stravaAccessToken: undefined, stravaRefreshToken: undefined, influencePoints: 0 });
+      reloadMapData();
+    } catch (err) {
+      console.error(err);
+      alert('Ошибка при отключении Strava');
+    } finally {
+      setIsDisconnecting(false);
+    }
+  };
+
   const handleStravaClick = () => {
     // Используем динамический origin (работает и локально, и на проде)
     const url = `${window.location.origin}/api/strava/auth?telegram_id=${currentUser.telegramId}`;
@@ -409,16 +439,32 @@ export function ProfileTab({
       {!isEditing && (
         <div style={{ marginTop: '20px' }}>
           {currentUser.stravaAccessToken ? (
-            <button style={{ width: '100%', padding: '15px', background: 'transparent', border: '1px solid var(--primary)', color: 'var(--primary)', borderRadius: '8px', fontWeight: '500', textTransform: 'uppercase' }} onClick={handleSync} disabled={isSyncing}>
-              {isSyncing ? 'Синхронизация...' : 'Синхронизировать Strava'}
-            </button>
+            <>
+              <button style={{ width: '100%', padding: '15px', background: 'transparent', border: '1px solid var(--primary)', color: 'var(--primary)', borderRadius: '8px', fontWeight: '500', textTransform: 'uppercase', marginBottom: '10px' }} onClick={handleSync} disabled={isSyncing}>
+                {isSyncing ? 'Синхронизация...' : 'Синхронизировать Strava'}
+              </button>
+              <button style={{ width: '100%', padding: '15px', background: 'transparent', border: '1px solid #ef4444', color: '#ef4444', borderRadius: '8px', fontWeight: '500', textTransform: 'uppercase' }} onClick={handleDisconnectStrava} disabled={isDisconnecting}>
+                {isDisconnecting ? 'Отключение...' : 'Отключить и удалить данные'}
+              </button>
+            </>
           ) : (
-            <button style={{ width: '100%', padding: '15px', background: '#fc4c02', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '500', textTransform: 'uppercase' }} onClick={handleStravaClick}>
-              Подключить Strava
+            <button style={{ width: '100%', padding: '14px', background: '#fc4c02', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer' }} onClick={handleStravaClick}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
+              Connect with Strava
             </button>
           )}
         </div>
       )}
+
+      <div style={{ marginTop: '40px', textAlign: 'center', paddingBottom: '20px' }}>
+        <div style={{ color: 'var(--text-dim)', fontSize: '12px', marginBottom: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontWeight: '500' }}>
+          Powered by <span style={{ color: '#fc4c02', fontWeight: 'bold', fontSize: '14px', letterSpacing: '1px' }}>STRAVA</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', fontSize: '12px' }}>
+          <a href="/privacy.html" target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', textDecoration: 'none' }}>Privacy Policy</a>
+          <a href="/terms.html" target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', textDecoration: 'none' }}>Terms of Service</a>
+        </div>
+      </div>
     </div>
   );
 }
