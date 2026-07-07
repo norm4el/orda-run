@@ -503,31 +503,6 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates, ord
     onPlannedPointsChange?.(drawnPoints);
   }, [drawnPoints, onPlannedPointsChange]);
 
-  const syncThemePaint = (map: maplibregl.Map) => {
-    if (!map.getLayer(territoryFillLayerId) || !map.getLayer(territoryLineLayerId)) {
-      return;
-    }
-
-    const colorSelf = currentUserRef.current?.colorSelf ?? '#f97316';
-    const colorOthers = currentUserRef.current?.colorOthers ?? '#ef4444';
-    const ownerMatch = currentUserRef.current?.id ?? '__none__';
-
-    map.setPaintProperty(territoryFillLayerId, 'fill-color', [
-      'case',
-      ['==', ['get', 'owner_id'], ownerMatch],
-      colorSelf,
-      colorOthers,
-    ]);
-
-    map.setPaintProperty(territoryLineLayerId, 'line-color', [
-      'case',
-      ['==', ['get', 'owner_id'], ownerMatch],
-      colorSelf,
-      colorOthers,
-    ]);
-
-
-  };
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) {
@@ -549,7 +524,7 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates, ord
       applyTerritoryStyle(map);
       syncTerritories(map);
       syncRoutes(map);
-      syncThemePaint(map);
+      applyTerritoryStyle(map);
       syncPlannedRoute(map, drawnPoints);
     });
 
@@ -665,7 +640,7 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates, ord
       return;
     }
 
-    syncThemePaint(map);
+    applyTerritoryStyle(map);
   }, [currentUser]);
 
   useEffect(() => {
@@ -682,7 +657,7 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates, ord
       applyTerritoryStyle(map);
       syncTerritories(map);
       syncRoutes(map);
-      syncThemePaint(map);
+      applyTerritoryStyle(map);
       syncPlannedRoute(map, drawnPoints);
     });
   }, [mapTheme]);
