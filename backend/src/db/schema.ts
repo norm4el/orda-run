@@ -84,6 +84,11 @@ export async function ensureDatabaseSchema() {
   `);
 
   await pool.query(`
+    ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS bonus_points INT NOT NULL DEFAULT 0
+  `);
+
+  await pool.query(`
     CREATE OR REPLACE FUNCTION recalculate_influence_points()
     RETURNS TRIGGER AS $$
     BEGIN
@@ -93,7 +98,7 @@ export async function ensureDatabaseSchema() {
           SELECT COALESCE(ST_Area(ST_Union(polygon)::geography), 0)::int
           FROM territories
           WHERE owner_id = OLD.owner_id
-        )
+        ) + COALESCE((SELECT bonus_points FROM users WHERE id = OLD.owner_id), 0)
         WHERE id = OLD.owner_id;
         RETURN OLD;
       ELSE
@@ -102,7 +107,7 @@ export async function ensureDatabaseSchema() {
           SELECT COALESCE(ST_Area(ST_Union(polygon)::geography), 0)::int
           FROM territories
           WHERE owner_id = NEW.owner_id
-        )
+        ) + COALESCE((SELECT bonus_points FROM users WHERE id = NEW.owner_id), 0)
         WHERE id = NEW.owner_id;
         RETURN NEW;
       END IF;
@@ -124,7 +129,7 @@ export async function ensureDatabaseSchema() {
       SELECT COALESCE(ST_Area(ST_Union(polygon)::geography), 0)::int
       FROM territories t
       WHERE t.owner_id = u.id
-    )
+    ) + u.bonus_points
   `);
 
   await pool.query(`
@@ -152,6 +157,16 @@ export async function ensureDatabaseSchema() {
       event_type TEXT NOT NULL, -- 'CAPTURE', 'STEAL', 'ORDA_JOIN', 'ORDA_CREATE'
       message TEXT NOT NULL,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS claimed_quests (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      quest_id TEXT NOT NULL,
+      claimed_at DATE NOT NULL DEFAULT CURRENT_DATE,
+      UNIQUE (user_id, quest_id, claimed_at)
     )
   `);
 }

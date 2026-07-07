@@ -507,6 +507,101 @@ apiRouter.get('/user/routes/:telegram_id', async (req, res) => {
     }
 });
 
+// --- QUESTS API ---
+const DAILY_QUESTS = [
+    { id: 'login', title: 'Разминка', description: 'Зайти в приложение', target: 1, reward: 500 },
+    { id: 'run_3km', title: 'Марафонец', description: 'Пробежать 3 км за сегодня', target: 3000, reward: 1500 },
+    { id: 'capture_1', title: 'Завоеватель', description: 'Сделать 1 пробежку сегодня', target: 1, reward: 1000 }
+];
+
+apiRouter.get('/user/quests/:telegram_id', async (req, res) => {
+    const telegramId = req.params.telegram_id;
+    try {
+        const userRes = await query(`SELECT id FROM users WHERE telegram_id = $1`, [telegramId]);
+        if (userRes.rowCount === 0) return res.status(404).json({ error: 'Not found' });
+        const userId = userRes.rows[0].id;
+
+        // Calculate progress for today
+        const runsTodayRes = await query(`
+            SELECT COUNT(*) as count, COALESCE(SUM(distance), 0) as total_distance 
+            FROM routes 
+            WHERE user_id = $1 AND DATE(created_at) = CURRENT_DATE
+        `, [userId]);
+        const runsCount = Number(runsTodayRes.rows[0].count);
+        const totalDistance = Number(runsTodayRes.rows[0].total_distance);
+
+        // Get claimed quests
+        const claimedRes = await query(`
+            SELECT quest_id FROM claimed_quests 
+            WHERE user_id = $1 AND claimed_at = CURRENT_DATE
+        `, [userId]);
+        const claimedIds = new Set(claimedRes.rows.map(r => r.quest_id));
+
+        const questsWithProgress = DAILY_QUESTS.map(q => {
+            let progress = 0;
+            if (q.id === 'login') progress = 1;
+            if (q.id === 'run_3km') progress = Math.min(totalDistance, q.target);
+            if (q.id === 'capture_1') progress = Math.min(runsCount, q.target);
+
+            return {
+                ...q,
+                progress,
+                completed: progress >= q.target,
+                claimed: claimedIds.has(q.id)
+            };
+        });
+
+        res.json(questsWithProgress);
+    } catch (e) {
+        console.error('Failed to get quests', e);
+        res.status(500).json({ error: 'Failed' });
+    }
+});
+
+apiRouter.post('/user/quests/claim', async (req, res) => {
+    const { telegram_id, quest_id } = req.body;
+    if (!telegram_id || !quest_id) return res.status(400).json({ error: 'Missing fields' });
+    try {
+        const userRes = await query(`SELECT id FROM users WHERE telegram_id = $1`, [String(telegram_id)]);
+        if (userRes.rowCount === 0) return res.status(404).json({ error: 'Not found' });
+        const userId = userRes.rows[0].id;
+
+        const quest = DAILY_QUESTS.find(q => q.id === quest_id);
+        if (!quest) return res.status(404).json({ error: 'Quest not found' });
+
+        // Record claim (will throw if already claimed due to UNIQUE constraint)
+        await query(`
+            INSERT INTO claimed_quests (user_id, quest_id) VALUES ($1, $2)
+        `, [userId, quest_id]);
+
+        // Add bonus points
+        await query(`
+            UPDATE users SET bonus_points = bonus_points + $1 WHERE id = $2
+        `, [quest.reward, userId]);
+
+        // Trigger recalculation (since bonus_points isn't actively updating influence here, we can force a fake update on a territory, or run the same logic)
+        await query(`
+            UPDATE users u
+            SET influence_points = (
+              SELECT COALESCE(ST_Area(ST_Union(polygon)::geography), 0)::int
+              FROM territories t
+              WHERE t.owner_id = u.id
+            ) + u.bonus_points
+            WHERE u.id = $1
+        `, [userId]);
+
+        await query(`INSERT INTO game_events (user_id, event_type, message) VALUES ($1, 'QUEST_CLAIM', 'выполнил задание: ' || $2)`, [userId, quest.title]);
+
+        res.json({ ok: true, reward: quest.reward });
+    } catch (e: any) {
+        if (e.code === '23505') {
+            return res.status(400).json({ error: 'Already claimed today' });
+        }
+        console.error('Failed to claim quest', e);
+        res.status(500).json({ error: 'Failed' });
+    }
+});
+
 // --- ORDA API ---
 
 apiRouter.get('/orda/leaderboard', async (req, res) => {

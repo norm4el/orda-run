@@ -8,6 +8,7 @@ import { ActivityFeed } from './components/ActivityFeed';
 import { Onboarding } from './components/Onboarding';
 import { PublicProfileModal } from './components/PublicProfileModal';
 import { HistoryModal } from './components/HistoryModal';
+import { QuestsTab } from './components/QuestsTab';
 
 export type AuthenticatedUser = {
   id: string;
@@ -241,6 +242,10 @@ function App() {
       
       {activeTab === 'leaderboard' && (
         <LeaderboardTab currentUser={currentUser} onUserClick={(id) => setViewingUserId(id)} />
+      )}
+
+      {activeTab === 'quests' && currentUser && (
+        <QuestsTab currentUser={currentUser} reloadMapData={reloadMapData} />
       )}
 
       <div style={{ display: activeTab === 'record' ? 'block' : 'none' }}>
