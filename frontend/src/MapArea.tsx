@@ -10,8 +10,12 @@ import type { AuthenticatedUser } from './App';
 
 const mapCenter: [number, number] = [71.43, 51.13];
 const mapZoom = 13;
-const darkStyleUrl = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
-const lightStyleUrl = 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json';
+// Use alternative public carto styles for free without keys if maptiler needs key
+const cartoThemes = {
+  dark: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+  light: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',
+  positron: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
+};
 const territorySourceId = 'territories-source';
 const territoryFillLayerId = 'territories-fill';
 const territoryLineLayerId = 'territories-line';
@@ -50,13 +54,14 @@ type MapAreaProps = {
   currentUser: AuthenticatedUser | null;
   liveCoordinates?: [number, number][];
   ordaMode?: boolean;
-  isDarkTheme?: boolean;
+  mapTheme?: 'dark' | 'light' | 'positron';
   isDrawingMode?: boolean;
   onPlannedAreaChange?: (area: number | null) => void;
   onPlannedPointsChange?: (points: [number, number][]) => void;
+  onTerritoryClick?: (ownerId: string) => void;
 };
 
-export function MapArea({ territories, routes, currentUser, liveCoordinates, ordaMode = false, isDarkTheme = true, isDrawingMode = false, onPlannedAreaChange, onPlannedPointsChange }: MapAreaProps) {
+export function MapArea({ territories, routes, currentUser, liveCoordinates, ordaMode = false, mapTheme = 'dark', isDrawingMode = false, onPlannedAreaChange, onPlannedPointsChange, onTerritoryClick }: MapAreaProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const territoriesRef = useRef<TerritoryFeatureCollection | null>(territories);
@@ -82,6 +87,11 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates, ord
   useEffect(() => {
     currentUserRef.current = currentUser;
   }, [currentUser]);
+
+  const onTerritoryClickRef = useRef(onTerritoryClick);
+  useEffect(() => {
+    onTerritoryClickRef.current = onTerritoryClick;
+  }, [onTerritoryClick]);
 
   const [drawnPoints, setDrawnPoints] = useState<[number, number][]>([]);
   const isDrawingModeRef = useRef<boolean>(isDrawingMode);
@@ -488,7 +498,7 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates, ord
 
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: darkStyleUrl,
+      style: cartoThemes[mapTheme] || cartoThemes.dark,
       center: mapCenter,
       zoom: mapZoom,
       minZoom: 2,
@@ -553,6 +563,24 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates, ord
     map.on('touchend', onTouchEnd);
     map.on('touchcancel', onTouchEnd);
 
+    map.on('click', territoryFillLayerId, (e) => {
+      if (isDrawingModeRef.current || isDragging) return;
+      if (e.features && e.features.length > 0) {
+        const ownerId = e.features[0].properties?.owner_id;
+        if (ownerId && onTerritoryClickRef.current) {
+          onTerritoryClickRef.current(ownerId);
+        }
+      }
+    });
+
+    // Change cursor on hover
+    map.on('mouseenter', territoryFillLayerId, () => {
+      if (!isDrawingModeRef.current) map.getCanvas().style.cursor = 'pointer';
+    });
+    map.on('mouseleave', territoryFillLayerId, () => {
+      if (!isDrawingModeRef.current) map.getCanvas().style.cursor = '';
+    });
+
     return () => {
       map.off('mousedown', onMouseDown);
       map.off('mousemove', onMouseMove);
@@ -609,7 +637,7 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates, ord
       return;
     }
 
-    const nextStyle = isDarkTheme ? darkStyleUrl : lightStyleUrl;
+    const nextStyle = cartoThemes[mapTheme] || cartoThemes.dark;
 
     map.setStyle(nextStyle);
     map.once('style.load', () => {
@@ -619,7 +647,7 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates, ord
       syncThemePaint(map);
       syncPlannedRoute(map, drawnPoints);
     });
-  }, [isDarkTheme]);
+  }, [mapTheme]);
 
   return (
     <div style={styles.shell}>

@@ -155,7 +155,7 @@ apiRouter.get('/territories', async (_req, res) => {
 apiRouter.get('/events', async (_req, res) => {
     try {
         const events = await query(`
-            SELECT e.id, e.event_type, e.message, e.created_at, u.display_name
+            SELECT e.id, e.user_id, e.event_type, e.message, e.created_at, u.display_name
             FROM game_events e
             LEFT JOIN users u ON e.user_id = u.id
             ORDER BY e.created_at DESC
@@ -416,9 +416,6 @@ apiRouter.put('/user/update', async (req, res) => {
 
 apiRouter.get('/leaderboard', async (req, res) => {
     try {
-        // We get actual users from DB so the current user will be at the top if they are the first one returned by ASC 
-        // (or we can just ORDER BY id to get a stable list where the current user is guaranteed to be there).
-        // Let's just return real users with fake scores.
         const result = await query<{ id: string; display_name: string; influence_points: number }>(
             `SELECT id, display_name, influence_points FROM users ORDER BY influence_points DESC, created_at ASC LIMIT 10`
         );
@@ -433,6 +430,59 @@ apiRouter.get('/leaderboard', async (req, res) => {
     } catch (error) {
         console.error('leaderboard error:', error);
         res.status(500).json({ error: 'Failed to get leaderboard' });
+    }
+});
+
+apiRouter.get('/user/stats/:telegram_id', async (req, res) => {
+    const telegramId = req.params.telegram_id;
+    try {
+        const userRes = await query(`SELECT id FROM users WHERE telegram_id = $1`, [telegramId]);
+        if (userRes.rowCount === 0) return res.json({ runs: 0, distance: 0 });
+        
+        const userId = userRes.rows[0].id;
+        // Mock distance calculation, since we don't have explicit distance column 
+        // We will just return routes_count and a fake distance multiplier (e.g. 5km per run)
+        const routesRes = await query(`SELECT COUNT(*) as cnt FROM routes WHERE user_id = $1`, [userId]);
+        const runs = parseInt(routesRes.rows[0]?.cnt || '0', 10);
+        const distance = runs * 5.4; // 5.4km per run avg
+
+        res.json({ runs, distance });
+    } catch (e) {
+        console.error('Failed to get stats', e);
+        res.status(500).json({ error: 'Failed' });
+    }
+});
+
+apiRouter.get('/user/public/:id', async (req, res) => {
+    const userId = req.params.id;
+    try {
+        const userRes = await query(`
+            SELECT u.id, u.display_name, u.influence_points, u.color_self, o.name as orda_name
+            FROM users u
+            LEFT JOIN ordas o ON u.orda_id = o.id
+            WHERE u.id = $1
+        `, [userId]);
+
+        if (userRes.rowCount === 0) return res.status(404).json({ error: 'Not found' });
+        
+        const user = userRes.rows[0];
+        
+        const routesRes = await query(`SELECT COUNT(*) as cnt FROM routes WHERE user_id = $1`, [userId]);
+        const runs = parseInt(routesRes.rows[0]?.cnt || '0', 10);
+        const distance = runs * 5.4; 
+
+        res.json({
+            id: user.id,
+            displayName: user.display_name || 'Игрок',
+            influencePoints: user.influence_points,
+            color: user.color_self,
+            ordaName: user.orda_name,
+            runs,
+            distance
+        });
+    } catch (e) {
+        console.error('Failed to get public profile', e);
+        res.status(500).json({ error: 'Failed' });
     }
 });
 

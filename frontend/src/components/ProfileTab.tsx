@@ -6,8 +6,8 @@ type Props = {
   currentUser: AuthenticatedUser | null;
   onUserUpdate: (user: AuthenticatedUser) => void;
   reloadMapData: () => void;
-  isDarkTheme?: boolean;
-  setIsDarkTheme?: (val: boolean | ((prev: boolean) => boolean)) => void;
+  mapTheme?: 'dark' | 'light' | 'positron';
+  setMapTheme?: (val: 'dark' | 'light' | 'positron') => void;
   isSoundEnabled?: boolean;
   setIsSoundEnabled?: (val: boolean | ((prev: boolean) => boolean)) => void;
 };
@@ -16,8 +16,8 @@ export function ProfileTab({
   currentUser, 
   onUserUpdate, 
   reloadMapData,
-  isDarkTheme = true,
-  setIsDarkTheme,
+  mapTheme = 'dark',
+  setMapTheme,
   isSoundEnabled = true,
   setIsSoundEnabled
 }: Props) {
@@ -30,6 +30,16 @@ export function ProfileTab({
   const [ordas, setOrdas] = useState<{ id: string; name: string; member_count: number }[]>([]);
   const [newOrdaName, setNewOrdaName] = useState('');
   const [isOrdaLoading, setIsOrdaLoading] = useState(false);
+  const [userStats, setUserStats] = useState({ runs: 0, distance: 0 });
+
+  useEffect(() => {
+    if (currentUser?.telegramId) {
+      fetch(`/api/user/stats/${currentUser.telegramId}`)
+        .then(res => res.json())
+        .then(data => setUserStats(data))
+        .catch(console.error);
+    }
+  }, [currentUser?.telegramId]);
 
   useEffect(() => {
     if (!currentUser?.ordaId) {
@@ -240,11 +250,11 @@ export function ProfileTab({
         <h3 style={{ fontSize: '14px', fontWeight: '500', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '20px' }}>Статистика</h3>
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '24px', fontWeight: '500', color: 'var(--text-main)', marginBottom: '4px' }}>0</div>
+            <div style={{ fontSize: '24px', fontWeight: '500', color: 'var(--text-main)', marginBottom: '4px' }}>{userStats.runs}</div>
             <div style={{ fontSize: '12px', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Пробежки</div>
           </div>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '24px', fontWeight: '500', color: 'var(--text-main)', marginBottom: '4px' }}>0.0</div>
+            <div style={{ fontSize: '24px', fontWeight: '500', color: 'var(--text-main)', marginBottom: '4px' }}>{userStats.distance.toFixed(1)}</div>
             <div style={{ fontSize: '12px', color: 'var(--text-dim)', textTransform: 'uppercase' }}>КМ</div>
           </div>
           <div style={{ textAlign: 'center' }}>
@@ -260,14 +270,18 @@ export function ProfileTab({
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '12px 15px', borderRadius: '8px' }}>
             <div>
               <div style={{ fontWeight: '500', color: 'var(--text-main)' }}>Тема карты</div>
-              <div style={{ fontSize: '12px', color: 'var(--text-dim)' }}>{isDarkTheme ? 'Темная' : 'Светлая'}</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-dim)' }}>{mapTheme === 'dark' ? 'Темная' : mapTheme === 'light' ? 'Светлая' : 'Positron'}</div>
             </div>
-            <button 
-              onClick={() => setIsDarkTheme?.(prev => !prev)} 
-              style={{ background: 'transparent', border: '1px solid var(--primary)', color: 'var(--primary)', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold' }}
-            >
-              СМЕНИТЬ
-            </button>
+            <div style={{ display: 'flex', gap: '5px' }}>
+              <button 
+                onClick={() => setMapTheme?.('dark')} 
+                style={{ background: mapTheme === 'dark' ? 'var(--primary)' : 'transparent', border: '1px solid var(--primary)', color: mapTheme === 'dark' ? '#000' : 'var(--primary)', padding: '6px 10px', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold' }}
+              >ТЕМНАЯ</button>
+              <button 
+                onClick={() => setMapTheme?.('positron')} 
+                style={{ background: mapTheme === 'positron' ? 'var(--primary)' : 'transparent', border: '1px solid var(--primary)', color: mapTheme === 'positron' ? '#000' : 'var(--primary)', padding: '6px 10px', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold' }}
+              >СВЕТЛАЯ</button>
+            </div>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '12px 15px', borderRadius: '8px' }}>
             <div>
@@ -287,9 +301,26 @@ export function ProfileTab({
       <div style={{ marginBottom: '40px' }}>
         <h3 style={{ fontSize: '14px', fontWeight: '500', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '20px' }}>Достижения</h3>
         <div style={{ display: 'flex', gap: '15px' }}>
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} style={{ width: '60px', height: '60px', border: '1px solid rgba(255,255,255,0.1)', transform: 'rotate(45deg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ transform: 'rotate(-45deg)', color: 'var(--text-dim)' }}>{i === 1 ? '🏇' : '🔒'}</div>
+          {[
+            { id: 1, icon: '🏇', unlocked: true, desc: 'Начало пути' },
+            { id: 2, icon: '🗺️', unlocked: userStats.runs > 0, desc: 'Первая пробежка' },
+            { id: 3, icon: '⚔️', unlocked: userStats.distance > 10, desc: 'Пробежал 10км' },
+            { id: 4, icon: '👑', unlocked: !!currentUser.ordaId, desc: 'В Орде' }
+          ].map(ach => (
+            <div key={ach.id} title={ach.desc} style={{ 
+              width: '60px', height: '60px', 
+              border: `1px solid ${ach.unlocked ? 'var(--primary)' : 'rgba(255,255,255,0.1)'}`, 
+              background: ach.unlocked ? 'rgba(216, 167, 96, 0.1)' : 'transparent',
+              transform: 'rotate(45deg)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: ach.unlocked ? '0 0 15px rgba(216, 167, 96, 0.2)' : 'none',
+              transition: 'all 0.3s ease'
+            }}>
+              <div style={{ 
+                transform: 'rotate(-45deg)', 
+                color: ach.unlocked ? '#fff' : 'var(--text-dim)',
+                fontSize: '24px',
+                filter: ach.unlocked ? 'none' : 'grayscale(100%) opacity(0.5)'
+              }}>{ach.icon}</div>
             </div>
           ))}
         </div>

@@ -2,13 +2,18 @@ import { useEffect, useState } from 'react';
 
 type GameEvent = {
   id: string;
+  user_id: string;
   event_type: string;
   message: string;
   created_at: string;
   display_name: string | null;
 };
 
-export function ActivityFeed() {
+type Props = {
+  onUserClick?: (userId: string) => void;
+};
+
+export function ActivityFeed({ onUserClick }: Props) {
   const [events, setEvents] = useState<GameEvent[]>([]);
   const [isVisible] = useState(true);
 
@@ -55,7 +60,7 @@ export function ActivityFeed() {
         if (ev.event_type === 'ORDA_JOIN') { color = '#3b82f6'; icon = '🤝'; }
 
         return (
-          <div key={ev.id} style={{
+          <div key={ev.id} onClick={() => ev.display_name && ev.event_type !== 'ORDA_CREATE' && ev.user_id && onUserClick?.(ev.user_id)} style={{
             background: 'rgba(30, 41, 59, 0.85)',
             backdropFilter: 'blur(10px)',
             border: `1px solid ${color}40`,
@@ -68,7 +73,8 @@ export function ActivityFeed() {
             alignItems: 'center',
             gap: '10px',
             boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
-            animation: 'slideIn 0.5s ease-out forwards'
+            animation: 'slideIn 0.5s ease-out forwards',
+            cursor: 'pointer'
           }}>
             <span style={{ fontSize: '18px' }}>{icon}</span>
             <span style={{ flex: 1 }}>

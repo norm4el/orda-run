@@ -10,9 +10,10 @@ type LeaderboardEntry = {
 
 type Props = {
   currentUser: AuthenticatedUser | null;
+  onUserClick?: (id: string) => void;
 };
 
-export function LeaderboardTab({ currentUser }: Props) {
+export function LeaderboardTab({ currentUser, onUserClick }: Props) {
   const [data, setData] = useState<LeaderboardEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [mode, setMode] = useState<'personal' | 'orda'>('personal');
@@ -77,10 +78,12 @@ export function LeaderboardTab({ currentUser }: Props) {
             <div 
               key={item.id} 
               className="leaderboard-item"
+              onClick={() => onUserClick?.(item.id)}
               style={{
                 borderColor: (mode === 'personal' && item.id === currentUser?.id) || (mode === 'orda' && item.id === currentUser?.ordaId) ? 'var(--primary)' : 'transparent',
                 background: (mode === 'personal' && item.id === currentUser?.id) || (mode === 'orda' && item.id === currentUser?.ordaId) ? 'rgba(216, 167, 96, 0.05)' : 'transparent',
-                borderRadius: '8px'
+                borderRadius: '8px',
+                cursor: onUserClick ? 'pointer' : 'default'
               }}
             >
               <span className="leaderboard-rank" style={{ color: item.id === currentUser?.id ? 'var(--primary)' : undefined }}>{index + 1}</span>

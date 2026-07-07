@@ -6,6 +6,7 @@ import { LeaderboardTab } from './components/LeaderboardTab';
 import { RecordTab } from './components/RecordTab';
 import { ActivityFeed } from './components/ActivityFeed';
 import { Onboarding } from './components/Onboarding';
+import { PublicProfileModal } from './components/PublicProfileModal';
 
 export type AuthenticatedUser = {
   id: string;
@@ -41,12 +42,13 @@ function App() {
   const [activeTab, setActiveTab] = useState<TabType>('map');
   const [liveCoordinates, setLiveCoordinates] = useState<[number, number][]>([]);
   const [ordaMode, setOrdaMode] = useState<boolean>(false);
-  const [isDarkTheme, setIsDarkTheme] = useState(true);
+  const [mapTheme, setMapTheme] = useState<'dark' | 'light' | 'positron'>('dark');
   const [isSoundEnabled, setIsSoundEnabled] = useState(true);
   const [isDrawingMode, setIsDrawingMode] = useState(false);
   const [plannedArea, setPlannedArea] = useState<number | null>(null);
   const [plannedPoints, setPlannedPoints] = useState<[number, number][]>([]);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [viewingUserId, setViewingUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const hasCompletedOnboarding = localStorage.getItem('onboardingCompleted');
@@ -193,23 +195,27 @@ function App() {
         }} />
       )}
       <div className={`map-container ${activeTab !== 'map' && activeTab !== 'record' ? 'hidden-map' : ''}`}>
-        <MapArea territories={territories} routes={routes} currentUser={currentUser} liveCoordinates={liveCoordinates} ordaMode={ordaMode} isDarkTheme={isDarkTheme} isDrawingMode={isDrawingMode} onPlannedAreaChange={setPlannedArea} onPlannedPointsChange={setPlannedPoints} />
+        <MapArea territories={territories} routes={routes} currentUser={currentUser} liveCoordinates={liveCoordinates} ordaMode={ordaMode} mapTheme={mapTheme} isDrawingMode={isDrawingMode} onPlannedAreaChange={setPlannedArea} onPlannedPointsChange={setPlannedPoints} onTerritoryClick={(id) => setViewingUserId(id)} />
       </div>
+      
+      {viewingUserId && (
+        <PublicProfileModal userId={viewingUserId} onClose={() => setViewingUserId(null)} />
+      )}
       
       {activeTab === 'profile' && (
         <ProfileTab 
           currentUser={currentUser} 
           onUserUpdate={setCurrentUser} 
           reloadMapData={reloadMapData} 
-          isDarkTheme={isDarkTheme}
-          setIsDarkTheme={setIsDarkTheme}
+          mapTheme={mapTheme}
+          setMapTheme={setMapTheme}
           isSoundEnabled={isSoundEnabled}
           setIsSoundEnabled={setIsSoundEnabled}
         />
       )}
       
       {activeTab === 'leaderboard' && (
-        <LeaderboardTab currentUser={currentUser} />
+        <LeaderboardTab currentUser={currentUser} onUserClick={(id) => setViewingUserId(id)} />
       )}
 
       {activeTab === 'record' && (
@@ -296,7 +302,7 @@ function App() {
             </div>
           )}
 
-          {currentUser && <ActivityFeed />}
+          {currentUser && <ActivityFeed onUserClick={(id) => setViewingUserId(id)} />}
 
           {currentUser && (
             <div style={{
