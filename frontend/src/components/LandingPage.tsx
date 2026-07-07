@@ -1,17 +1,14 @@
-
-
 export function LandingPage() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)',
+      background: 'var(--bg)',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
       padding: '20px',
-      color: '#fff',
-      fontFamily: 'Inter, system-ui, sans-serif',
+      color: 'var(--text-main)',
       textAlign: 'center',
       overflow: 'hidden',
       position: 'relative'
@@ -23,7 +20,7 @@ export function LandingPage() {
         left: '10%',
         width: '300px',
         height: '300px',
-        background: 'radial-gradient(circle, rgba(216,167,96,0.15) 0%, rgba(0,0,0,0) 70%)',
+        background: 'radial-gradient(circle, rgba(216,167,96,0.15) 0%, rgba(0,0,0,0) 70%)', /* var(--primary) */
         filter: 'blur(40px)',
         zIndex: 0
       }}></div>
@@ -33,26 +30,26 @@ export function LandingPage() {
         right: '10%',
         width: '400px',
         height: '400px',
-        background: 'radial-gradient(circle, rgba(168,85,247,0.15) 0%, rgba(0,0,0,0) 70%)',
+        background: 'radial-gradient(circle, rgba(44,90,90,0.2) 0%, rgba(0,0,0,0) 70%)', /* var(--secondary) */
         filter: 'blur(60px)',
         zIndex: 0
       }}></div>
 
       <div style={{
         zIndex: 1,
-        background: 'rgba(30, 41, 59, 0.6)',
-        backdropFilter: 'blur(20px)',
-        border: '1px solid rgba(255,255,255,0.1)',
+        background: 'var(--surface)',
+        border: '1px solid rgba(216,167,96,0.2)', /* Subtle primary border */
         borderRadius: '30px',
         padding: '50px 30px',
         maxWidth: '500px',
         width: '100%',
-        boxShadow: '0 20px 50px rgba(0,0,0,0.5)'
+        boxShadow: '0 20px 50px rgba(0,0,0,0.8)'
       }}>
         <div style={{
           fontSize: '70px',
           marginBottom: '20px',
-          animation: 'float 3s ease-in-out infinite'
+          animation: 'float 3s ease-in-out infinite',
+          filter: 'drop-shadow(0 10px 15px rgba(216,167,96,0.3))'
         }}>
           🏃‍♂️
         </div>
@@ -60,7 +57,7 @@ export function LandingPage() {
           fontSize: '42px',
           fontWeight: '900',
           marginBottom: '16px',
-          background: 'linear-gradient(90deg, #d8a760, #a855f7)',
+          background: 'linear-gradient(90deg, #d8a760, #ffdd99)',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
           letterSpacing: '-1px'
@@ -69,7 +66,7 @@ export function LandingPage() {
         </h1>
         <p style={{
           fontSize: '18px',
-          color: '#cbd5e1',
+          color: 'var(--text-dim)',
           lineHeight: '1.6',
           marginBottom: '40px'
         }}>
@@ -86,14 +83,14 @@ export function LandingPage() {
             alignItems: 'center',
             justifyContent: 'center',
             gap: '12px',
-            background: 'linear-gradient(90deg, #2563eb, #3b82f6)',
-            color: '#fff',
+            background: 'var(--primary)',
+            color: '#000',
             textDecoration: 'none',
             padding: '18px 32px',
             borderRadius: '100px',
             fontSize: '18px',
             fontWeight: 'bold',
-            boxShadow: '0 10px 25px rgba(37, 99, 235, 0.4)',
+            boxShadow: '0 10px 25px rgba(216,167,96,0.3)',
             transition: 'transform 0.2s, box-shadow 0.2s',
             marginBottom: '30px',
             width: '100%',
@@ -101,11 +98,11 @@ export function LandingPage() {
           }}
           onMouseOver={(e) => {
             e.currentTarget.style.transform = 'translateY(-2px)';
-            e.currentTarget.style.boxShadow = '0 15px 30px rgba(37, 99, 235, 0.6)';
+            e.currentTarget.style.boxShadow = '0 15px 30px rgba(216,167,96,0.5)';
           }}
           onMouseOut={(e) => {
             e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 10px 25px rgba(37, 99, 235, 0.4)';
+            e.currentTarget.style.boxShadow = '0 10px 25px rgba(216,167,96,0.3)';
           }}
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
@@ -136,7 +133,7 @@ export function LandingPage() {
 }
 
 const socialLinkStyle = {
-  color: '#94a3b8',
+  color: 'var(--text-main)',
   textDecoration: 'none',
   fontSize: '14px',
   fontWeight: '500',
