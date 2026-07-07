@@ -78,7 +78,7 @@ export function LandingPage() {
         </p>
 
         <a 
-          href="https://t.me/orda_run_bot" 
+          href="https://t.me/ordarunbot" 
           target="_blank"
           rel="noopener noreferrer"
           style={{
@@ -115,11 +115,11 @@ export function LandingPage() {
         </a>
 
         <div style={{ display: 'flex', justifyContent: 'center', gap: '20px' }}>
-          <a href="https://t.me/orda_run_news" target="_blank" rel="noopener noreferrer" style={socialLinkStyle}>
+          <a href="https://t.me/ordarun" target="_blank" rel="noopener noreferrer" style={socialLinkStyle}>
             📢 Новости
           </a>
-          <a href="https://t.me/orda_run_chat" target="_blank" rel="noopener noreferrer" style={socialLinkStyle}>
-            💬 Чат игроков
+          <a href="https://instagram.com/orda_run" target="_blank" rel="noopener noreferrer" style={socialLinkStyle}>
+            📸 Instagram
           </a>
         </div>
       </div>
