@@ -30,8 +30,9 @@ if (spaDirectory) {
 
 app.use('/api', apiRouter);
 app.use('/api/strava', stravaRouter);
-app.use(webhookPath, webhookCallback(bot, 'express'));
-
+if (process.env.BOT_WEBHOOK_URL) {
+  app.use(webhookPath, webhookCallback(bot, 'express'));
+}
 app.get('*', (_req, res) => {
   if (!spaDirectory) {
     res.status(404).send('Frontend build not found');
