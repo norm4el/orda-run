@@ -220,7 +220,7 @@ function App() {
       )}
       
       <AppTour 
-        run={showTour && !showOnboarding} 
+        run={showTour && !showOnboarding && !!currentUser} 
         onFinish={() => {
           localStorage.setItem('tourCompleted', 'true');
           (window.Telegram?.WebApp as any)?.CloudStorage?.setItem('tourCompleted', 'true');
