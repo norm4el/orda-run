@@ -327,7 +327,22 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates, ord
 
   const syncTerritories = (map: maplibregl.Map) => {
     const source = map.getSource(territorySourceId) as maplibregl.GeoJSONSource | undefined;
-    source?.setData(territoriesRef.current ?? emptyTerritoryData);
+    const data = territoriesRef.current;
+    
+    if (source && data) {
+      source.setData({
+        ...data,
+        features: data.features.map(f => ({
+          ...f,
+          properties: {
+            ...f.properties,
+            displayNameWithRank: `${f.properties?.owner_display_name || 'Игрок'}\n[${getRankFromPoints(f.properties?.owner_influence_points || 0).title}]`
+          }
+        }))
+      });
+    } else if (source) {
+      source.setData(emptyTerritoryData);
+    }
   };
 
   const syncRoutes = (map: maplibregl.Map) => {

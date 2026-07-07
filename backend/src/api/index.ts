@@ -152,6 +152,22 @@ apiRouter.get('/territories', async (_req, res) => {
     res.json(result.rows);
 });
 
+apiRouter.get('/events', async (_req, res) => {
+    try {
+        const events = await query(`
+            SELECT e.id, e.event_type, e.message, e.created_at, u.display_name
+            FROM game_events e
+            LEFT JOIN users u ON e.user_id = u.id
+            ORDER BY e.created_at DESC
+            LIMIT 50
+        `);
+        res.json(events.rows);
+    } catch (err) {
+        console.error('Failed to fetch events', err);
+        res.status(500).json({ error: 'Failed to fetch events' });
+    }
+});
+
 apiRouter.get('/routes', async (_req, res) => {
     try {
         const result = await query<{
@@ -241,6 +257,8 @@ apiRouter.post('/test-capture', async (req, res) => {
         const userId = userResult.rows[0].id;
         const result = await captureTerritory(userId, polylineString);
 
+        await query(`INSERT INTO game_events (user_id, event_type, message) VALUES ($1, 'CAPTURE', 'захватил новую территорию')`, [userId]);
+
         if (result.stolen_victims_telegram_ids && result.stolen_victims_telegram_ids.length > 0) {
             const { bot } = await import('../bot');
             const userDispNameResult = await query<{ display_name: string }>(
@@ -248,6 +266,8 @@ apiRouter.post('/test-capture', async (req, res) => {
                 [userId]
             );
             const thiefName = userDispNameResult.rows[0]?.display_name || 'Неизвестный игрок';
+
+            await query(`INSERT INTO game_events (user_id, event_type, message) VALUES ($1, 'STEAL', 'отвоевал часть чужой территории!')`, [userId]);
 
             for (const victimTgId of result.stolen_victims_telegram_ids) {
                 if (victimTgId && victimTgId !== String(telegramId)) {
@@ -305,6 +325,8 @@ apiRouter.post('/runs/manual', async (req, res) => {
 
         const result = await captureTerritory(userId, polylineString);
 
+        await query(`INSERT INTO game_events (user_id, event_type, message) VALUES ($1, 'CAPTURE', 'захватил новую территорию')`, [userId]);
+
         if (result.stolen_victims_telegram_ids && result.stolen_victims_telegram_ids.length > 0) {
             const { bot } = await import('../bot');
             const userDispNameResult = await query<{ display_name: string }>(
@@ -312,6 +334,8 @@ apiRouter.post('/runs/manual', async (req, res) => {
                 [userId]
             );
             const thiefName = userDispNameResult.rows[0]?.display_name || 'Неизвестный игрок';
+
+            await query(`INSERT INTO game_events (user_id, event_type, message) VALUES ($1, 'STEAL', 'отвоевал часть чужой территории!')`, [userId]);
 
             for (const victimTgId of result.stolen_victims_telegram_ids) {
                 if (victimTgId && victimTgId !== String(telegramId)) {
@@ -465,6 +489,7 @@ apiRouter.post('/orda/create', async (req, res) => {
         const ordaId = insertRes.rows[0].id;
 
         await pool.query('UPDATE users SET orda_id = $1 WHERE id = $2', [ordaId, userId]);
+        await pool.query(`INSERT INTO game_events (user_id, event_type, message) VALUES ($1, 'ORDA_CREATE', 'создал новую Орду: ' || $2)`, [userId, name]);
         res.json({ ok: true, ordaId });
     } catch (e) {
         console.error(e);
@@ -480,7 +505,11 @@ apiRouter.post('/orda/join', async (req, res) => {
         if (userRes.rowCount === 0) return res.status(404).json({ error: 'User not found' });
         const userId = userRes.rows[0].id;
 
+        const ordaRes = await pool.query('SELECT name FROM ordas WHERE id = $1', [orda_id]);
+        const ordaName = ordaRes.rows[0]?.name || 'Орда';
+        
         await pool.query('UPDATE users SET orda_id = $1 WHERE id = $2', [orda_id, userId]);
+        await pool.query(`INSERT INTO game_events (user_id, event_type, message) VALUES ($1, 'ORDA_JOIN', 'вступил в Орду: ' || $2)`, [userId, ordaName]);
         res.json({ ok: true });
     } catch (e) {
         console.error(e);

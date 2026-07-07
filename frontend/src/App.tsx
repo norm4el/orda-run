@@ -4,6 +4,8 @@ import { BottomNav, type TabType } from './components/BottomNav';
 import { ProfileTab } from './components/ProfileTab';
 import { LeaderboardTab } from './components/LeaderboardTab';
 import { RecordTab } from './components/RecordTab';
+import { ActivityFeed } from './components/ActivityFeed';
+import { Onboarding } from './components/Onboarding';
 
 export type AuthenticatedUser = {
   id: string;
@@ -44,6 +46,14 @@ function App() {
   const [isDrawingMode, setIsDrawingMode] = useState(false);
   const [plannedArea, setPlannedArea] = useState<number | null>(null);
   const [plannedPoints, setPlannedPoints] = useState<[number, number][]>([]);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  useEffect(() => {
+    const hasCompletedOnboarding = localStorage.getItem('onboardingCompleted');
+    if (!hasCompletedOnboarding) {
+      setShowOnboarding(true);
+    }
+  }, []);
 
   useEffect(() => {
     const telegram = window.Telegram?.WebApp;
@@ -176,6 +186,12 @@ function App() {
 
   return (
     <main className="app-shell">
+      {showOnboarding && (
+        <Onboarding onComplete={() => {
+          localStorage.setItem('onboardingCompleted', 'true');
+          setShowOnboarding(false);
+        }} />
+      )}
       <div className={`map-container ${activeTab !== 'map' && activeTab !== 'record' ? 'hidden-map' : ''}`}>
         <MapArea territories={territories} routes={routes} currentUser={currentUser} liveCoordinates={liveCoordinates} ordaMode={ordaMode} isDarkTheme={isDarkTheme} isDrawingMode={isDrawingMode} onPlannedAreaChange={setPlannedArea} onPlannedPointsChange={setPlannedPoints} />
       </div>
@@ -279,6 +295,8 @@ function App() {
               </div>
             </div>
           )}
+
+          {currentUser && <ActivityFeed />}
 
           {currentUser && (
             <div style={{
