@@ -16,13 +16,33 @@ type Props = {
 export function ActivityFeed({ onUserClick }: Props) {
   const [events, setEvents] = useState<GameEvent[]>([]);
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(() => {
-    const saved = sessionStorage.getItem('dismissedEvents');
+    const saved = localStorage.getItem('dismissedEvents');
     return saved ? new Set(JSON.parse(saved)) : new Set();
   });
   const touchStartX = useRef<number | null>(null);
 
   useEffect(() => {
-    sessionStorage.setItem('dismissedEvents', JSON.stringify(Array.from(dismissedIds)));
+    const telegram: any = window.Telegram?.WebApp;
+    if (telegram?.CloudStorage) {
+      telegram.CloudStorage.getItem('dismissedEvents', (err: any, val: string) => {
+        if (!err && val) {
+          try {
+            const parsed = JSON.parse(val);
+            setDismissedIds(prev => new Set([...prev, ...parsed]));
+          } catch (e) {}
+        }
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (dismissedIds.size === 0) return;
+    const val = JSON.stringify(Array.from(dismissedIds));
+    localStorage.setItem('dismissedEvents', val);
+    const telegram: any = window.Telegram?.WebApp;
+    if (telegram?.CloudStorage) {
+      telegram.CloudStorage.setItem('dismissedEvents', val);
+    }
   }, [dismissedIds]);
 
   useEffect(() => {

@@ -129,9 +129,11 @@ export function AppTour({ run, onFinish }: Props) {
         }
         .react-joyride__overlay {
           z-index: 99999 !important;
+          background-color: transparent !important;
         }
         .react-joyride__spotlight {
           z-index: 99999 !important;
+          background-color: transparent !important;
         }
         .react-joyride__tooltip {
           z-index: 100000 !important;
@@ -145,10 +147,15 @@ export function AppTour({ run, onFinish }: Props) {
           scrollToFirstStep: true,
           showProgress: false,
           showSkipButton: false,
-          spotlightClicks: true,
+          spotlightClicks: false,
           disableOverlayClose: true,
           callback: handleJoyrideCallback,
           tooltipComponent: CustomTooltip,
+          styles: {
+            overlay: {
+              backgroundColor: 'transparent',
+            }
+          }
         } as any}
       />
     </>
