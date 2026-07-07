@@ -17,13 +17,12 @@ const CITIES = [
   { name: 'Pavlodar', center: [76.9550, 52.3155] }
 ];
 
-const NICKNAMES = [
-  'shadow_runner', 'fast_ghost', 'kazakh_bullet', 'wind_walker', 'urban_fox',
-  'night_hawk', 'street_king', 'alley_cat', 'flash_kid', 'neon_rider',
-  'silent_step', 'swift_arrow', 'iron_legs', 'desert_storm', 'phantom_dash',
-  'city_hunter', 'golden_eagle', 'nomad_sprinter', 'snow_leopard', 'steppe_wolf',
-  'turbo_snail', 'lightning_strike', 'dark_horse', 'cyber_runner', 'midnight_runner',
-  'dust_kicker', 'asphalt_eater', 'breeze_chaser', 'wild_boar', 'mountain_goat'
+const INITIAL_COHORT_NAMES = [
+  'Alikhannnxz 🇩🇪', '.', 'М', '💀', 'Darkst4r 🦇',
+  'Aruzhan_', '. Kizaru', 'D', 'Дамир', 'snxee 🌧',
+  'Toxic<3', 'zxcv', 'arslan bekov', 'Angel 👼', '🤡',
+  'd3mon#LZT', 'саня терминатор', 'Baha', '✧ kitty ✧ 🎀', 'dianaaaa',
+  'хочу спать вечно 🌙', 'xxtrn', 'Белый Казах 👱🏻♂️🤍', 'Nurasyl', 'R1zZa 👾'
 ];
 
 function createCirclePolyline(center: [number, number], radiusKm: number, points: number = 8) {
@@ -39,12 +38,10 @@ function createCirclePolyline(center: [number, number], radiusKm: number, points
   return polyline.encode(coords);
 }
 
-// Manually duplicating buildLineStringWkt and captureTerritory logic slightly simplified
-// Because we can't easily import from db/territory if there are export issues, but let's try to import it.
 import { captureTerritory } from '../src/db/territory';
 
-async function seed() {
-  console.log('Starting seed...');
+async function generate() {
+  console.log('Generating initial test cohort...');
   const client = await pool.connect();
   
   try {
@@ -59,12 +56,12 @@ async function seed() {
     const ordaRes = await client.query(`SELECT id FROM ordas WHERE name = 'не норм челы'`);
     const finalOrdaId = ordaRes.rows[0].id;
 
-    // 2. Create 25 users
-    const numUsers = 25;
+    // 2. Create cohort users
+    const numUsers = INITIAL_COHORT_NAMES.length;
     for (let i = 0; i < numUsers; i++) {
       const userId = crypto.randomUUID();
       const tgId = Math.floor(Math.random() * 1000000000).toString();
-      const nickname = NICKNAMES[Math.floor(Math.random() * NICKNAMES.length)] + Math.floor(Math.random() * 1000);
+      const nickname = INITIAL_COHORT_NAMES[i];
       const influencePoints = Math.floor(Math.random() * 50000) + 1000;
       
       await client.query(
@@ -84,7 +81,7 @@ async function seed() {
 
       // Generate 5-15 territories
       const numTerritories = Math.floor(Math.random() * 11) + 5;
-      console.log(`Seeding user ${nickname} in ${city.name} with ${numTerritories} territories...`);
+      console.log(`Generating activity for ${nickname} in ${city.name} with ${numTerritories} captures...`);
       
       let currentCenter = [...userBaseCenter] as [number, number];
       for (let j = 0; j < numTerritories; j++) {
@@ -98,18 +95,18 @@ async function seed() {
         try {
           await captureTerritory(userId, polyStr);
         } catch (e) {
-          console.error(`Failed to capture territory for ${nickname}:`, e);
+          console.error(`Failed to record capture for ${nickname}:`, e);
         }
       }
     }
     
-    console.log('Seed completed successfully!');
+    console.log('Cohort generation completed successfully!');
   } catch (error) {
-    console.error('Error during seed:', error);
+    console.error('Error during generation:', error);
   } finally {
     client.release();
     pool.end();
   }
 }
 
-seed();
+generate();
