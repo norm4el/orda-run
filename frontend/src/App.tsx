@@ -64,19 +64,28 @@ function App() {
     const localOnboarding = localStorage.getItem('onboardingCompleted');
     const localTour = localStorage.getItem('tourCompleted');
     
-    if (telegram?.CloudStorage) {
-      telegram.CloudStorage.getItem('onboardingCompleted', (_err: any, val: string) => {
-        const isOnboardingDone = (val === 'true' || localOnboarding === 'true');
-        if (isOnboardingDone) {
-          telegram.CloudStorage.getItem('tourCompleted', (_err2: any, tourVal: string) => {
-            const isTourDone = (tourVal === 'true' || localTour === 'true');
-            if (!isTourDone) setShowTour(true);
-          });
-        } else {
-          setShowOnboarding(true);
-        }
-      });
-    } else {
+    let usedCloudStorage = false;
+    try {
+      if (telegram?.isVersionAtLeast && telegram.isVersionAtLeast('6.9') && telegram.CloudStorage) {
+        usedCloudStorage = true;
+        telegram.CloudStorage.getItem('onboardingCompleted', (_err: any, val: string) => {
+          const isOnboardingDone = (val === 'true' || localOnboarding === 'true');
+          if (isOnboardingDone) {
+            telegram.CloudStorage.getItem('tourCompleted', (_err2: any, tourVal: string) => {
+              const isTourDone = (tourVal === 'true' || localTour === 'true');
+              if (!isTourDone) setShowTour(true);
+            });
+          } else {
+            setShowOnboarding(true);
+          }
+        });
+      }
+    } catch (e) {
+      console.warn("CloudStorage error", e);
+      usedCloudStorage = false;
+    }
+
+    if (!usedCloudStorage) {
       const hasCompletedOnboarding = localStorage.getItem('onboardingCompleted');
       const hasSeenTour = localStorage.getItem('tourCompleted');
       if (!hasCompletedOnboarding) {
@@ -227,7 +236,12 @@ function App() {
       {showOnboarding && (
         <Onboarding onComplete={() => {
           localStorage.setItem('onboardingCompleted', 'true');
-          (window.Telegram?.WebApp as any)?.CloudStorage?.setItem('onboardingCompleted', 'true');
+          try {
+            const tg: any = window.Telegram?.WebApp;
+            if (tg?.isVersionAtLeast && tg.isVersionAtLeast('6.9') && tg.CloudStorage) {
+              tg.CloudStorage.setItem('onboardingCompleted', 'true');
+            }
+          } catch(e) {}
           setShowOnboarding(false);
           setShowTour(true);
         }} />
@@ -237,7 +251,12 @@ function App() {
         run={showTour && !showOnboarding && !!currentUser} 
         onFinish={() => {
           localStorage.setItem('tourCompleted', 'true');
-          (window.Telegram?.WebApp as any)?.CloudStorage?.setItem('tourCompleted', 'true');
+          try {
+            const tg: any = window.Telegram?.WebApp;
+            if (tg?.isVersionAtLeast && tg.isVersionAtLeast('6.9') && tg.CloudStorage) {
+              tg.CloudStorage.setItem('tourCompleted', 'true');
+            }
+          } catch(e) {}
           setShowTour(false);
         }} 
         setActiveTab={setActiveTab} 
