@@ -1,6 +1,4 @@
-import { useEffect, useState } from 'react';
-import { Joyride, STATUS } from 'react-joyride';
-import type { Step, TooltipRenderProps } from 'react-joyride';
+import { useState } from 'react';
 import type { TabType } from './BottomNav';
 
 type Props = {
@@ -9,161 +7,122 @@ type Props = {
   setActiveTab: (tab: TabType) => void;
 };
 
-function CustomTooltip({
-  index,
-  step,
-  primaryProps,
-  isLastStep,
-}: TooltipRenderProps) {
-  return (
-    <div style={{
-      background: 'rgba(30, 41, 59, 0.95)',
-      border: '1px solid #d8a760',
-      borderRadius: '24px',
-      padding: '30px 20px',
-      maxWidth: '350px',
-      width: '100%',
-      textAlign: 'center',
-      boxShadow: '0 0 40px rgba(216, 167, 96, 0.3)',
-      boxSizing: 'border-box'
-    }}>
-      <div style={{
-        width: '50px',
-        height: '50px',
-        borderRadius: '25px',
-        background: 'rgba(216, 167, 96, 0.1)',
-        color: '#d8a760',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: '20px',
-        margin: '0 auto 16px',
-        border: '2px solid #d8a760'
-      }}>
-        {index + 1}
-      </div>
-      
-      {step.title && (
-        <h2 style={{ color: '#fff', fontSize: '20px', marginBottom: '12px', fontWeight: 'bold' }}>
-          {step.title}
-        </h2>
-      )}
-      
-      <p style={{ color: '#a0aec0', fontSize: '15px', lineHeight: '1.5', marginBottom: '24px' }}>
-        {step.content}
-      </p>
-
-      <button
-        {...primaryProps}
-        style={{
-          background: '#d8a760',
-          color: '#000',
-          border: 'none',
-          padding: '14px 28px',
-          borderRadius: '30px',
-          fontSize: '16px',
-          fontWeight: 'bold',
-          width: '100%',
-          cursor: 'pointer',
-          textTransform: 'uppercase',
-          letterSpacing: '1px'
-        }}
-      >
-        {isLastStep ? 'Понятно' : 'Далее'}
-      </button>
-    </div>
-  );
-}
-
 export function AppTour({ run, onFinish }: Props) {
-  const [steps, setSteps] = useState<Step[]>([]);
+  const [stepIndex, setStepIndex] = useState(0);
 
-  useEffect(() => {
-    setSteps([
-      {
-        target: 'body',
-        title: 'Добро пожаловать!',
-        content: 'Сейчас я покажу, что здесь есть.',
-        placement: 'center',
-        disableBeacon: true
-      },
-      {
-        target: '.top-user-info',
-        title: 'Твоя Территория',
-        content: 'Здесь ты можешь переключать видимость: смотреть свою территорию или территорию своей Орды.',
-        placement: 'bottom',
-        disableBeacon: true
-      },
-      {
-        target: '.bottom-nav-btn:nth-child(5)', // Profile tab
-        title: 'Профиль',
-        content: 'В профиле ты можешь вступить в Орду или создать свою, а также поменять цвет своей территории.',
-        placement: 'top',
-        disableBeacon: true
-      },
-      {
-        target: '.bottom-nav-btn:nth-child(3)', // Quests tab
-        title: 'Задания',
-        content: 'Выполняй задания здесь каждый день, чтобы зарабатывать бонусные очки (XP) и быстрее расти в таблице лидеров!',
-        placement: 'top',
-        disableBeacon: true
-      },
-      {
-        target: '.bottom-nav-btn:nth-child(2)', // Record tab
-        title: 'Начать пробежку',
-        content: 'А здесь начинается самое главное — запись пробежки. Нажми старт и захватывай улицы!',
-        placement: 'top',
-        disableBeacon: true
-      }
-    ] as any);
-  }, []);
+  if (!run) return null;
 
-  const handleJoyrideCallback = (data: any) => {
-    const { status } = data;
-    
-    if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
+  const steps = [
+    {
+      title: 'Добро пожаловать!',
+      content: 'Сейчас я покажу, что здесь есть.',
+      position: { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }
+    },
+    {
+      title: 'Твоя Территория',
+      content: 'Сверху ты можешь переключать видимость: смотреть свою территорию или территорию своей Орды.',
+      position: { top: '100px', left: '50%', transform: 'translateX(-50%)' }
+    },
+    {
+      title: 'Профиль',
+      content: 'В профиле (справа внизу) ты можешь вступить в Орду или создать свою, а также поменять цвет своей территории.',
+      position: { bottom: '100px', right: '16px' }
+    },
+    {
+      title: 'Задания',
+      content: 'Выполняй задания (в центре внизу) каждый день, чтобы зарабатывать бонусные очки (XP) и быстрее расти в таблице лидеров!',
+      position: { bottom: '100px', left: '50%', transform: 'translateX(-50%)' }
+    },
+    {
+      title: 'Начать пробежку',
+      content: 'А здесь начинается самое главное — запись пробежки. Нажми старт (вторая кнопка слева) и захватывай улицы!',
+      position: { bottom: '100px', left: '16px' }
+    }
+  ];
+
+  const currentStep = steps[stepIndex];
+  if (!currentStep) return null;
+
+  const handleNext = () => {
+    if (stepIndex === steps.length - 1) {
       onFinish();
+    } else {
+      setStepIndex(s => s + 1);
     }
   };
 
   return (
     <>
-      <style>{`
-        .__floater__open, .__floater {
-          z-index: 100000 !important;
-        }
-        .react-joyride__overlay {
-          z-index: 99999 !important;
-          background-color: transparent !important;
-        }
-        .react-joyride__spotlight {
-          z-index: 99999 !important;
-          background-color: transparent !important;
-        }
-        .react-joyride__tooltip {
-          z-index: 100000 !important;
-        }
-      `}</style>
-      <Joyride
-        {...{
-          steps,
-          run,
-          continuous: true,
-          scrollToFirstStep: true,
-          showProgress: false,
-          showSkipButton: false,
-          spotlightClicks: false,
-          skipBeacon: true,
-          disableOverlayClose: true,
-          callback: handleJoyrideCallback,
-          tooltipComponent: CustomTooltip,
-          styles: {
-            overlay: {
-              backgroundColor: 'transparent',
-            }
-          }
-        } as any}
-      />
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 99998,
+        background: 'transparent',
+        pointerEvents: 'none' // Allow clicking through if needed, but we want to force them to click Next? No, let them click it.
+      }} />
+      <div style={{
+        position: 'fixed',
+        zIndex: 99999,
+        background: 'rgba(30, 41, 59, 0.95)',
+        border: '1px solid #d8a760',
+        borderRadius: '24px',
+        padding: '30px 20px',
+        width: '90%',
+        maxWidth: '350px',
+        textAlign: 'center',
+        boxShadow: '0 0 40px rgba(216, 167, 96, 0.3)',
+        boxSizing: 'border-box',
+        transition: 'all 0.3s ease-in-out',
+        ...currentStep.position
+      }}>
+        <div style={{
+          width: '50px',
+          height: '50px',
+          borderRadius: '25px',
+          background: 'rgba(216, 167, 96, 0.1)',
+          color: '#d8a760',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '20px',
+          margin: '0 auto 16px',
+          border: '2px solid #d8a760'
+        }}>
+          {stepIndex + 1}
+        </div>
+        
+        {currentStep.title && (
+          <h2 style={{ color: '#fff', fontSize: '20px', marginBottom: '12px', fontWeight: 'bold' }}>
+            {currentStep.title}
+          </h2>
+        )}
+        
+        <p style={{ color: '#a0aec0', fontSize: '15px', lineHeight: '1.5', marginBottom: '24px' }}>
+          {currentStep.content}
+        </p>
+
+        <button
+          onClick={handleNext}
+          style={{
+            background: '#d8a760',
+            color: '#000',
+            border: 'none',
+            padding: '14px 28px',
+            borderRadius: '30px',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            width: '100%',
+            cursor: 'pointer',
+            textTransform: 'uppercase',
+            letterSpacing: '1px'
+          }}
+        >
+          {stepIndex === steps.length - 1 ? 'Понятно' : 'Далее'}
+        </button>
+      </div>
     </>
   );
 }
