@@ -45,7 +45,14 @@ async function start() {
   await ensureDatabaseSchema();
 
   if (process.env.BOT_WEBHOOK_URL) {
-    await bot.api.setWebhook(new URL(webhookPath, process.env.BOT_WEBHOOK_URL).toString());
+    const fullWebhookUrl = new URL(webhookPath, process.env.BOT_WEBHOOK_URL).toString();
+    console.log(`Setting Telegram webhook to: ${fullWebhookUrl}`);
+    await bot.api.setWebhook(fullWebhookUrl);
+  } else {
+    console.log('BOT_WEBHOOK_URL is not set. Falling back to long polling (bot.start()).');
+    // We should delete webhook before starting polling just in case it was set previously
+    await bot.api.deleteWebhook();
+    bot.start();
   }
 
   app.listen(port, () => {
