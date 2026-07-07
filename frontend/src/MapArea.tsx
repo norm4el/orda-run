@@ -468,17 +468,62 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates, ord
       syncPlannedRoute(map, drawnPoints);
     });
 
-    const onClick = (e: maplibregl.MapMouseEvent) => {
+    let isDragging = false;
+    let lastPointTime = 0;
+
+    const startDrawing = (lngLat: maplibregl.LngLat) => {
       if (!isDrawingModeRef.current) return;
-      
-      const lngLat = e.lngLat;
+      isDragging = true;
+      map.dragPan.disable();
       setDrawnPoints((prev: [number, number][]) => [...prev, [lngLat.lng, lngLat.lat]]);
     };
 
-    map.on('click', onClick);
+    const moveDrawing = (lngLat: maplibregl.LngLat) => {
+      if (!isDrawingModeRef.current || !isDragging) return;
+      const now = Date.now();
+      if (now - lastPointTime < 30) return;
+      lastPointTime = now;
+      
+      setDrawnPoints((prev: [number, number][]) => {
+        if (prev.length > 0) {
+          const last = prev[prev.length - 1];
+          const dist = Math.hypot(last[0] - lngLat.lng, last[1] - lngLat.lat);
+          if (dist < 0.0001) return prev;
+        }
+        return [...prev, [lngLat.lng, lngLat.lat]];
+      });
+    };
+
+    const endDrawing = () => {
+      if (!isDrawingModeRef.current) return;
+      isDragging = false;
+      map.dragPan.enable();
+    };
+
+    const onMouseDown = (e: maplibregl.MapMouseEvent) => startDrawing(e.lngLat);
+    const onMouseMove = (e: maplibregl.MapMouseEvent) => moveDrawing(e.lngLat);
+    const onMouseUp = () => endDrawing();
+    
+    const onTouchStart = (e: maplibregl.MapTouchEvent) => startDrawing(e.lngLat);
+    const onTouchMove = (e: maplibregl.MapTouchEvent) => moveDrawing(e.lngLat);
+    const onTouchEnd = () => endDrawing();
+
+    map.on('mousedown', onMouseDown);
+    map.on('mousemove', onMouseMove);
+    map.on('mouseup', onMouseUp);
+    map.on('touchstart', onTouchStart);
+    map.on('touchmove', onTouchMove);
+    map.on('touchend', onTouchEnd);
+    map.on('touchcancel', onTouchEnd);
 
     return () => {
-      map.off('click', onClick);
+      map.off('mousedown', onMouseDown);
+      map.off('mousemove', onMouseMove);
+      map.off('mouseup', onMouseUp);
+      map.off('touchstart', onTouchStart);
+      map.off('touchmove', onTouchMove);
+      map.off('touchend', onTouchEnd);
+      map.off('touchcancel', onTouchEnd);
       map.remove();
       mapRef.current = null;
     };
