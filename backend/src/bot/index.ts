@@ -9,6 +9,13 @@ if (!botToken) {
 
 export const bot = new Bot(botToken);
 
+bot.catch((err) => {
+  const ctx = err.ctx;
+  console.error(`Error while handling update ${ctx.update.update_id}:`);
+  const e = err.error;
+  console.error('Bot Error:', e);
+});
+
 bot.command('start', async (ctx) => {
   const telegramId = ctx.from?.id;
 
@@ -29,10 +36,10 @@ bot.command('start', async (ctx) => {
     );
   }
 
-  const webAppUrl = process.env.WEB_APP_URL;
+  const webAppUrl = process.env.WEBAPP_URL || process.env.WEB_APP_URL;
 
   if (!webAppUrl) {
-    await ctx.reply('WEB_APP_URL не задан в .env');
+    await ctx.reply('WEBAPP_URL не задан в .env');
     return;
   }
 
@@ -41,18 +48,17 @@ bot.command('start', async (ctx) => {
   const welcomeMessage = `Добро пожаловать в Orda Run! 🏃‍♂️
   
 Захватывай территории в реальном мире, бегая с включенным Strava!
-Нажми кнопку <b>Run</b> ниже, чтобы открыть карту и начать играть.
+Нажми кнопку Run ниже, чтобы открыть карту и начать играть.
 
 Если у тебя возникли вопросы, используй команду /help.`;
 
   await ctx.reply(welcomeMessage, {
     reply_markup: keyboard,
-    parse_mode: 'HTML',
   });
 });
 
 bot.command('help', async (ctx) => {
-  const helpMessage = `🛠 <b>Помощь и Поддержка</b>
+  const helpMessage = `🛠 Помощь и Поддержка
 
 Orda Run — это игра, где твои реальные пробежки превращаются в захваченные территории на карте.
 
@@ -60,7 +66,9 @@ Orda Run — это игра, где твои реальные пробежки 
 
 Подписывайся на наш официальный канал, чтобы не пропустить обновления: @ordarun`;
 
-  await ctx.reply(helpMessage, {
-    parse_mode: 'HTML',
-  });
+  await ctx.reply(helpMessage);
+});
+
+bot.on('message', (ctx) => {
+  console.log('Received message from Telegram:', ctx.message?.text);
 });
