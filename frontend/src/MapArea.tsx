@@ -56,12 +56,11 @@ type MapAreaProps = {
   ordaMode?: boolean;
   mapTheme?: 'dark' | 'light' | 'positron';
   isDrawingMode?: boolean;
-  onPlannedAreaChange?: (area: number | null) => void;
-  onPlannedPointsChange?: (points: [number, number][]) => void;
-  onTerritoryClick?: (ownerId: string) => void;
+  onPlannedAreaChange?: (areaMeters: number | null) => void;
+  onTerritoryClick?: (userId: string) => void;
 };
 
-export function MapArea({ territories, routes, currentUser, liveCoordinates, ordaMode = false, mapTheme = 'dark', isDrawingMode = false, onPlannedAreaChange, onPlannedPointsChange, onTerritoryClick }: MapAreaProps) {
+export function MapArea({ territories, routes, currentUser, liveCoordinates, ordaMode = false, mapTheme = 'dark', isDrawingMode = false, onPlannedAreaChange, onTerritoryClick }: MapAreaProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const territoriesRef = useRef<TerritoryFeatureCollection | null>(territories);
@@ -497,8 +496,7 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates, ord
     if (mapRef.current) {
       syncPlannedRoute(mapRef.current, drawnPoints);
     }
-    onPlannedPointsChange?.(drawnPoints);
-  }, [drawnPoints, onPlannedPointsChange]);
+  }, [drawnPoints]);
 
 
   useEffect(() => {

@@ -50,7 +50,6 @@ function App() {
   const [isSoundEnabled, setIsSoundEnabled] = useState(true);
   const [isDrawingMode, setIsDrawingMode] = useState(false);
   const [plannedArea, setPlannedArea] = useState<number | null>(null);
-  const [plannedPoints, setPlannedPoints] = useState<[number, number][]>([]);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [viewingUserId, setViewingUserId] = useState<string | null>(null);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
@@ -263,7 +262,7 @@ function App() {
       />
 
       <div className={`map-container ${activeTab !== 'map' && activeTab !== 'record' ? 'hidden-map' : ''}`}>
-        <MapArea territories={territories} routes={routes} currentUser={currentUser} liveCoordinates={pastRouteToShow || liveCoordinates} ordaMode={ordaMode} mapTheme={mapTheme} isDrawingMode={isDrawingMode} onPlannedAreaChange={setPlannedArea} onPlannedPointsChange={setPlannedPoints} onTerritoryClick={(id) => setViewingUserId(id)} />
+        <MapArea territories={territories} routes={routes} currentUser={currentUser} liveCoordinates={pastRouteToShow || liveCoordinates} ordaMode={ordaMode} mapTheme={mapTheme} isDrawingMode={isDrawingMode} onPlannedAreaChange={setPlannedArea} onTerritoryClick={(id) => setViewingUserId(id)} />
       </div>
       
       {showHistoryModal && currentUser && (
