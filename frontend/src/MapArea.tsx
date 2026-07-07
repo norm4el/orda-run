@@ -136,7 +136,7 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates, ord
     }
 
     const colorSelf = currentUserRef.current?.colorSelf ?? '#d8a760'; // User chosen color or Gold
-    const colorOthers = '#2c5a5a'; // Teal
+    const colorOthers = '#ef4444'; // Red for enemies and enemy ordas
     const colorOrda = '#22c55e'; // Green for own Orda members
     
     const ownerMatch = currentUserRef.current?.id ?? '__none__';

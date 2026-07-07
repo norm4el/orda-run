@@ -15,8 +15,15 @@ type Props = {
 
 export function ActivityFeed({ onUserClick }: Props) {
   const [events, setEvents] = useState<GameEvent[]>([]);
-  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(() => {
+    const saved = sessionStorage.getItem('dismissedEvents');
+    return saved ? new Set(JSON.parse(saved)) : new Set();
+  });
   const touchStartX = useRef<number | null>(null);
+
+  useEffect(() => {
+    sessionStorage.setItem('dismissedEvents', JSON.stringify(Array.from(dismissedIds)));
+  }, [dismissedIds]);
 
   useEffect(() => {
     async function loadEvents() {

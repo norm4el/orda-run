@@ -57,12 +57,25 @@ function App() {
   const [showTour, setShowTour] = useState(false);
 
   useEffect(() => {
-    const hasCompletedOnboarding = localStorage.getItem('onboardingCompleted');
-    const hasSeenTour = localStorage.getItem('tourCompleted');
-    if (!hasCompletedOnboarding) {
-      setShowOnboarding(true);
-    } else if (!hasSeenTour) {
-      setShowTour(true);
+    const telegram: any = window.Telegram?.WebApp;
+    if (telegram?.CloudStorage) {
+      telegram.CloudStorage.getItem('onboardingCompleted', (err: any, val: string) => {
+        if (!err && val === 'true') {
+          telegram.CloudStorage.getItem('tourCompleted', (err2: any, tourVal: string) => {
+            if (!err2 && tourVal !== 'true') setShowTour(true);
+          });
+        } else {
+          setShowOnboarding(true);
+        }
+      });
+    } else {
+      const hasCompletedOnboarding = localStorage.getItem('onboardingCompleted');
+      const hasSeenTour = localStorage.getItem('tourCompleted');
+      if (!hasCompletedOnboarding) {
+        setShowOnboarding(true);
+      } else if (!hasSeenTour) {
+        setShowTour(true);
+      }
     }
   }, []);
 
@@ -200,6 +213,7 @@ function App() {
       {showOnboarding && (
         <Onboarding onComplete={() => {
           localStorage.setItem('onboardingCompleted', 'true');
+          (window.Telegram?.WebApp as any)?.CloudStorage?.setItem('onboardingCompleted', 'true');
           setShowOnboarding(false);
           setShowTour(true);
         }} />
@@ -209,6 +223,7 @@ function App() {
         run={showTour && !showOnboarding} 
         onFinish={() => {
           localStorage.setItem('tourCompleted', 'true');
+          (window.Telegram?.WebApp as any)?.CloudStorage?.setItem('tourCompleted', 'true');
           setShowTour(false);
         }} 
         setActiveTab={setActiveTab} 
