@@ -8,7 +8,8 @@
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "start": "node dist/index.js",
     "wipe:territories": "ts-node-dev --transpile-only scripts/wipe_territories.ts",
-    "decay:territories": "ts-node-dev --transpile-only scripts/decay_territories.ts"
+    "decay:territories": "ts-node-dev --transpile-only scripts/decay_territories.ts",
+    "seed:fake-users": "ts-node-dev --transpile-only scripts/seed_fake_users.ts"
   },
   "keywords": [],
   "author": "",

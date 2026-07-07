@@ -119,6 +119,16 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates, ord
   }, [ordaMode]);
 
   const applyTerritoryStyle = (map: maplibregl.Map) => {
+    const getUserColor = (userId: string | undefined) => {
+      if (!userId) return '#ef4444';
+      let hash = 0;
+      for (let i = 0; i < userId.length; i++) {
+        hash = userId.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      const hue = Math.abs(hash) % 360;
+      return `hsl(${hue}, 65%, 45%)`;
+    };
+
     if (!map.getSource(territorySourceId)) {
         map.addSource(territorySourceId, {
           type: 'geojson',
@@ -128,15 +138,29 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates, ord
               ...f,
               properties: {
                 ...f.properties,
-                displayNameWithRank: `${f.properties?.owner_display_name || 'Игрок'}\n[${getRankFromPoints(f.properties?.owner_influence_points || 0).title}]`
+                displayNameWithRank: `${f.properties?.owner_display_name || 'Игрок'}\n[${getRankFromPoints(f.properties?.owner_influence_points || 0).title}]`,
+                displayColor: getUserColor(f.properties?.owner_id)
               }
             }))
           }
         });
+    } else {
+      // We must update the data if the source already exists so colors are applied correctly when data changes
+      const source = map.getSource(territorySourceId) as maplibregl.GeoJSONSource;
+      source.setData({
+        ...territoriesRef.current!,
+        features: (territoriesRef.current?.features || []).map(f => ({
+          ...f,
+          properties: {
+            ...f.properties,
+            displayNameWithRank: `${f.properties?.owner_display_name || 'Игрок'}\n[${getRankFromPoints(f.properties?.owner_influence_points || 0).title}]`,
+            displayColor: getUserColor(f.properties?.owner_id)
+          }
+        }))
+      });
     }
 
     const colorSelf = currentUserRef.current?.colorSelf ?? '#d8a760'; // User chosen color or Gold
-    const colorOthers = '#ef4444'; // Red for enemies and enemy ordas
     const colorOrda = '#22c55e'; // Green for own Orda members
     
     const ownerMatch = currentUserRef.current?.id ?? '__none__';
@@ -152,14 +176,14 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates, ord
         colorSelf,
         ['==', ['get', 'owner_orda_id'], ordaMatch],
         colorOrda,
-        colorOthers,
+        ['get', 'displayColor'],
       ];
     } else {
       fillColorExpression = [
         'case',
         ['==', ['get', 'owner_id'], ownerMatch],
         colorSelf,
-        colorOthers,
+        ['get', 'displayColor'],
       ];
     }
 
@@ -185,6 +209,7 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates, ord
         paint: {
           'line-color': fillColorExpression,
           'line-width': 2,
+          'line-opacity': 0.8,
         },
       });
     } else {
