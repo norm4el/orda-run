@@ -80,15 +80,19 @@ async function generate() {
     const numUsers = INITIAL_COHORT_NAMES.length;
     for (let i = 0; i < numUsers; i++) {
       const userId = generateUUID();
-      const tgId = Math.floor(Math.random() * 1000000000).toString();
+      const tgId = (9990000000 + i).toString(); // Deterministic ID to avoid duplicates on reruns
       const nickname = INITIAL_COHORT_NAMES[i];
       const influencePoints = Math.floor(Math.random() * 50000) + 1000;
       
       await client.query(
         `INSERT INTO users (id, telegram_id, username, display_name, orda_id, influence_points) 
-         VALUES ($1, $2, $3, $4, $5, $6)`,
+         VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (telegram_id) DO NOTHING`,
         [userId, tgId, nickname, nickname, finalOrdaId, influencePoints]
       );
+      
+      // We need to fetch the actual user ID in case it already existed from a previous run
+      const userRes = await client.query(`SELECT id FROM users WHERE telegram_id = $1`, [tgId]);
+      const actualUserId = userRes.rows[0].id;
       
       // Pick a city for this user
       const city = CITIES[Math.floor(Math.random() * CITIES.length)];
@@ -113,7 +117,7 @@ async function generate() {
         const polyStr = createCirclePolyline(currentCenter, radius, Math.floor(Math.random() * 5) + 6);
         
         try {
-          await captureTerritory(userId, polyStr);
+          await captureTerritory(actualUserId, polyStr);
         } catch (e) {
           console.error(`Failed to record capture for ${nickname}:`, e);
         }
