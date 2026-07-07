@@ -58,11 +58,16 @@ function App() {
 
   useEffect(() => {
     const telegram: any = window.Telegram?.WebApp;
+    const localOnboarding = localStorage.getItem('onboardingCompleted');
+    const localTour = localStorage.getItem('tourCompleted');
+    
     if (telegram?.CloudStorage) {
-      telegram.CloudStorage.getItem('onboardingCompleted', (err: any, val: string) => {
-        if (!err && val === 'true') {
-          telegram.CloudStorage.getItem('tourCompleted', (err2: any, tourVal: string) => {
-            if (!err2 && tourVal !== 'true') setShowTour(true);
+      telegram.CloudStorage.getItem('onboardingCompleted', (_err: any, val: string) => {
+        const isOnboardingDone = (val === 'true' || localOnboarding === 'true');
+        if (isOnboardingDone) {
+          telegram.CloudStorage.getItem('tourCompleted', (_err2: any, tourVal: string) => {
+            const isTourDone = (tourVal === 'true' || localTour === 'true');
+            if (!isTourDone) setShowTour(true);
           });
         } else {
           setShowOnboarding(true);

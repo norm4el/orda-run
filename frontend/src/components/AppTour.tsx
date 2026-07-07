@@ -148,6 +148,7 @@ export function AppTour({ run, onFinish }: Props) {
           showProgress: false,
           showSkipButton: false,
           spotlightClicks: false,
+          skipBeacon: true,
           disableOverlayClose: true,
           callback: handleJoyrideCallback,
           tooltipComponent: CustomTooltip,
