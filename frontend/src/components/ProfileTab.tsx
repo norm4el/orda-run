@@ -171,7 +171,7 @@ export function ProfileTab({
       const telegram = (window as any).Telegram?.WebApp;
       if (telegram?.showAlert) telegram.showAlert('Аккаунт Strava успешно отключен, а ваши данные удалены.');
       
-      onUserUpdate({ ...currentUser, stravaAccessToken: undefined, stravaRefreshToken: undefined, influencePoints: 0 });
+      onUserUpdate({ ...currentUser, stravaAccessToken: null, stravaRefreshToken: null, influencePoints: 0 });
       reloadMapData();
     } catch (err) {
       console.error(err);
