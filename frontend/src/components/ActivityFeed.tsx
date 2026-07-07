@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 type GameEvent = {
   id: string;
@@ -15,7 +15,8 @@ type Props = {
 
 export function ActivityFeed({ onUserClick }: Props) {
   const [events, setEvents] = useState<GameEvent[]>([]);
-  const [isVisible] = useState(true);
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
+  const touchStartX = useRef<number | null>(null);
 
   useEffect(() => {
     async function loadEvents() {
@@ -34,10 +35,28 @@ export function ActivityFeed({ onUserClick }: Props) {
     return () => clearInterval(interval);
   }, []);
 
-  if (events.length === 0 || !isVisible) return null;
+  const visibleEvents = events.filter(e => !dismissedIds.has(e.id)).slice(0, 3);
 
-  // Show only the latest 3 events in the ticker
-  const recentEvents = events.slice(0, 3);
+  if (visibleEvents.length === 0) return null;
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent, id: string) => {
+    if (touchStartX.current === null) return;
+    const diff = touchStartX.current - e.touches[0].clientX;
+    
+    // If swiped left or right by more than 50px
+    if (Math.abs(diff) > 50) {
+      setDismissedIds(prev => new Set(prev).add(id));
+      touchStartX.current = null;
+    }
+  };
+
+  const handleTouchEnd = () => {
+    touchStartX.current = null;
+  };
 
   return (
     <div style={{
@@ -46,12 +65,11 @@ export function ActivityFeed({ onUserClick }: Props) {
       left: '16px',
       right: '16px',
       zIndex: 1000,
-      pointerEvents: 'none',
       display: 'flex',
       flexDirection: 'column',
       gap: '8px'
     }}>
-      {recentEvents.map(ev => {
+      {visibleEvents.map(ev => {
         let color = '#d8a760';
         let icon = '📢';
         if (ev.event_type === 'CAPTURE') { color = '#22c55e'; icon = '🚩'; }
@@ -60,22 +78,31 @@ export function ActivityFeed({ onUserClick }: Props) {
         if (ev.event_type === 'ORDA_JOIN') { color = '#3b82f6'; icon = '🤝'; }
 
         return (
-          <div key={ev.id} onClick={() => ev.display_name && ev.event_type !== 'ORDA_CREATE' && ev.user_id && onUserClick?.(ev.user_id)} style={{
-            background: 'rgba(30, 41, 59, 0.85)',
-            backdropFilter: 'blur(10px)',
-            border: `1px solid ${color}40`,
-            borderLeft: `4px solid ${color}`,
-            borderRadius: '12px',
-            padding: '10px 14px',
-            color: '#fff',
-            fontSize: '13px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
-            animation: 'slideIn 0.5s ease-out forwards',
-            cursor: 'pointer'
-          }}>
+          <div 
+            key={ev.id} 
+            onClick={() => ev.display_name && ev.event_type !== 'ORDA_CREATE' && ev.user_id && onUserClick?.(ev.user_id)} 
+            onTouchStart={handleTouchStart}
+            onTouchMove={(e) => handleTouchMove(e, ev.id)}
+            onTouchEnd={handleTouchEnd}
+            style={{
+              background: 'rgba(30, 41, 59, 0.85)',
+              backdropFilter: 'blur(10px)',
+              border: `1px solid ${color}40`,
+              borderLeft: `4px solid ${color}`,
+              borderRadius: '12px',
+              padding: '10px 14px',
+              color: '#fff',
+              fontSize: '13px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
+              animation: 'slideIn 0.5s ease-out forwards',
+              cursor: 'pointer',
+              pointerEvents: 'auto',
+              userSelect: 'none'
+            }}
+          >
             <span style={{ fontSize: '18px' }}>{icon}</span>
             <span style={{ flex: 1 }}>
               <strong style={{ color: color }}>{ev.display_name || 'Игрок'}</strong> {ev.message}

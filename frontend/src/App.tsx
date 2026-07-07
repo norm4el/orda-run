@@ -9,6 +9,7 @@ import { Onboarding } from './components/Onboarding';
 import { PublicProfileModal } from './components/PublicProfileModal';
 import { HistoryModal } from './components/HistoryModal';
 import { QuestsTab } from './components/QuestsTab';
+import { AppTour } from './components/AppTour';
 
 export type AuthenticatedUser = {
   id: string;
@@ -53,11 +54,15 @@ function App() {
   const [viewingUserId, setViewingUserId] = useState<string | null>(null);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [pastRouteToShow, setPastRouteToShow] = useState<[number, number][] | null>(null);
+  const [showTour, setShowTour] = useState(false);
 
   useEffect(() => {
     const hasCompletedOnboarding = localStorage.getItem('onboardingCompleted');
+    const hasSeenTour = localStorage.getItem('tourCompleted');
     if (!hasCompletedOnboarding) {
       setShowOnboarding(true);
+    } else if (!hasSeenTour) {
+      setShowTour(true);
     }
   }, []);
 
@@ -196,8 +201,19 @@ function App() {
         <Onboarding onComplete={() => {
           localStorage.setItem('onboardingCompleted', 'true');
           setShowOnboarding(false);
+          setShowTour(true);
         }} />
       )}
+      
+      <AppTour 
+        run={showTour && !showOnboarding} 
+        onFinish={() => {
+          localStorage.setItem('tourCompleted', 'true');
+          setShowTour(false);
+        }} 
+        setActiveTab={setActiveTab} 
+      />
+
       <div className={`map-container ${activeTab !== 'map' && activeTab !== 'record' ? 'hidden-map' : ''}`}>
         <MapArea territories={territories} routes={routes} currentUser={currentUser} liveCoordinates={pastRouteToShow || liveCoordinates} ordaMode={ordaMode} mapTheme={mapTheme} isDrawingMode={isDrawingMode} onPlannedAreaChange={setPlannedArea} onPlannedPointsChange={setPlannedPoints} onTerritoryClick={(id) => setViewingUserId(id)} />
       </div>
@@ -288,7 +304,7 @@ function App() {
                 {currentUser.displayName || 'Без имени'}
               </div>
 
-              <div style={{ display: 'flex', gap: '10px' }}>
+              <div className="top-user-info" style={{ display: 'flex', gap: '10px' }}>
                 <button
                   onClick={() => setOrdaMode(!ordaMode)}
                   style={{
@@ -307,18 +323,19 @@ function App() {
                   {ordaMode ? 'Орда' : 'Личный'}
                 </button>
                 <div 
+                  className="tour-trigger"
                   onClick={() => setActiveTab('profile')}
                   style={{
-                    background: 'var(--surface)',
+                    background: 'rgba(30, 41, 59, 0.85)',
+                    backdropFilter: 'blur(10px)',
+                    padding: '8px',
+                    borderRadius: '50%',
                     width: '36px',
                     height: '36px',
-                    borderRadius: '50%',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    pointerEvents: 'auto',
-                    border: '1px solid rgba(255,255,255,0.05)',
-                    backdropFilter: 'blur(10px)',
+                    border: '1px solid rgba(255,255,255,0.1)',
                     color: 'var(--text-dim)',
                     cursor: 'pointer'
                   }}
