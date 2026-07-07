@@ -7,6 +7,7 @@ import { RecordTab } from './components/RecordTab';
 import { ActivityFeed } from './components/ActivityFeed';
 import { Onboarding } from './components/Onboarding';
 import { PublicProfileModal } from './components/PublicProfileModal';
+import { HistoryModal } from './components/HistoryModal';
 
 export type AuthenticatedUser = {
   id: string;
@@ -49,6 +50,8 @@ function App() {
   const [plannedPoints, setPlannedPoints] = useState<[number, number][]>([]);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [viewingUserId, setViewingUserId] = useState<string | null>(null);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [pastRouteToShow, setPastRouteToShow] = useState<[number, number][] | null>(null);
 
   useEffect(() => {
     const hasCompletedOnboarding = localStorage.getItem('onboardingCompleted');
@@ -195,8 +198,29 @@ function App() {
         }} />
       )}
       <div className={`map-container ${activeTab !== 'map' && activeTab !== 'record' ? 'hidden-map' : ''}`}>
-        <MapArea territories={territories} routes={routes} currentUser={currentUser} liveCoordinates={liveCoordinates} ordaMode={ordaMode} mapTheme={mapTheme} isDrawingMode={isDrawingMode} onPlannedAreaChange={setPlannedArea} onPlannedPointsChange={setPlannedPoints} onTerritoryClick={(id) => setViewingUserId(id)} />
+        <MapArea territories={territories} routes={routes} currentUser={currentUser} liveCoordinates={pastRouteToShow || liveCoordinates} ordaMode={ordaMode} mapTheme={mapTheme} isDrawingMode={isDrawingMode} onPlannedAreaChange={setPlannedArea} onPlannedPointsChange={setPlannedPoints} onTerritoryClick={(id) => setViewingUserId(id)} />
       </div>
+      
+      {showHistoryModal && currentUser && (
+        <HistoryModal 
+          currentUser={currentUser} 
+          onClose={() => setShowHistoryModal(false)} 
+          onShowRouteOnMap={(coords) => {
+            setPastRouteToShow(coords);
+            setActiveTab('map');
+            // Hide it after some time or add a close button? Let's clear it if they switch tabs.
+          }} 
+        />
+      )}
+
+      {pastRouteToShow && activeTab === 'map' && (
+        <button 
+          onClick={() => setPastRouteToShow(null)}
+          style={{ position: 'absolute', top: '100px', left: '50%', transform: 'translateX(-50%)', background: 'var(--primary)', color: '#000', border: 'none', padding: '10px 20px', borderRadius: '20px', fontWeight: 'bold', zIndex: 1000, boxShadow: '0 4px 15px rgba(0,0,0,0.3)', cursor: 'pointer' }}
+        >
+          ЗАКРЫТЬ МАРШРУТ
+        </button>
+      )}
       
       {viewingUserId && (
         <PublicProfileModal userId={viewingUserId} onClose={() => setViewingUserId(null)} />
@@ -211,6 +235,7 @@ function App() {
           setMapTheme={setMapTheme}
           isSoundEnabled={isSoundEnabled}
           setIsSoundEnabled={setIsSoundEnabled}
+          onOpenHistory={() => setShowHistoryModal(true)}
         />
       )}
       
@@ -218,17 +243,17 @@ function App() {
         <LeaderboardTab currentUser={currentUser} onUserClick={(id) => setViewingUserId(id)} />
       )}
 
-      {activeTab === 'record' && (
+      <div style={{ display: activeTab === 'record' ? 'block' : 'none' }}>
         <RecordTab 
           currentUser={currentUser} 
           onCoordinatesUpdate={setLiveCoordinates}
           onRunFinished={() => {
             setLiveCoordinates([]);
-            reloadMapData();
             setActiveTab('map');
+            reloadMapData();
           }} 
         />
-      )}
+      </div>
 
       {activeTab === 'map' && (
         <>

@@ -166,6 +166,10 @@ export function RecordTab({ currentUser, onCoordinatesUpdate, onRunFinished }: P
         colors: ['#d8a760', '#22c55e', '#ffffff']
       });
 
+      setCoordinates([]);
+      setDistanceMeters(0);
+      setElapsedSeconds(0);
+
       onRunFinished(); // this will reload map data and switch tab
     } catch (err: any) {
       setError(err.message || 'Ошибка сети');

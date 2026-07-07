@@ -133,8 +133,16 @@ export async function ensureDatabaseSchema() {
       user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       strava_activity_id BIGINT UNIQUE NOT NULL,
       coordinates JSONB NOT NULL,
+      distance FLOAT DEFAULT 0,
+      duration INT DEFAULT 0,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
+  `);
+
+  await pool.query(`
+    ALTER TABLE routes
+      ADD COLUMN IF NOT EXISTS distance FLOAT DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS duration INT DEFAULT 0
   `);
 
   await pool.query(`

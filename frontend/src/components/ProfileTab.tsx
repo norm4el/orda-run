@@ -10,6 +10,7 @@ type Props = {
   setMapTheme?: (val: 'dark' | 'light' | 'positron') => void;
   isSoundEnabled?: boolean;
   setIsSoundEnabled?: (val: boolean | ((prev: boolean) => boolean)) => void;
+  onOpenHistory?: () => void;
 };
 
 export function ProfileTab({ 
@@ -19,7 +20,8 @@ export function ProfileTab({
   mapTheme = 'dark',
   setMapTheme,
   isSoundEnabled = true,
-  setIsSoundEnabled
+  setIsSoundEnabled,
+  onOpenHistory
 }: Props) {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(currentUser?.displayName ?? '');
@@ -254,14 +256,21 @@ export function ProfileTab({
             <div style={{ fontSize: '12px', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Пробежки</div>
           </div>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '24px', fontWeight: '500', color: 'var(--text-main)', marginBottom: '4px' }}>{userStats.distance.toFixed(1)}</div>
+            <div style={{ fontSize: '24px', fontWeight: '500', color: 'var(--text-main)', marginBottom: '4px' }}>{(userStats.distance || 0).toFixed(1)}</div>
             <div style={{ fontSize: '12px', color: 'var(--text-dim)', textTransform: 'uppercase' }}>КМ</div>
           </div>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '24px', fontWeight: '500', color: 'var(--text-main)', marginBottom: '4px' }}>{(currentUser.influencePoints / 1000000).toFixed(2)}</div>
+            <div style={{ fontSize: '24px', fontWeight: '500', color: 'var(--text-main)', marginBottom: '4px' }}>{((currentUser?.influencePoints || 0) / 1000000).toFixed(2)}</div>
             <div style={{ fontSize: '12px', color: 'var(--text-dim)', textTransform: 'uppercase' }}>КМ²</div>
           </div>
         </div>
+
+        <button 
+          onClick={onOpenHistory}
+          style={{ width: '100%', marginTop: '20px', background: 'rgba(216, 167, 96, 0.1)', color: 'var(--primary)', border: '1px solid var(--primary)', padding: '12px', borderRadius: '12px', fontSize: '14px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', cursor: 'pointer' }}
+        >
+          История маршрутов
+        </button>
       </div>
 
       <div style={{ marginBottom: '40px' }}>

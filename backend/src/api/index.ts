@@ -316,11 +316,11 @@ apiRouter.post('/runs/manual', async (req, res) => {
         const decodedPoints = require('@mapbox/polyline').decode(polylineString);
         await query(
             `
-                INSERT INTO routes (user_id, strava_activity_id, coordinates)
-                VALUES ($1, $2, $3)
+                INSERT INTO routes (user_id, strava_activity_id, coordinates, distance, duration)
+                VALUES ($1, $2, $3, $4, $5)
                 ON CONFLICT (strava_activity_id) DO NOTHING
             `,
-            [userId, Date.now(), JSON.stringify(decodedPoints)]
+            [userId, Date.now(), JSON.stringify(decodedPoints), distance, duration]
         );
 
         const result = await captureTerritory(userId, polylineString);
@@ -482,6 +482,27 @@ apiRouter.get('/user/public/:id', async (req, res) => {
         });
     } catch (e) {
         console.error('Failed to get public profile', e);
+        res.status(500).json({ error: 'Failed' });
+    }
+});
+
+apiRouter.get('/user/routes/:telegram_id', async (req, res) => {
+    const telegramId = req.params.telegram_id;
+    try {
+        const userRes = await query(`SELECT id FROM users WHERE telegram_id = $1`, [telegramId]);
+        if (userRes.rowCount === 0) return res.json([]);
+        
+        const userId = userRes.rows[0].id;
+        const routesRes = await query(`
+            SELECT id, strava_activity_id, distance, duration, created_at, coordinates 
+            FROM routes 
+            WHERE user_id = $1 
+            ORDER BY created_at DESC
+        `, [userId]);
+
+        res.json(routesRes.rows);
+    } catch (e) {
+        console.error('Failed to get user routes', e);
         res.status(500).json({ error: 'Failed' });
     }
 });

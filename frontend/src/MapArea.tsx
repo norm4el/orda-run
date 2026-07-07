@@ -393,7 +393,20 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates, ord
         properties: {},
       });
       // Optionally pan to the user's location
-      map.easeTo({ center: [lastPoint[0], lastPoint[1]] as [number, number], duration: 1000 });
+      if (geoJsonCoords.length > 5) {
+        // It's likely a full route, fit bounds
+        try {
+          const lats = geoJsonCoords.map(c => c[1]);
+          const lngs = geoJsonCoords.map(c => c[0]);
+          const bounds = [
+            [Math.min(...lngs), Math.min(...lats)],
+            [Math.max(...lngs), Math.max(...lats)]
+          ] as maplibregl.LngLatBoundsLike;
+          map.fitBounds(bounds, { padding: 40, duration: 1000 });
+        } catch (e) {}
+      } else {
+        map.easeTo({ center: [lastPoint[0], lastPoint[1]] as [number, number], duration: 1000, zoom: 15 });
+      }
     }
 
     source.setData({
