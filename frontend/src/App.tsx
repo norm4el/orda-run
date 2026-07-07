@@ -10,6 +10,7 @@ import { PublicProfileModal } from './components/PublicProfileModal';
 import { HistoryModal } from './components/HistoryModal';
 import { QuestsTab } from './components/QuestsTab';
 import { AppTour } from './components/AppTour';
+import { LandingPage } from './components/LandingPage';
 
 export type AuthenticatedUser = {
   id: string;
@@ -56,6 +57,7 @@ function App() {
   const [pastRouteToShow, setPastRouteToShow] = useState<[number, number][] | null>(null);
   const [showTour, setShowTour] = useState(false);
   const [showActivityFeed, setShowActivityFeed] = useState(false);
+  const [isOutsideTelegram, setIsOutsideTelegram] = useState(false);
 
   useEffect(() => {
     const telegram: any = window.Telegram?.WebApp;
@@ -90,6 +92,7 @@ function App() {
 
     if (!telegram) {
       setCurrentUser(null);
+      setIsOutsideTelegram(true);
       return;
     }
 
@@ -100,6 +103,7 @@ function App() {
 
     if (!initData) {
       setCurrentUser(null);
+      setIsOutsideTelegram(true);
       return;
     }
 
@@ -213,6 +217,10 @@ function App() {
   useEffect(() => {
     reloadMapData();
   }, [reloadMapData]);
+
+  if (isOutsideTelegram) {
+    return <LandingPage />;
+  }
 
   return (
     <main className="app-shell">
