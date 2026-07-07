@@ -454,6 +454,22 @@ function App() {
                   )} <span style={{ fontSize: '16px', color: 'var(--text-dim)', fontWeight: 'normal' }}>км²</span>
                 </div>
               </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <button
+                  onClick={() => setIsDrawingMode(!isDrawingMode)}
+                  style={{
+                    background: isDrawingMode ? 'transparent' : '#22c55e',
+                    color: isDrawingMode ? 'var(--text-main)' : '#000',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    padding: '8px 16px',
+                    borderRadius: '20px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {isDrawingMode ? 'Отмена' : 'План'}
+                </button>
               </div>
             </div>
           )}
