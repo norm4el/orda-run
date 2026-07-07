@@ -84,33 +84,38 @@ export function AppTour({ run, onFinish }: Props) {
         target: 'body',
         title: 'Добро пожаловать!',
         content: 'Сейчас я покажу, что здесь есть.',
-        placement: 'center'
+        placement: 'center',
+        disableBeacon: true
       },
       {
         target: '.top-user-info',
         title: 'Твоя Территория',
         content: 'Здесь ты можешь переключать видимость: смотреть свою территорию или территорию своей Орды.',
-        placement: 'bottom'
+        placement: 'bottom',
+        disableBeacon: true
       },
       {
         target: '.bottom-nav-btn:nth-child(5)', // Profile tab
         title: 'Профиль',
         content: 'В профиле ты можешь вступить в Орду или создать свою, а также поменять цвет своей территории.',
-        placement: 'top'
+        placement: 'top',
+        disableBeacon: true
       },
       {
         target: '.bottom-nav-btn:nth-child(3)', // Quests tab
         title: 'Задания',
         content: 'Выполняй задания здесь каждый день, чтобы зарабатывать бонусные очки (XP) и быстрее расти в таблице лидеров!',
-        placement: 'top'
+        placement: 'top',
+        disableBeacon: true
       },
       {
         target: '.bottom-nav-btn:nth-child(2)', // Record tab
         title: 'Начать пробежку',
         content: 'А здесь начинается самое главное — запись пробежки. Нажми старт и захватывай улицы!',
-        placement: 'top'
+        placement: 'top',
+        disableBeacon: true
       }
-    ]);
+    ] as any);
   }, []);
 
   const handleJoyrideCallback = (data: any) => {

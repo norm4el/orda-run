@@ -55,6 +55,7 @@ function App() {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [pastRouteToShow, setPastRouteToShow] = useState<[number, number][] | null>(null);
   const [showTour, setShowTour] = useState(false);
+  const [showActivityFeed, setShowActivityFeed] = useState(false);
 
   useEffect(() => {
     const telegram: any = window.Telegram?.WebApp;
@@ -310,18 +311,44 @@ function App() {
               zIndex: 1000,
               pointerEvents: 'none'
             }}>
-              <div style={{
-                background: 'var(--surface)',
-                padding: '8px 16px',
-                borderRadius: '20px',
-                color: 'var(--text-main)',
-                fontSize: '14px',
-                fontWeight: '500',
-                pointerEvents: 'auto',
-                border: '1px solid rgba(255,255,255,0.05)',
-                backdropFilter: 'blur(10px)'
-              }}>
-                {currentUser.displayName || 'Без имени'}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{
+                  background: 'var(--surface)',
+                  padding: '8px 16px',
+                  borderRadius: '20px',
+                  color: 'var(--text-main)',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  pointerEvents: 'auto',
+                  border: '1px solid rgba(255,255,255,0.05)',
+                  backdropFilter: 'blur(10px)'
+                }}>
+                  {currentUser.displayName || 'Без имени'}
+                </div>
+                
+                <div 
+                  className="activity-folder-trigger"
+                  onClick={() => setShowActivityFeed(!showActivityFeed)}
+                  style={{
+                    background: showActivityFeed ? 'var(--primary)' : 'rgba(30, 41, 59, 0.85)',
+                    backdropFilter: 'blur(10px)',
+                    padding: '8px',
+                    borderRadius: '50%',
+                    width: '36px',
+                    height: '36px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    color: showActivityFeed ? '#000' : 'var(--text-dim)',
+                    cursor: 'pointer',
+                    pointerEvents: 'auto'
+                  }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                  </svg>
+                </div>
               </div>
 
               <div className="top-user-info" style={{ display: 'flex', gap: '10px' }}>
@@ -369,7 +396,7 @@ function App() {
             </div>
           )}
 
-          {currentUser && <ActivityFeed onUserClick={(id) => setViewingUserId(id)} />}
+          {currentUser && showActivityFeed && <ActivityFeed onUserClick={(id) => setViewingUserId(id)} />}
 
           {currentUser && (
             <div style={{
