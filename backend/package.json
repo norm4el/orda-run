@@ -6,7 +6,8 @@
   "scripts": {
     "build": "npx tsc -p tsconfig.json",
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "wipe:territories": "ts-node-dev --transpile-only scripts/wipe_territories.ts"
   },
   "keywords": [],
   "author": "",

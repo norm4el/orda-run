@@ -20,7 +20,6 @@ const emptyTerritoryData: TerritoryFeatureCollection = {
 };
 
 const routesSourceId = 'routes-source';
-const routesLineLayerId = 'routes-line';
 const emptyRoutesData: RouteFeatureCollection = {
   type: 'FeatureCollection',
   features: [],
@@ -186,23 +185,7 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates, ord
       });
     }
 
-    if (!map.getLayer(routesLineLayerId)) {
-      map.addLayer({
-        id: routesLineLayerId,
-        type: 'line',
-        source: routesSourceId,
-        paint: {
-          'line-color': [
-            'case',
-            ['==', ['get', 'owner_id'], ownerMatch],
-            colorSelf,
-            colorOthers,
-          ],
-          'line-width': 3,
-          'line-opacity': 0.8,
-        },
-      });
-    }
+
 
     if (!map.getSource(liveRouteSourceId)) {
       map.addSource(liveRouteSourceId, {
@@ -419,14 +402,7 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates, ord
       colorOthers,
     ]);
 
-    if (map.getLayer(routesLineLayerId)) {
-      map.setPaintProperty(routesLineLayerId, 'line-color', [
-        'case',
-        ['==', ['get', 'owner_id'], ownerMatch],
-        colorSelf,
-        colorOthers,
-      ]);
-    }
+
   };
 
   useEffect(() => {
