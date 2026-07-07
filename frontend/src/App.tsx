@@ -39,6 +39,8 @@ function App() {
   const [ordaMode, setOrdaMode] = useState<boolean>(false);
   const [isDarkTheme, setIsDarkTheme] = useState(true);
   const [isSoundEnabled, setIsSoundEnabled] = useState(true);
+  const [isDrawingMode, setIsDrawingMode] = useState(false);
+  const [plannedArea, setPlannedArea] = useState<number | null>(null);
 
   useEffect(() => {
     const telegram = window.Telegram?.WebApp;
@@ -170,7 +172,7 @@ function App() {
   return (
     <main className="app-shell">
       <div className={`map-container ${activeTab !== 'map' && activeTab !== 'record' ? 'hidden-map' : ''}`}>
-        <MapArea territories={territories} routes={routes} currentUser={currentUser} liveCoordinates={liveCoordinates} ordaMode={ordaMode} isDarkTheme={isDarkTheme} />
+        <MapArea territories={territories} routes={routes} currentUser={currentUser} liveCoordinates={liveCoordinates} ordaMode={ordaMode} isDarkTheme={isDarkTheme} isDrawingMode={isDrawingMode} onPlannedAreaChange={setPlannedArea} />
       </div>
       
       {activeTab === 'profile' && (
@@ -292,16 +294,32 @@ function App() {
             }}>
               <div>
                 <div style={{ fontSize: '12px', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>
-                  {ordaMode ? (currentUser.ordaName || 'Нет орды') : 'Твоя площадь'}
+                  {isDrawingMode ? 'Площадь плана' : (ordaMode ? (currentUser.ordaName || 'Нет орды') : 'Твоя площадь')}
                 </div>
                 <div style={{ fontSize: '28px', fontWeight: 'bold', color: 'var(--text-main)', display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                  {(currentUser.influencePoints / 1000000).toFixed(2)} <span style={{ fontSize: '16px', color: 'var(--text-dim)', fontWeight: 'normal' }}>км²</span>
+                  {isDrawingMode ? (
+                    plannedArea !== null ? (plannedArea / 1000000).toFixed(4) : '0.0000'
+                  ) : (
+                    (currentUser.influencePoints / 1000000).toFixed(2)
+                  )} <span style={{ fontSize: '16px', color: 'var(--text-dim)', fontWeight: 'normal' }}>км²</span>
                 </div>
               </div>
-              <div style={{ color: 'var(--text-dim)' }}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <button
+                  onClick={() => setIsDrawingMode(!isDrawingMode)}
+                  style={{
+                    background: isDrawingMode ? '#22c55e' : 'var(--background)',
+                    color: isDrawingMode ? '#000' : 'var(--text-main)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    padding: '8px 16px',
+                    borderRadius: '20px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {isDrawingMode ? 'Отмена' : 'Рисовать'}
+                </button>
               </div>
             </div>
           )}

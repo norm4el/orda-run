@@ -1,8 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import type { FeatureCollection, Geometry } from 'geojson';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { area } from '@turf/area';
+import { polygon } from '@turf/helpers';
 import type { AuthenticatedUser } from './App';
 
 const mapCenter: [number, number] = [71.43, 51.13];
@@ -28,6 +30,11 @@ const liveRouteSourceId = 'live-route-source';
 const liveRouteLayerId = 'live-route-layer';
 const livePointLayerId = 'live-point-layer';
 
+const plannedRouteSourceId = 'planned-route-source';
+const plannedFillLayerId = 'planned-fill-layer';
+const plannedLineLayerId = 'planned-line-layer';
+const plannedPointLayerId = 'planned-point-layer';
+
 export type TerritoryFeatureCollection = FeatureCollection<
   Geometry,
   { id: string; owner_id: string; owner_orda_id: string | null }
@@ -45,9 +52,11 @@ type MapAreaProps = {
   liveCoordinates?: [number, number][];
   ordaMode?: boolean;
   isDarkTheme?: boolean;
+  isDrawingMode?: boolean;
+  onPlannedAreaChange?: (area: number | null) => void;
 };
 
-export function MapArea({ territories, routes, currentUser, liveCoordinates, ordaMode = false, isDarkTheme = true }: MapAreaProps) {
+export function MapArea({ territories, routes, currentUser, liveCoordinates, ordaMode = false, isDarkTheme = true, isDrawingMode = false, onPlannedAreaChange }: MapAreaProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const territoriesRef = useRef<TerritoryFeatureCollection | null>(territories);
@@ -73,6 +82,22 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates, ord
   useEffect(() => {
     currentUserRef.current = currentUser;
   }, [currentUser]);
+
+  const [drawnPoints, setDrawnPoints] = useState<[number, number][]>([]);
+  const isDrawingModeRef = useRef<boolean>(isDrawingMode);
+  const onPlannedAreaChangeRef = useRef(onPlannedAreaChange);
+
+  useEffect(() => {
+    isDrawingModeRef.current = isDrawingMode;
+    if (!isDrawingMode) {
+      setDrawnPoints([]);
+      onPlannedAreaChangeRef.current?.(null);
+    }
+  }, [isDrawingMode]);
+
+  useEffect(() => {
+    onPlannedAreaChangeRef.current = onPlannedAreaChange;
+  }, [onPlannedAreaChange]);
 
   const ordaModeRef = useRef<boolean>(ordaMode);
 
@@ -218,6 +243,58 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates, ord
         filter: ['==', '$type', 'Point'],
       });
     }
+
+    if (!map.getSource(plannedRouteSourceId)) {
+      map.addSource(plannedRouteSourceId, {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: [],
+        },
+      });
+    }
+
+    if (!map.getLayer(plannedFillLayerId)) {
+      map.addLayer({
+        id: plannedFillLayerId,
+        type: 'fill',
+        source: plannedRouteSourceId,
+        paint: {
+          'fill-color': '#22c55e',
+          'fill-opacity': 0.3,
+        },
+        filter: ['==', '$type', 'Polygon'],
+      });
+    }
+
+    if (!map.getLayer(plannedLineLayerId)) {
+      map.addLayer({
+        id: plannedLineLayerId,
+        type: 'line',
+        source: plannedRouteSourceId,
+        paint: {
+          'line-color': '#22c55e',
+          'line-width': 3,
+          'line-dasharray': [2, 2],
+        },
+        filter: ['any', ['==', '$type', 'Polygon'], ['==', '$type', 'LineString']],
+      });
+    }
+
+    if (!map.getLayer(plannedPointLayerId)) {
+      map.addLayer({
+        id: plannedPointLayerId,
+        type: 'circle',
+        source: plannedRouteSourceId,
+        paint: {
+          'circle-radius': 5,
+          'circle-color': '#22c55e',
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#ffffff',
+        },
+        filter: ['==', '$type', 'Point'],
+      });
+    }
   };
 
   const syncTerritories = (map: maplibregl.Map) => {
@@ -271,6 +348,68 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates, ord
       features,
     });
   };
+
+  const syncPlannedRoute = (map: maplibregl.Map, points: [number, number][]) => {
+    const source = map.getSource(plannedRouteSourceId) as maplibregl.GeoJSONSource | undefined;
+    if (!source) return;
+
+    const features: any[] = [];
+
+    // Points
+    for (const point of points) {
+      features.push({
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: point,
+        },
+        properties: {},
+      });
+    }
+
+    if (points.length >= 3) {
+      // Create closed polygon
+      const closedPoints = [...points, points[0]];
+      features.push({
+        type: 'Feature',
+        geometry: {
+          type: 'Polygon',
+          coordinates: [closedPoints],
+        },
+        properties: {},
+      });
+      try {
+        const poly = polygon([closedPoints]);
+        const calcArea = area(poly);
+        onPlannedAreaChangeRef.current?.(calcArea);
+      } catch (e) {
+        onPlannedAreaChangeRef.current?.(null);
+      }
+    } else if (points.length === 2) {
+      features.push({
+        type: 'Feature',
+        geometry: {
+          type: 'LineString',
+          coordinates: points,
+        },
+        properties: {},
+      });
+      onPlannedAreaChangeRef.current?.(null);
+    } else {
+      onPlannedAreaChangeRef.current?.(null);
+    }
+
+    source.setData({
+      type: 'FeatureCollection',
+      features,
+    });
+  };
+
+  useEffect(() => {
+    if (mapRef.current) {
+      syncPlannedRoute(mapRef.current, drawnPoints);
+    }
+  }, [drawnPoints]);
 
   const syncThemePaint = (map: maplibregl.Map) => {
     if (!map.getLayer(territoryFillLayerId) || !map.getLayer(territoryLineLayerId)) {
@@ -326,9 +465,20 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates, ord
       syncTerritories(map);
       syncRoutes(map);
       syncThemePaint(map);
+      syncPlannedRoute(map, drawnPoints);
     });
 
+    const onClick = (e: maplibregl.MapMouseEvent) => {
+      if (!isDrawingModeRef.current) return;
+      
+      const lngLat = e.lngLat;
+      setDrawnPoints((prev: [number, number][]) => [...prev, [lngLat.lng, lngLat.lat]]);
+    };
+
+    map.on('click', onClick);
+
     return () => {
+      map.off('click', onClick);
       map.remove();
       mapRef.current = null;
     };
@@ -385,6 +535,7 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates, ord
       syncTerritories(map);
       syncRoutes(map);
       syncThemePaint(map);
+      syncPlannedRoute(map, drawnPoints);
     });
   }, [isDarkTheme]);
 

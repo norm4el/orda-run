@@ -23,10 +23,6 @@ async function captureTerritory(userId, polylineString) {
         WITH input_line AS (
           SELECT ST_GeomFromText($2, 4326) AS geom
         ),
-        buffered_line AS (
-          SELECT ST_Buffer(geom::geography, 30)::geometry AS geom
-          FROM input_line
-        ),
         closed_lines AS (
           SELECT ST_AddPoint(geom, ST_StartPoint(geom)) AS geom
           FROM input_line
@@ -40,52 +36,68 @@ async function captureTerritory(userId, polylineString) {
           SELECT (ST_Dump(ST_Polygonize(geom))).geom AS geom
           FROM nodes
         ),
-        combined_enclosed AS (
+        new_zone AS (
           SELECT ST_Union(geom) AS geom
           FROM enclosed_polys
         ),
-        new_zone AS (
-          SELECT ST_Union(
-            (SELECT geom FROM buffered_line),
-            COALESCE((SELECT geom FROM combined_enclosed), ST_GeomFromText('GEOMETRYCOLLECTION EMPTY', 4326))
-          ) AS geom
-        ),
-        locked_territories AS (
+        locked_other_territories AS (
           SELECT t.id
           FROM territories t
           CROSS JOIN new_zone z
           WHERE t.owner_id <> $1::uuid
+            AND z.geom IS NOT NULL
             AND ST_Intersects(t.polygon, z.geom)
           FOR UPDATE
         ),
-        deleted_territories AS (
+        deleted_other_territories AS (
           DELETE FROM territories t
-          USING locked_territories lt
+          USING locked_other_territories lt
           WHERE t.id = lt.id
           RETURNING t.owner_id, t.polygon
         ),
-        split_territories AS (
+        split_other_territories AS (
           SELECT
             d.owner_id,
             dumped.geom
-          FROM deleted_territories d
+          FROM deleted_other_territories d
           CROSS JOIN new_zone z
           CROSS JOIN LATERAL ST_Dump(ST_Difference(d.polygon, z.geom)) AS dumped
         ),
         insert_reduced AS (
           INSERT INTO territories (owner_id, polygon, captured_at)
           SELECT owner_id, geom, NOW()
-          FROM split_territories
+          FROM split_other_territories
           WHERE geom IS NOT NULL
             AND NOT ST_IsEmpty(geom)
             AND ST_Area(geom::geography) > 0
           RETURNING id
         ),
+        locked_own_territories AS (
+          SELECT t.id
+          FROM territories t
+          CROSS JOIN new_zone z
+          WHERE t.owner_id = $1::uuid
+            AND z.geom IS NOT NULL
+            AND ST_Intersects(t.polygon, z.geom)
+          FOR UPDATE
+        ),
+        deleted_own_territories AS (
+          DELETE FROM territories t
+          USING locked_own_territories lt
+          WHERE t.id = lt.id
+          RETURNING t.polygon
+        ),
+        merged_own_zone AS (
+          SELECT ST_Union(
+            COALESCE((SELECT geom FROM new_zone WHERE geom IS NOT NULL), ST_GeomFromText('GEOMETRYCOLLECTION EMPTY', 4326)),
+            COALESCE((SELECT ST_Union(polygon) FROM deleted_own_territories), ST_GeomFromText('GEOMETRYCOLLECTION EMPTY', 4326))
+          ) AS geom
+        ),
         insert_new_zone AS (
           INSERT INTO territories (owner_id, polygon, captured_at)
-          SELECT $1::uuid, (ST_Dump(z.geom)).geom::geometry(Polygon, 4326), NOW()
-          FROM new_zone z
-          WHERE z.geom IS NOT NULL AND NOT ST_IsEmpty(z.geom)
+          SELECT $1::uuid, (ST_Dump(geom)).geom::geometry(Polygon, 4326), NOW()
+          FROM merged_own_zone
+          WHERE geom IS NOT NULL AND NOT ST_IsEmpty(geom)
           RETURNING id
         )
         SELECT
