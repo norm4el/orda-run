@@ -110,12 +110,9 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates, ord
   }, [onPlannedAreaChange]);
 
   const ordaModeRef = useRef<boolean>(ordaMode);
-
+  
   useEffect(() => {
     ordaModeRef.current = ordaMode;
-    if (mapRef.current && mapRef.current.isStyleLoaded()) {
-      applyTerritoryStyle(mapRef.current);
-    }
   }, [ordaMode]);
 
   const applyTerritoryStyle = (map: maplibregl.Map) => {
@@ -609,37 +606,19 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates, ord
 
   useEffect(() => {
     const map = mapRef.current;
-
-    if (!map) {
-      return;
-    }
-
-    if (map.loaded()) {
-      syncTerritories(map);
-    } else {
-      map.once('load', () => syncTerritories(map));
-    }
-  }, [territories]);
+    if (!map || !map.isStyleLoaded()) return;
+    applyTerritoryStyle(map);
+  }, [territories, ordaMode]); // Add ordaMode here since it affects styling
 
   useEffect(() => {
     const map = mapRef.current;
-
-    if (!map) return;
-
-    if (map.loaded()) {
-      syncRoutes(map);
-    } else {
-      map.once('load', () => syncRoutes(map));
-    }
+    if (!map || !map.isStyleLoaded()) return;
+    syncRoutes(map);
   }, [routes]);
 
   useEffect(() => {
     const map = mapRef.current;
-
-    if (!map || !map.loaded()) {
-      return;
-    }
-
+    if (!map || !map.isStyleLoaded()) return;
     applyTerritoryStyle(map);
   }, [currentUser]);
 

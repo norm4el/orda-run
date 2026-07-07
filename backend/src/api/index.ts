@@ -228,65 +228,7 @@ apiRouter.get('/territories/:telegram_id', async (req, res) => {
     }
 });
 
-apiRouter.post('/test-capture', async (req, res) => {
-    const telegramId = req.body?.telegram_id;
-    const polylineString = req.body?.polyline;
 
-    if ((typeof telegramId !== 'string' && typeof telegramId !== 'number') || typeof polylineString !== 'string') {
-        res.status(400).json({ error: 'telegram_id and polyline are required' });
-        return;
-    }
-
-    try {
-        const userResult = await query<{ id: string }>(
-            `
-                INSERT INTO users (telegram_id)
-                VALUES ($1)
-                ON CONFLICT (telegram_id) DO UPDATE
-                SET telegram_id = EXCLUDED.telegram_id
-                RETURNING id
-            `,
-            [String(telegramId)],
-        );
-
-        if (userResult.rowCount === 0 || !userResult.rows[0]) {
-            res.status(404).json({ error: 'User not found' });
-            return;
-        }
-
-        const userId = userResult.rows[0].id;
-        const result = await captureTerritory(userId, polylineString);
-
-        await query(`INSERT INTO game_events (user_id, event_type, message) VALUES ($1, 'CAPTURE', 'захватил новую территорию')`, [userId]);
-
-        if (result.stolen_victims_telegram_ids && result.stolen_victims_telegram_ids.length > 0) {
-            const { bot } = await import('../bot');
-            const userDispNameResult = await query<{ display_name: string }>(
-                `SELECT display_name FROM users WHERE id = $1`,
-                [userId]
-            );
-            const thiefName = userDispNameResult.rows[0]?.display_name || 'Неизвестный игрок';
-
-            await query(`INSERT INTO game_events (user_id, event_type, message) VALUES ($1, 'STEAL', 'отвоевал часть чужой территории!')`, [userId]);
-
-            for (const victimTgId of result.stolen_victims_telegram_ids) {
-                if (victimTgId && victimTgId !== String(telegramId)) {
-                    bot.api.sendMessage(victimTgId, `⚠️ Игрок **${thiefName}** откусил кусок вашей территории! Зайдите в приложение, чтобы отвоевать свои земли!`, { parse_mode: 'Markdown' }).catch(e => console.error('Failed to send notification to', victimTgId, e));
-                }
-            }
-        }
-
-        res.json({
-            ok: true,
-            user_id: userId,
-            ...result,
-        });
-    } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unknown error';
-        console.error('test-capture error:', error);
-        res.status(500).json({ error: message });
-    }
-});
 
 apiRouter.post('/runs/manual', async (req, res) => {
     const telegramId = req.body?.telegram_id;
