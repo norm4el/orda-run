@@ -52,18 +52,31 @@ async function generate() {
   const client = await pool.connect();
   
   try {
-    // 1. Create Orda "не норм челы"
-    const ordaId = generateUUID();
+    // 1. Create a Khan user for the Orda
+    const khanId = generateUUID();
+    const khanTgId = Math.floor(Math.random() * 1000000000).toString();
+    const khanName = 'Khan of Chels';
     await client.query(
-      `INSERT INTO ordas (id, name, color, owner_id) VALUES ($1, $2, $3, $4) ON CONFLICT (name) DO NOTHING`,
-      [ordaId, 'не норм челы', '#22c55e', null]
+      `INSERT INTO users (id, telegram_id, username, display_name, influence_points) 
+       VALUES ($1, $2, $3, $4, $5) ON CONFLICT (telegram_id) DO NOTHING`,
+      [khanId, khanTgId, khanName, khanName, 50000]
     );
-    
-    // Get the orda ID in case it already existed
-    const ordaRes = await client.query(`SELECT id FROM ordas WHERE name = 'не норм челы'`);
-    const finalOrdaId = ordaRes.rows[0].id;
 
-    // 2. Create cohort users
+    // 2. Create or find Orda "не норм челы"
+    let finalOrdaId;
+    const ordaRes = await client.query(`SELECT id FROM ordas WHERE name = 'не норм челы' LIMIT 1`);
+    if (ordaRes.rows.length > 0) {
+      finalOrdaId = ordaRes.rows[0].id;
+    } else {
+      const ordaId = generateUUID();
+      await client.query(
+        `INSERT INTO ordas (id, name, khan_id) VALUES ($1, $2, $3)`,
+        [ordaId, 'не норм челы', khanId]
+      );
+      finalOrdaId = ordaId;
+    }
+
+    // 3. Create cohort users
     const numUsers = INITIAL_COHORT_NAMES.length;
     for (let i = 0; i < numUsers; i++) {
       const userId = generateUUID();
