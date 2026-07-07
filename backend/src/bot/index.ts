@@ -41,18 +41,18 @@ bot.command('start', async (ctx) => {
   const welcomeMessage = `Добро пожаловать в Orda Run! 🏃‍♂️
   
 Захватывай территории в реальном мире, бегая с включенным Strava!
-Нажми кнопку **Run** ниже, чтобы открыть карту и начать играть.
+Нажми кнопку <b>Run</b> ниже, чтобы открыть карту и начать играть.
 
 Если у тебя возникли вопросы, используй команду /help.`;
 
   await ctx.reply(welcomeMessage, {
     reply_markup: keyboard,
-    parse_mode: 'Markdown',
+    parse_mode: 'HTML',
   });
 });
 
 bot.command('help', async (ctx) => {
-  const helpMessage = `🛠 **Помощь и Поддержка**
+  const helpMessage = `🛠 <b>Помощь и Поддержка</b>
 
 Orda Run — это игра, где твои реальные пробежки превращаются в захваченные территории на карте.
 
@@ -61,6 +61,6 @@ Orda Run — это игра, где твои реальные пробежки 
 Подписывайся на наш официальный канал, чтобы не пропустить обновления: @ordarun`;
 
   await ctx.reply(helpMessage, {
-    parse_mode: 'Markdown',
+    parse_mode: 'HTML',
   });
 });
