@@ -51,39 +51,57 @@ export function AppTour({ run, onFinish }: Props) {
   };
 
   return (
-    <Joyride
-      {...{
-        steps,
-        run,
-        continuous: true,
-        scrollToFirstStep: true,
-        showProgress: true,
-        showSkipButton: true,
-        callback: handleJoyrideCallback,
-        styles: {
-          options: {
-            primaryColor: '#d8a760',
-            textColor: '#333',
-            zIndex: 10000,
-          },
-          tooltipContainer: {
-            textAlign: 'left',
-          },
-          buttonNext: {
-            backgroundColor: '#d8a760',
-          },
-          buttonBack: {
-            color: '#d8a760',
-          }
-        },
-        locale: {
-          back: 'Назад',
-          close: 'Закрыть',
-          last: 'Понятно',
-          next: 'Далее',
-          skip: 'Пропустить',
+    <>
+      <style>{`
+        .__floater__open, .__floater {
+          z-index: 100000 !important;
         }
-      } as any}
-    />
+        .react-joyride__overlay {
+          z-index: 99999 !important;
+        }
+        .react-joyride__spotlight {
+          z-index: 99999 !important;
+        }
+        .react-joyride__tooltip {
+          z-index: 100000 !important;
+        }
+      `}</style>
+      <Joyride
+        {...{
+          steps,
+          run,
+          continuous: true,
+          scrollToFirstStep: true,
+          showProgress: true,
+          showSkipButton: true,
+          spotlightClicks: true,
+          disableOverlayClose: true,
+          callback: handleJoyrideCallback,
+          styles: {
+            options: {
+              primaryColor: '#d8a760',
+              textColor: '#333',
+              zIndex: 100000,
+            },
+            tooltipContainer: {
+              textAlign: 'left',
+            },
+            buttonNext: {
+              backgroundColor: '#d8a760',
+            },
+            buttonBack: {
+              color: '#d8a760',
+            }
+          },
+          locale: {
+            back: 'Назад',
+            close: 'Закрыть',
+            last: 'Понятно',
+            next: 'Далее',
+            skip: 'Пропустить',
+          }
+        } as any}
+      />
+    </>
   );
 }
