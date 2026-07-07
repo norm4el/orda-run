@@ -1,4 +1,37 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.apiRouter = void 0;
 const express_1 = require("express");
@@ -92,6 +125,7 @@ exports.apiRouter.get('/territories', async (_req, res) => {
                 t.owner_id AS id,
                 t.owner_id,
                 MAX(u.orda_id::text)::uuid AS owner_orda_id,
+                MAX(u.display_name) AS owner_display_name,
                 ST_AsGeoJSON(ST_Union(t.polygon))::json AS polygon
             FROM territories t
             JOIN users u ON t.owner_id = u.id
@@ -160,6 +194,16 @@ exports.apiRouter.post('/test-capture', async (req, res) => {
         }
         const userId = userResult.rows[0].id;
         const result = await (0, territory_1.captureTerritory)(userId, polylineString);
+        if (result.stolen_victims_telegram_ids && result.stolen_victims_telegram_ids.length > 0) {
+            const { bot } = await Promise.resolve().then(() => __importStar(require('../bot')));
+            const userDispNameResult = await (0, db_1.query)(`SELECT display_name FROM users WHERE id = $1`, [userId]);
+            const thiefName = userDispNameResult.rows[0]?.display_name || 'Неизвестный игрок';
+            for (const victimTgId of result.stolen_victims_telegram_ids) {
+                if (victimTgId && victimTgId !== String(telegramId)) {
+                    bot.api.sendMessage(victimTgId, `⚠️ Игрок **${thiefName}** откусил кусок вашей территории! Зайдите в приложение, чтобы отвоевать свои земли!`, { parse_mode: 'Markdown' }).catch(e => console.error('Failed to send notification to', victimTgId, e));
+                }
+            }
+        }
         res.json({
             ok: true,
             user_id: userId,
@@ -196,6 +240,16 @@ exports.apiRouter.post('/runs/manual', async (req, res) => {
                 ON CONFLICT (strava_activity_id) DO NOTHING
             `, [userId, Date.now(), JSON.stringify(decodedPoints)]);
         const result = await (0, territory_1.captureTerritory)(userId, polylineString);
+        if (result.stolen_victims_telegram_ids && result.stolen_victims_telegram_ids.length > 0) {
+            const { bot } = await Promise.resolve().then(() => __importStar(require('../bot')));
+            const userDispNameResult = await (0, db_1.query)(`SELECT display_name FROM users WHERE id = $1`, [userId]);
+            const thiefName = userDispNameResult.rows[0]?.display_name || 'Неизвестный игрок';
+            for (const victimTgId of result.stolen_victims_telegram_ids) {
+                if (victimTgId && victimTgId !== String(telegramId)) {
+                    bot.api.sendMessage(victimTgId, `⚠️ Игрок **${thiefName}** откусил кусок вашей территории! Зайдите в приложение, чтобы отвоевать свои земли!`, { parse_mode: 'Markdown' }).catch(e => console.error('Failed to send notification to', victimTgId, e));
+                }
+            }
+        }
         res.json({
             ok: true,
             user_id: userId,

@@ -158,6 +158,14 @@ export function RecordTab({ currentUser, onCoordinatesUpdate, onRunFinished }: P
         throw new Error('Ошибка при сохранении пробежки');
       }
 
+      const confetti = (await import('canvas-confetti')).default;
+      confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#d8a760', '#22c55e', '#ffffff']
+      });
+
       onRunFinished(); // this will reload map data and switch tab
     } catch (err: any) {
       setError(err.message || 'Ошибка сети');

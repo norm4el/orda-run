@@ -99,10 +99,16 @@ async function captureTerritory(userId, polylineString) {
           FROM merged_own_zone
           WHERE geom IS NOT NULL AND NOT ST_IsEmpty(geom)
           RETURNING id
+        ),
+        stolen_victims AS (
+          SELECT DISTINCT u.telegram_id
+          FROM deleted_other_territories d
+          JOIN users u ON d.owner_id = u.id
         )
         SELECT
           (SELECT COUNT(*)::int FROM insert_reduced) AS reduced_pieces,
-          (SELECT COUNT(*)::int FROM insert_new_zone) AS new_territories;
+          (SELECT COUNT(*)::int FROM insert_new_zone) AS new_territories,
+          ARRAY(SELECT telegram_id FROM stolen_victims) AS stolen_victims_telegram_ids;
       `, [userId, lineStringWkt]);
         await client.query('COMMIT');
         return result.rows[0];

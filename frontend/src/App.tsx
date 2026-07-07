@@ -27,6 +27,7 @@ type TerritoryResponse = {
   id: string;
   owner_id: string;
   owner_orda_id: string | null;
+  owner_display_name: string | null;
   polygon: GeoJSON.Geometry;
 };
 
@@ -41,6 +42,7 @@ function App() {
   const [isSoundEnabled, setIsSoundEnabled] = useState(true);
   const [isDrawingMode, setIsDrawingMode] = useState(false);
   const [plannedArea, setPlannedArea] = useState<number | null>(null);
+  const [plannedPoints, setPlannedPoints] = useState<[number, number][]>([]);
 
   useEffect(() => {
     const telegram = window.Telegram?.WebApp;
@@ -119,6 +121,7 @@ function App() {
               id: territory.id,
               owner_id: territory.owner_id,
               owner_orda_id: territory.owner_orda_id,
+              owner_display_name: territory.owner_display_name,
             },
           })),
         });
@@ -172,7 +175,7 @@ function App() {
   return (
     <main className="app-shell">
       <div className={`map-container ${activeTab !== 'map' && activeTab !== 'record' ? 'hidden-map' : ''}`}>
-        <MapArea territories={territories} routes={routes} currentUser={currentUser} liveCoordinates={liveCoordinates} ordaMode={ordaMode} isDarkTheme={isDarkTheme} isDrawingMode={isDrawingMode} onPlannedAreaChange={setPlannedArea} />
+        <MapArea territories={territories} routes={routes} currentUser={currentUser} liveCoordinates={liveCoordinates} ordaMode={ordaMode} isDarkTheme={isDarkTheme} isDrawingMode={isDrawingMode} onPlannedAreaChange={setPlannedArea} onPlannedPointsChange={setPlannedPoints} />
       </div>
       
       {activeTab === 'profile' && (
@@ -305,11 +308,62 @@ function App() {
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                {isDrawingMode && plannedArea !== null && (
+                  <button
+                    onClick={async () => {
+                      try {
+                        if (plannedPoints.length < 3) return;
+                        
+                        const polyline = await import('@mapbox/polyline');
+                        
+                        // plannedPoints are [lng, lat], we need [lat, lng] for polyline
+                        const latLngPoints = plannedPoints.map((p: number[]) => [p[1], p[0]] as [number, number]);
+                        const polylineStr = polyline.default.encode(latLngPoints);
+                        
+                        const res = await fetch('/api/test-capture', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            telegram_id: currentUser.telegramId,
+                            polyline: polylineStr
+                          })
+                        });
+                        
+                        if (res.ok) {
+                          const confetti = (await import('canvas-confetti')).default;
+                          confetti({
+                            particleCount: 150,
+                            spread: 70,
+                            origin: { y: 0.6 },
+                            colors: ['#d8a760', '#22c55e', '#ffffff']
+                          });
+                          setIsDrawingMode(false);
+                          reloadMapData();
+                        }
+                      } catch (e) {
+                        console.error(e);
+                      }
+                    }}
+                    style={{
+                      background: 'var(--primary)',
+                      color: '#000',
+                      border: 'none',
+                      padding: '8px 16px',
+                      borderRadius: '20px',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      textTransform: 'uppercase'
+                    }}
+                  >
+                    Захват
+                  </button>
+                )}
                 <button
                   onClick={() => setIsDrawingMode(!isDrawingMode)}
                   style={{
-                    background: isDrawingMode ? '#22c55e' : 'var(--background)',
-                    color: isDrawingMode ? '#000' : 'var(--text-main)',
+                    background: isDrawingMode ? 'transparent' : '#22c55e',
+                    color: isDrawingMode ? 'var(--text-main)' : '#000',
                     border: '1px solid rgba(255,255,255,0.1)',
                     padding: '8px 16px',
                     borderRadius: '20px',

@@ -163,7 +163,8 @@ async function fetchAndSaveActivities(telegramId, accessToken) {
         });
         const activities = response.data;
         for (const activity of activities) {
-            if (activity.map?.summary_polyline) {
+            const allowedTypes = ['Run', 'Walk', 'Hike', 'VirtualRun', 'TrailRun'];
+            if (activity.map?.summary_polyline && allowedTypes.includes(activity.type)) {
                 // Decode to array of [lat, lng]
                 const coordinates = polyline_1.default.decode(activity.map.summary_polyline);
                 const insertResult = await (0, db_1.query)(`
@@ -231,8 +232,9 @@ async function processNewActivity(activityId, stravaOwnerId) {
             headers: { Authorization: `Bearer ${accessToken}` }
         });
         const activity = response.data;
-        // Если у тренировки есть маршрут (полилиния)
-        if (activity.map?.summary_polyline) {
+        // Если у тренировки есть маршрут (полилиния) и это пешая активность
+        const allowedTypes = ['Run', 'Walk', 'Hike', 'VirtualRun', 'TrailRun'];
+        if (activity.map?.summary_polyline && allowedTypes.includes(activity.type)) {
             const coordinates = polyline_1.default.decode(activity.map.summary_polyline);
             const insertResult = await (0, db_1.query)(`
           INSERT INTO routes (user_id, strava_activity_id, coordinates)

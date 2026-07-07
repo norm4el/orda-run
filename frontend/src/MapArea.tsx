@@ -35,7 +35,7 @@ const plannedLineLayerId = 'planned-line-layer';
 
 export type TerritoryFeatureCollection = FeatureCollection<
   Geometry,
-  { id: string; owner_id: string; owner_orda_id: string | null }
+  { id: string; owner_id: string; owner_orda_id: string | null; owner_display_name: string | null }
 >;
 
 export type RouteFeatureCollection = FeatureCollection<
@@ -52,9 +52,10 @@ type MapAreaProps = {
   isDarkTheme?: boolean;
   isDrawingMode?: boolean;
   onPlannedAreaChange?: (area: number | null) => void;
+  onPlannedPointsChange?: (points: [number, number][]) => void;
 };
 
-export function MapArea({ territories, routes, currentUser, liveCoordinates, ordaMode = false, isDarkTheme = true, isDrawingMode = false, onPlannedAreaChange }: MapAreaProps) {
+export function MapArea({ territories, routes, currentUser, liveCoordinates, ordaMode = false, isDarkTheme = true, isDrawingMode = false, onPlannedAreaChange, onPlannedPointsChange }: MapAreaProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const territoriesRef = useRef<TerritoryFeatureCollection | null>(territories);
@@ -176,6 +177,27 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates, ord
       });
     } else {
       map.setPaintProperty(territoryLineLayerId, 'line-color', fillColorExpression);
+    }
+
+    const territorySymbolLayerId = 'territories-symbol';
+    if (!map.getLayer(territorySymbolLayerId)) {
+      map.addLayer({
+        id: territorySymbolLayerId,
+        type: 'symbol',
+        source: territorySourceId,
+        layout: {
+          'text-field': ['get', 'owner_display_name'],
+          'text-size': 14,
+          'text-anchor': 'center',
+          'text-justify': 'center',
+          'symbol-placement': 'point', // puts it at the centroid
+        },
+        paint: {
+          'text-color': '#ffffff',
+          'text-halo-color': '#000000',
+          'text-halo-width': 1,
+        },
+      });
     }
 
     if (!map.getSource(routesSourceId)) {
@@ -377,7 +399,8 @@ export function MapArea({ territories, routes, currentUser, liveCoordinates, ord
     if (mapRef.current) {
       syncPlannedRoute(mapRef.current, drawnPoints);
     }
-  }, [drawnPoints]);
+    onPlannedPointsChange?.(drawnPoints);
+  }, [drawnPoints, onPlannedPointsChange]);
 
   const syncThemePaint = (map: maplibregl.Map) => {
     if (!map.getLayer(territoryFillLayerId) || !map.getLayer(territoryLineLayerId)) {

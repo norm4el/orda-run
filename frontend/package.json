@@ -13,6 +13,8 @@
     "@mapbox/polyline": "^1.2.1",
     "@turf/area": "^7.3.5",
     "@turf/helpers": "^7.3.5",
+    "@types/canvas-confetti": "^1.9.0",
+    "canvas-confetti": "^1.9.4",
     "maplibre-gl": "^5.7.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"

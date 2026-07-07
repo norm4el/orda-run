@@ -210,7 +210,8 @@ async function fetchAndSaveActivities(telegramId: string, accessToken: string) {
     const activities = response.data;
 
     for (const activity of activities) {
-      if (activity.map?.summary_polyline) {
+      const allowedTypes = ['Run', 'Walk', 'Hike', 'VirtualRun', 'TrailRun'];
+      if (activity.map?.summary_polyline && allowedTypes.includes(activity.type)) {
         // Decode to array of [lat, lng]
         const coordinates = polyline.decode(activity.map.summary_polyline);
 
@@ -297,8 +298,9 @@ async function processNewActivity(activityId: number, stravaOwnerId: number) {
 
     const activity = response.data;
 
-    // Если у тренировки есть маршрут (полилиния)
-    if (activity.map?.summary_polyline) {
+    // Если у тренировки есть маршрут (полилиния) и это пешая активность
+    const allowedTypes = ['Run', 'Walk', 'Hike', 'VirtualRun', 'TrailRun'];
+    if (activity.map?.summary_polyline && allowedTypes.includes(activity.type)) {
       const coordinates = polyline.decode(activity.map.summary_polyline);
 
       const insertResult = await query(

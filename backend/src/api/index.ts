@@ -132,6 +132,7 @@ apiRouter.get('/territories', async (_req, res) => {
         id: string;
         owner_id: string;
         owner_orda_id: string | null;
+        owner_display_name: string | null;
         polygon: GeoJSON.Geometry;
     }>(
         `
@@ -139,6 +140,7 @@ apiRouter.get('/territories', async (_req, res) => {
                 t.owner_id AS id,
                 t.owner_id,
                 MAX(u.orda_id::text)::uuid AS owner_orda_id,
+                MAX(u.display_name) AS owner_display_name,
                 ST_AsGeoJSON(ST_Union(t.polygon))::json AS polygon
             FROM territories t
             JOIN users u ON t.owner_id = u.id
@@ -238,6 +240,21 @@ apiRouter.post('/test-capture', async (req, res) => {
         const userId = userResult.rows[0].id;
         const result = await captureTerritory(userId, polylineString);
 
+        if (result.stolen_victims_telegram_ids && result.stolen_victims_telegram_ids.length > 0) {
+            const { bot } = await import('../bot');
+            const userDispNameResult = await query<{ display_name: string }>(
+                `SELECT display_name FROM users WHERE id = $1`,
+                [userId]
+            );
+            const thiefName = userDispNameResult.rows[0]?.display_name || 'Неизвестный игрок';
+
+            for (const victimTgId of result.stolen_victims_telegram_ids) {
+                if (victimTgId && victimTgId !== String(telegramId)) {
+                    bot.api.sendMessage(victimTgId, `⚠️ Игрок **${thiefName}** откусил кусок вашей территории! Зайдите в приложение, чтобы отвоевать свои земли!`, { parse_mode: 'Markdown' }).catch(e => console.error('Failed to send notification to', victimTgId, e));
+                }
+            }
+        }
+
         res.json({
             ok: true,
             user_id: userId,
@@ -286,6 +303,21 @@ apiRouter.post('/runs/manual', async (req, res) => {
         );
 
         const result = await captureTerritory(userId, polylineString);
+
+        if (result.stolen_victims_telegram_ids && result.stolen_victims_telegram_ids.length > 0) {
+            const { bot } = await import('../bot');
+            const userDispNameResult = await query<{ display_name: string }>(
+                `SELECT display_name FROM users WHERE id = $1`,
+                [userId]
+            );
+            const thiefName = userDispNameResult.rows[0]?.display_name || 'Неизвестный игрок';
+
+            for (const victimTgId of result.stolen_victims_telegram_ids) {
+                if (victimTgId && victimTgId !== String(telegramId)) {
+                    bot.api.sendMessage(victimTgId, `⚠️ Игрок **${thiefName}** откусил кусок вашей территории! Зайдите в приложение, чтобы отвоевать свои земли!`, { parse_mode: 'Markdown' }).catch(e => console.error('Failed to send notification to', victimTgId, e));
+                }
+            }
+        }
 
         res.json({
             ok: true,
