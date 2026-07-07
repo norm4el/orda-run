@@ -1,5 +1,4 @@
 import { Pool } from 'pg';
-import crypto from 'crypto';
 import * as dotenv from 'dotenv';
 import path from 'path';
 import polyline from '@mapbox/polyline';
@@ -38,6 +37,14 @@ function createCirclePolyline(center: [number, number], radiusKm: number, points
   return polyline.encode(coords);
 }
 
+function generateUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
 import { captureTerritory } from '../src/db/territory';
 
 async function generate() {
@@ -46,7 +53,7 @@ async function generate() {
   
   try {
     // 1. Create Orda "не норм челы"
-    const ordaId = crypto.randomUUID();
+    const ordaId = generateUUID();
     await client.query(
       `INSERT INTO ordas (id, name, color, owner_id) VALUES ($1, $2, $3, $4) ON CONFLICT (name) DO NOTHING`,
       [ordaId, 'не норм челы', '#22c55e', null]
@@ -59,7 +66,7 @@ async function generate() {
     // 2. Create cohort users
     const numUsers = INITIAL_COHORT_NAMES.length;
     for (let i = 0; i < numUsers; i++) {
-      const userId = crypto.randomUUID();
+      const userId = generateUUID();
       const tgId = Math.floor(Math.random() * 1000000000).toString();
       const nickname = INITIAL_COHORT_NAMES[i];
       const influencePoints = Math.floor(Math.random() * 50000) + 1000;
