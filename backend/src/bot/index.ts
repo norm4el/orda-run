@@ -1,4 +1,4 @@
-import { Bot, InlineKeyboard } from 'grammy';
+import { Bot } from 'grammy';
 import { query } from '../db';
 
 const botToken = process.env.BOT_TOKEN;
@@ -43,18 +43,14 @@ bot.command('start', async (ctx) => {
     return;
   }
 
-  const keyboard = new InlineKeyboard().webApp('Run', webAppUrl);
-
   const welcomeMessage = `Добро пожаловать в Orda Run! 🏃‍♂️
   
 Захватывай территории в реальном мире, бегая с включенным Strava!
-Нажми кнопку Run ниже, чтобы открыть карту и начать играть.
+Нажми кнопку меню "Run" слева внизу, чтобы открыть карту и начать играть.
 
 Если у тебя возникли вопросы, используй команду /help.`;
 
-  await ctx.reply(welcomeMessage, {
-    reply_markup: keyboard,
-  });
+  await ctx.reply(welcomeMessage);
 });
 
 bot.command('help', async (ctx) => {
