@@ -36,9 +36,31 @@ bot.command('start', async (ctx) => {
     return;
   }
 
-  const keyboard = new InlineKeyboard().webApp('Открыть карту', webAppUrl);
+  const keyboard = new InlineKeyboard().webApp('Run', webAppUrl);
 
-  await ctx.reply('Добро пожаловать в Орду!', {
+  const welcomeMessage = `Добро пожаловать в Orda Run! 🏃‍♂️
+  
+Захватывай территории в реальном мире, бегая с включенным Strava!
+Нажми кнопку **Run** ниже, чтобы открыть карту и начать играть.
+
+Если у тебя возникли вопросы, используй команду /help.`;
+
+  await ctx.reply(welcomeMessage, {
     reply_markup: keyboard,
+    parse_mode: 'Markdown',
+  });
+});
+
+bot.command('help', async (ctx) => {
+  const helpMessage = `🛠 **Помощь и Поддержка**
+
+Orda Run — это игра, где твои реальные пробежки превращаются в захваченные территории на карте.
+
+Если у тебя есть вопросы, баги или предложения, пиши разработчику: @wnorm
+
+Подписывайся на наш официальный канал, чтобы не пропустить обновления: @ordarun`;
+
+  await ctx.reply(helpMessage, {
+    parse_mode: 'Markdown',
   });
 });
