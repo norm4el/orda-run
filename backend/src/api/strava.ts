@@ -271,7 +271,32 @@ stravaRouter.post('/webhook', (req, res) => {
       console.error('Error processing new webhook activity:', err);
     });
   }
+
+  // Обработка отзыва доступа (deauthorization)
+  if (object_type === 'athlete' && aspect_type === 'delete') {
+    console.log(`[Strava Webhook] Deauthorization event for strava_owner_id=${owner_id}`);
+    handleAthleteDeauthorization(owner_id).catch(err => {
+      console.error('Error processing deauth webhook:', err);
+    });
+  }
 });
+
+async function handleAthleteDeauthorization(stravaOwnerId: number) {
+  try {
+    await query(
+      `UPDATE users 
+       SET strava_access_token = NULL, 
+           strava_refresh_token = NULL, 
+           strava_expires_at = NULL, 
+           strava_athlete_id = NULL 
+       WHERE strava_athlete_id = $1`,
+      [stravaOwnerId]
+    );
+    console.log(`[Strava Webhook] Successfully deauthorized athlete ${stravaOwnerId}`);
+  } catch (error) {
+    console.error(`[Strava Webhook] Error deauthorizing athlete ${stravaOwnerId}:`, error);
+  }
+}
 
 async function processNewActivity(activityId: number, stravaOwnerId: number) {
   try {

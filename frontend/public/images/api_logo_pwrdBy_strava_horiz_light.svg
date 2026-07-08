@@ -1,0 +1,11 @@
+<svg width="200" height="30" viewBox="0 0 200 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g fill="#A0A0A0">
+    <!-- "POWERED BY" text approximate path -->
+    <path d="M10 20h2v-8h-2v8z"/>
+    <path d="M15 20h2v-8h-2v8z"/>
+    <!-- This is a placeholder for the "POWERED BY" text -->
+    <text x="10" y="20" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#A0A0A0" letter-spacing="1">POWERED BY</text>
+  </g>
+  <path d="M120 18.5l-2.5-5h-3.8L120 25.5l6.3-12h-3.8m-8.5-6.8l3.4 6.8h5L120 2l-8.5 16.7h5l3.4-6.8" fill="#FC4C02"/>
+  <text x="135" y="22" font-family="Arial, sans-serif" font-size="18" font-weight="900" fill="#FC4C02" letter-spacing="1">STRAVA</text>
+</svg>
