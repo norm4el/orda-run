@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import polyline from '@mapbox/polyline';
+import { useTranslation } from 'react-i18next';
 import type { AuthenticatedUser } from '../App';
 
 type Props = {
   currentUser: AuthenticatedUser | null;
   onCoordinatesUpdate: (coords: [number, number][]) => void;
   onRunFinished: () => void;
+  onGoToStrava?: () => void;
 };
 
 // Haversine formula to calculate distance between two coordinates in meters
@@ -29,7 +31,8 @@ function formatTime(seconds: number) {
   return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
 
-export function RecordTab({ currentUser, onCoordinatesUpdate, onRunFinished }: Props) {
+export function RecordTab({ currentUser, onCoordinatesUpdate, onRunFinished, onGoToStrava }: Props) {
+  const { t } = useTranslation();
   const [isTracking, setIsTracking] = useState(false);
   const [coordinates, setCoordinates] = useState<[number, number][]>([]);
   const [distanceMeters, setDistanceMeters] = useState(0);
@@ -71,7 +74,7 @@ export function RecordTab({ currentUser, onCoordinatesUpdate, onRunFinished }: P
   const startTracking = async () => {
     setError(null);
     if (!navigator.geolocation) {
-      setError('Геолокация не поддерживается вашим устройством');
+      setError(t('geo_not_supported'));
       return;
     }
 
@@ -106,7 +109,7 @@ export function RecordTab({ currentUser, onCoordinatesUpdate, onRunFinished }: P
       },
       (err) => {
         console.error(err);
-        setError(`Ошибка GPS: ${err.message}`);
+        setError(`${t('gps_error')} ${err.message}`);
       },
       {
         enableHighAccuracy: true,
@@ -131,7 +134,7 @@ export function RecordTab({ currentUser, onCoordinatesUpdate, onRunFinished }: P
 
   const saveRun = async () => {
     if (coordinates.length < 2) {
-      setError('Слишком короткая пробежка (нужно хотя бы 2 точки)');
+      setError(t('too_short'));
       return;
     }
 
@@ -139,7 +142,7 @@ export function RecordTab({ currentUser, onCoordinatesUpdate, onRunFinished }: P
     setError(null);
 
     try {
-      if (!currentUser) throw new Error('Пользователь не авторизован');
+      if (!currentUser) throw new Error(t('user_unauth'));
       
       const polylineStr = polyline.encode(coordinates);
       
@@ -155,7 +158,7 @@ export function RecordTab({ currentUser, onCoordinatesUpdate, onRunFinished }: P
       });
 
       if (!response.ok) {
-        throw new Error('Ошибка при сохранении пробежки');
+        throw new Error(t('save_error'));
       }
 
       const confetti = (await import('canvas-confetti')).default;
@@ -172,7 +175,7 @@ export function RecordTab({ currentUser, onCoordinatesUpdate, onRunFinished }: P
 
       onRunFinished(); // this will reload map data and switch tab
     } catch (err: any) {
-      setError(err.message || 'Ошибка сети');
+      setError(err.message || t('network_error'));
     } finally {
       setIsSaving(false);
     }
@@ -196,7 +199,7 @@ export function RecordTab({ currentUser, onCoordinatesUpdate, onRunFinished }: P
   return (
     <div className="tab-container" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: 'calc(100vh - 72px)', zIndex: 1000, padding: '20px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', pointerEvents: 'none', paddingTop: '40px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-        <h2 style={{ fontSize: '16px', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '2px', color: 'var(--text-dim)', margin: 0 }}>Трекер</h2>
+        <h2 style={{ fontSize: '16px', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '2px', color: 'var(--text-dim)', margin: 0 }}>{t('tracker')}</h2>
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-dim)' }}>
           <circle cx="12" cy="12" r="3"></circle>
           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
@@ -209,25 +212,40 @@ export function RecordTab({ currentUser, onCoordinatesUpdate, onRunFinished }: P
         </div>
       )}
 
+      {isTracking && (
+        <div style={{ background: 'rgba(91, 179, 255, 0.1)', border: '1px solid var(--primary)', color: 'var(--text-main)', padding: '12px', borderRadius: '12px', marginBottom: '20px', textAlign: 'center', pointerEvents: 'auto' }}>
+          {t('switch_to_map')}
+        </div>
+      )}
+
+      {!currentUser?.stravaAccessToken && (
+        <div style={{ background: 'rgba(252, 76, 2, 0.1)', border: '1px solid #fc4c02', color: 'var(--text-main)', padding: '16px', borderRadius: '12px', marginBottom: '20px', textAlign: 'center', pointerEvents: 'auto' }}>
+          <div style={{ marginBottom: '12px', fontSize: '14px' }}>{t('strava_prompt')}</div>
+          <button onClick={onGoToStrava} style={{ background: '#fc4c02', color: 'white', border: 'none', padding: '10px 16px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>
+            {t('connect_strava_btn')}
+          </button>
+        </div>
+      )}
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: '30px', width: '100%', pointerEvents: 'none', background: 'var(--surface)', padding: '30px', borderRadius: '32px', boxShadow: '0 12px 40px rgba(0,0,0,0.5)', zIndex: 10 }}>
         <div>
-          <div style={{ fontSize: '12px', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Километры</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>{t('kilometers')}</div>
           <div style={{ fontSize: '42px', fontWeight: '500', color: 'var(--text-main)', lineHeight: '1' }}>{distanceKm}</div>
         </div>
         <div>
-          <div style={{ fontSize: '12px', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Время</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>{t('time')}</div>
           <div style={{ fontSize: '42px', fontWeight: '500', color: 'var(--text-main)', lineHeight: '1' }}>{formatTime(elapsedSeconds)}</div>
         </div>
         <div>
-          <div style={{ fontSize: '12px', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Темп</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>{t('pace')}</div>
           <div style={{ fontSize: '28px', fontWeight: '500', color: 'var(--text-main)', display: 'flex', alignItems: 'baseline', gap: '4px' }}>{distanceMeters > 0 ? `${paceMins}:${paceSecs.toString().padStart(2, '0')}` : '0:00'} <span style={{ fontSize: '16px', color: 'var(--text-dim)' }}>/км</span></div>
         </div>
         <div>
-          <div style={{ fontSize: '12px', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Калории</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>{t('calories')}</div>
           <div style={{ fontSize: '28px', fontWeight: '500', color: 'var(--text-main)' }}>{Math.floor(distanceMeters * 0.07)}</div>
         </div>
       </div>
-
+      
       <div style={{ flex: 1 }} />
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', marginTop: 'auto', marginBottom: '20px', gap: '30px', pointerEvents: 'auto', zIndex: 10 }}>
@@ -242,14 +260,14 @@ export function RecordTab({ currentUser, onCoordinatesUpdate, onRunFinished }: P
               disabled={isSaving}
               style={{ width: '120px', height: '120px', borderRadius: '50%', fontSize: '16px', fontWeight: '500', background: 'var(--primary)', color: '#000', pointerEvents: 'auto', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', textTransform: 'uppercase', letterSpacing: '1px', cursor: 'pointer' }}
             >
-              {isSaving ? 'ОЖИДАЙТЕ' : 'ЗАХВАТ'}
+              {isSaving ? t('wait') : t('capture')}
             </button>
           ) : (
             <button
               onClick={startTracking}
               style={{ width: '120px', height: '120px', borderRadius: '50%', fontSize: '16px', fontWeight: '500', background: 'transparent', color: 'var(--primary)', border: '2px solid var(--primary)', pointerEvents: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', textTransform: 'uppercase', letterSpacing: '1px', cursor: 'pointer' }}
             >
-              СТАРТ
+              {t('start')}
             </button>
           )
         ) : (
@@ -257,7 +275,7 @@ export function RecordTab({ currentUser, onCoordinatesUpdate, onRunFinished }: P
             onClick={stopTracking}
             style={{ width: '120px', height: '120px', borderRadius: '50%', fontSize: '16px', fontWeight: '500', background: 'transparent', color: 'var(--primary)', border: '2px solid var(--primary)', pointerEvents: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', textTransform: 'uppercase', letterSpacing: '1px', cursor: 'pointer' }}
           >
-            ПАУЗА
+            {t('pause')}
           </button>
         )}
         

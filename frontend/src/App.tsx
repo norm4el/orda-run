@@ -261,7 +261,7 @@ function App() {
         setActiveTab={setActiveTab} 
       />
 
-      <div className={`map-container ${activeTab !== 'map' && activeTab !== 'record' ? 'hidden-map' : ''}`}>
+      <div className={`map-container ${activeTab !== 'map' ? 'hidden-map' : ''}`}>
         <MapArea territories={territories} routes={routes} currentUser={currentUser} liveCoordinates={pastRouteToShow || liveCoordinates} ordaMode={ordaMode} mapTheme={mapTheme} isDrawingMode={isDrawingMode} onPlannedAreaChange={setPlannedArea} onTerritoryClick={(id) => setViewingUserId(id)} />
       </div>
       
@@ -320,6 +320,12 @@ function App() {
             setActiveTab('map');
             reloadMapData();
           }} 
+          onGoToStrava={() => {
+            setActiveTab('profile');
+            setTimeout(() => {
+              document.getElementById('strava-section')?.scrollIntoView({ behavior: 'smooth' });
+            }, 100);
+          }}
         />
       </div>
 

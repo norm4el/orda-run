@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { AuthenticatedUser } from '../App';
 import { getRankFromPoints } from '../utils/ranks';
 
@@ -23,6 +24,7 @@ export function ProfileTab({
   setIsSoundEnabled,
   onOpenHistory
 }: Props) {
+  const { t, i18n } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(currentUser?.displayName ?? '');
   const [colorSelf, setColorSelf] = useState(currentUser?.colorSelf ?? '#d8a760');
@@ -231,14 +233,14 @@ export function ProfileTab({
   return (
     <div className="content-area" style={{ padding: '0 20px', paddingTop: '40px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-        <h2 style={{ fontSize: '16px', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '2px', color: 'var(--text-dim)', margin: 0 }}>Профиль</h2>
+        <h2 style={{ fontSize: '16px', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '2px', color: 'var(--text-dim)', margin: 0 }}>{t('profile')}</h2>
         {isEditing ? (
           <button 
             onClick={handleSave}
             disabled={isSaving}
             style={{ background: 'var(--primary)', color: '#000', border: 'none', padding: '6px 12px', borderRadius: '8px', fontWeight: 'bold', fontSize: '12px' }}
           >
-            {isSaving ? '...' : 'СОХРАНИТЬ'}
+            {isSaving ? t('saving') : t('save')}
           </button>
         ) : (
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-dim)', cursor: 'pointer' }} onClick={() => setIsEditing(true)}>
@@ -262,10 +264,10 @@ export function ProfileTab({
                 style={{ background: 'transparent', border: 'none', borderBottom: '1px solid var(--primary)', color: 'var(--text-main)', fontSize: '20px', textTransform: 'uppercase', width: '100%', marginBottom: '10px', outline: 'none' }}
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
-                placeholder="Введите имя"
+                placeholder={t('enter_name')}
               />
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-                <span style={{ fontSize: '12px', color: 'var(--text-dim)' }}>ЦВЕТ ТЕРРИТОРИИ</span>
+                <span style={{ fontSize: '12px', color: 'var(--text-dim)' }}>{t('territory_color')}</span>
                 <input type="color" value={colorSelf} onChange={(e) => setColorSelf(e.target.value)} style={{ width: '24px', height: '24px', border: 'none', padding: 0, background: 'none' }} />
               </div>
             </>
@@ -279,7 +281,7 @@ export function ProfileTab({
             {rank.nextMilestone ? (
               <span>{Math.floor(currentUser.influencePoints)} / {rank.nextMilestone} XP</span>
             ) : (
-              <span>MAX LEVEL</span>
+              <span>{t('max_level')}</span>
             )}
           </div>
           <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px' }}>
@@ -289,19 +291,19 @@ export function ProfileTab({
       </div>
 
       <div style={{ marginBottom: '40px' }}>
-        <h3 style={{ fontSize: '14px', fontWeight: '500', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '20px' }}>Статистика</h3>
+        <h3 style={{ fontSize: '14px', fontWeight: '500', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '20px' }}>{t('stats')}</h3>
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: '24px', fontWeight: '500', color: 'var(--text-main)', marginBottom: '4px' }}>{userStats.runs}</div>
-            <div style={{ fontSize: '12px', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Пробежки</div>
+            <div style={{ fontSize: '12px', color: 'var(--text-dim)', textTransform: 'uppercase' }}>{t('runs')}</div>
           </div>
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: '24px', fontWeight: '500', color: 'var(--text-main)', marginBottom: '4px' }}>{(userStats.distance || 0).toFixed(1)}</div>
-            <div style={{ fontSize: '12px', color: 'var(--text-dim)', textTransform: 'uppercase' }}>КМ</div>
+            <div style={{ fontSize: '12px', color: 'var(--text-dim)', textTransform: 'uppercase' }}>{t('km')}</div>
           </div>
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: '24px', fontWeight: '500', color: 'var(--text-main)', marginBottom: '4px' }}>{((currentUser?.influencePoints || 0) / 1000000).toFixed(2)}</div>
-            <div style={{ fontSize: '12px', color: 'var(--text-dim)', textTransform: 'uppercase' }}>КМ²</div>
+            <div style={{ fontSize: '12px', color: 'var(--text-dim)', textTransform: 'uppercase' }}>{t('sq_km')}</div>
           </div>
         </div>
 
@@ -309,39 +311,55 @@ export function ProfileTab({
           onClick={onOpenHistory}
           style={{ width: '100%', marginTop: '20px', background: 'rgba(216, 167, 96, 0.1)', color: 'var(--primary)', border: '1px solid var(--primary)', padding: '12px', borderRadius: '12px', fontSize: '14px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', cursor: 'pointer' }}
         >
-          История маршрутов
+          {t('history')}
         </button>
       </div>
 
       <div style={{ marginBottom: '40px' }}>
-        <h3 style={{ fontSize: '14px', fontWeight: '500', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '20px' }}>Настройки Приложения</h3>
+        <h3 style={{ fontSize: '14px', fontWeight: '500', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '20px' }}>{t('app_settings')}</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '12px 15px', borderRadius: '8px' }}>
             <div>
-              <div style={{ fontWeight: '500', color: 'var(--text-main)' }}>Тема карты</div>
-              <div style={{ fontSize: '12px', color: 'var(--text-dim)' }}>{mapTheme === 'dark' ? 'Темная' : mapTheme === 'light' ? 'Светлая' : 'Positron'}</div>
+              <div style={{ fontWeight: '500', color: 'var(--text-main)' }}>{t('language')}</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-dim)' }}>{t('language_desc')}</div>
+            </div>
+            <div style={{ display: 'flex', gap: '5px' }}>
+              <button 
+                onClick={() => { i18n.changeLanguage('ru'); localStorage.setItem('language', 'ru'); }} 
+                style={{ background: i18n.language === 'ru' ? 'var(--primary)' : 'transparent', border: '1px solid var(--primary)', color: i18n.language === 'ru' ? '#000' : 'var(--primary)', padding: '6px 10px', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold' }}
+              >RU</button>
+              <button 
+                onClick={() => { i18n.changeLanguage('en'); localStorage.setItem('language', 'en'); }} 
+                style={{ background: i18n.language === 'en' ? 'var(--primary)' : 'transparent', border: '1px solid var(--primary)', color: i18n.language === 'en' ? '#000' : 'var(--primary)', padding: '6px 10px', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold' }}
+              >EN</button>
+            </div>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '12px 15px', borderRadius: '8px' }}>
+            <div>
+              <div style={{ fontWeight: '500', color: 'var(--text-main)' }}>{t('map_theme')}</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-dim)' }}>{mapTheme === 'dark' ? t('theme_dark') : mapTheme === 'light' ? t('theme_light') : t('theme_positron')}</div>
             </div>
             <div style={{ display: 'flex', gap: '5px' }}>
               <button 
                 onClick={() => setMapTheme?.('dark')} 
                 style={{ background: mapTheme === 'dark' ? 'var(--primary)' : 'transparent', border: '1px solid var(--primary)', color: mapTheme === 'dark' ? '#000' : 'var(--primary)', padding: '6px 10px', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold' }}
-              >ТЕМНАЯ</button>
+              >{t('theme_dark').toUpperCase()}</button>
               <button 
                 onClick={() => setMapTheme?.('positron')} 
                 style={{ background: mapTheme === 'positron' ? 'var(--primary)' : 'transparent', border: '1px solid var(--primary)', color: mapTheme === 'positron' ? '#000' : 'var(--primary)', padding: '6px 10px', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold' }}
-              >СВЕТЛАЯ</button>
+              >{t('theme_light').toUpperCase()}</button>
             </div>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '12px 15px', borderRadius: '8px' }}>
             <div>
-              <div style={{ fontWeight: '500', color: 'var(--text-main)' }}>Звук</div>
-              <div style={{ fontSize: '12px', color: 'var(--text-dim)' }}>Уведомления и эффекты</div>
+              <div style={{ fontWeight: '500', color: 'var(--text-main)' }}>{t('sound')}</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-dim)' }}>{t('sound_desc')}</div>
             </div>
             <button 
               onClick={() => setIsSoundEnabled?.(prev => !prev)} 
               style={{ background: 'transparent', border: `1px solid ${isSoundEnabled ? 'var(--primary)' : 'var(--text-dim)'}`, color: isSoundEnabled ? 'var(--primary)' : 'var(--text-dim)', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold' }}
             >
-              {isSoundEnabled ? 'ВКЛ' : 'ВЫКЛ'}
+              {isSoundEnabled ? t('on') : t('off')}
             </button>
           </div>
         </div>
@@ -437,20 +455,20 @@ export function ProfileTab({
       )}
 
       {!isEditing && (
-        <div style={{ marginTop: '20px' }}>
+        <div id="strava-section" style={{ marginTop: '20px' }}>
           {currentUser.stravaAccessToken ? (
             <>
               <button style={{ width: '100%', padding: '15px', background: 'transparent', border: '1px solid var(--primary)', color: 'var(--primary)', borderRadius: '8px', fontWeight: '500', textTransform: 'uppercase', marginBottom: '10px' }} onClick={handleSync} disabled={isSyncing}>
-                {isSyncing ? 'Синхронизация...' : 'Синхронизировать Strava'}
+                {isSyncing ? t('syncing') : t('sync_strava')}
               </button>
               <button style={{ width: '100%', padding: '15px', background: 'transparent', border: '1px solid #ef4444', color: '#ef4444', borderRadius: '8px', fontWeight: '500', textTransform: 'uppercase' }} onClick={handleDisconnectStrava} disabled={isDisconnecting}>
-                {isDisconnecting ? 'Отключение...' : 'Отключить и удалить данные'}
+                {isDisconnecting ? t('disconnecting') : t('disconnect_strava')}
               </button>
             </>
           ) : (
             <button style={{ width: '100%', padding: '14px', background: '#fc4c02', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer' }} onClick={handleStravaClick}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
-              Connect with Strava
+              {t('connect_strava')}
             </button>
           )}
         </div>
