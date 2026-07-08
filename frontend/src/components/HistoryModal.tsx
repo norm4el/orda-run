@@ -25,8 +25,7 @@ function formatTime(seconds: number) {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-fun
-  const { t } = useTranslation();ction formatDate(isoStr: string) {
+function formatDate(isoStr: string) {
   const d = new Date(isoStr);
   return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
