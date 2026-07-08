@@ -418,7 +418,8 @@ function App() {
                     justifyContent: 'center',
                     border: '1px solid rgba(255,255,255,0.1)',
                     color: 'var(--text-dim)',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    pointerEvents: 'auto'
                   }}
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
