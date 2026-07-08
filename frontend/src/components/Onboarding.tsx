@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 
 type Props = {
@@ -5,6 +6,7 @@ type Props = {
 };
 
 export function Onboarding({ onComplete }: Props) {
+  const { t } = useTranslation();
   const [step, setStep] = useState(0);
 
   const slides = [

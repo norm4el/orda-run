@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useEffect, useState } from 'react';
 import type { AuthenticatedUser } from '../App';
 
@@ -17,18 +18,21 @@ type Props = {
 };
 
 function formatTime(seconds: number) {
+  const { t } = useTranslation();
   if (!seconds) return '00:00';
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-function formatDate(isoStr: string) {
+fun
+  const { t } = useTranslation();ction formatDate(isoStr: string) {
   const d = new Date(isoStr);
   return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
 
 export function HistoryModal({ currentUser, onClose, onShowRouteOnMap }: Props) {
+  const { t } = useTranslation();
   const [routes, setRoutes] = useState<RouteHistory[]>([]);
   const [loading, setLoading] = useState(true);
 

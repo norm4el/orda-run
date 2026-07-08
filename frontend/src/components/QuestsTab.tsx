@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react';
 import type { AuthenticatedUser } from '../App';
 
@@ -18,6 +19,7 @@ type Props = {
 };
 
 export function QuestsTab({ currentUser, reloadMapData }: Props) {
+  const { t } = useTranslation();
   const [quests, setQuests] = useState<Quest[]>([]);
   const [loading, setLoading] = useState(true);
   const [claimingId, setClaimingId] = useState<string | null>(null);

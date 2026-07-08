@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useEffect, useState, useRef } from 'react';
 
 type GameEvent = {
@@ -14,6 +15,7 @@ type Props = {
 };
 
 export function ActivityFeed({ onUserClick }: Props) {
+  const { t } = useTranslation();
   const [events, setEvents] = useState<GameEvent[]>([]);
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(() => {
     const saved = localStorage.getItem('dismissedEvents');
@@ -46,6 +48,7 @@ export function ActivityFeed({ onUserClick }: Props) {
   }, [dismissedIds]);
 
   useEffect(() => {
+  const { t } = useTranslation();
     async function loadEvents() {
       try {
         const res = await fetch('/api/events');
