@@ -1,4 +1,3 @@
-import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import type { TabType } from './BottomNav';
 
@@ -9,7 +8,6 @@ type Props = {
 };
 
 export function AppTour({ run, onFinish }: Props) {
-  const { t } = useTranslation();
   const [stepIndex, setStepIndex] = useState(0);
 
   if (!run) return null;

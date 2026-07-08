@@ -1,4 +1,3 @@
-import { useTranslation } from 'react-i18next';
 import { useEffect, useState, useCallback } from 'react';
 import { MapArea, type TerritoryFeatureCollection, type RouteFeatureCollection } from './MapArea';
 import { BottomNav, type TabType } from './components/BottomNav';
@@ -41,7 +40,6 @@ type TerritoryResponse = {
 };
 
 function App() {
-  const { t } = useTranslation();
   const [currentUser, setCurrentUser] = useState<AuthenticatedUser | null>(null);
   const [territories, setTerritories] = useState<TerritoryFeatureCollection | null>(null);
   const [routes, setRoutes] = useState<RouteFeatureCollection | null>(null);
@@ -117,7 +115,6 @@ function App() {
       return;
     }
 
-  const { t } = useTranslation();
     async function authorize() {
       try {
         const response = await fetch('/api/auth', {
@@ -157,8 +154,7 @@ function App() {
     };
   }, []);
 
-  const reloadM
-  const { t } = useTranslation();apData = useCallback(() => {
+  const reloadMapData = useCallback(() => {
     async function loadTerritories() {
       try {
         const response = await fetch('/api/territories');
@@ -185,8 +181,7 @@ function App() {
         });
       } catch (error) {
         console.error(error);
-        setTerritor
-  const { t } = useTranslation();ies({ type: 'FeatureCollection', features: [] });
+        setTerritories({ type: 'FeatureCollection', features: [] });
       }
     }
 
@@ -287,7 +282,7 @@ function App() {
           onClick={() => setPastRouteToShow(null)}
           style={{ position: 'absolute', top: '100px', left: '50%', transform: 'translateX(-50%)', background: 'var(--primary)', color: '#000', border: 'none', padding: '10px 20px', borderRadius: '20px', fontWeight: 'bold', zIndex: 1000, boxShadow: '0 4px 15px rgba(0,0,0,0.3)', cursor: 'pointer' }}
         >
-          {t('close_route')}
+          ЗАКРЫТЬ МАРШРУТ
         </button>
       )}
       
@@ -360,7 +355,7 @@ function App() {
                   border: '1px solid rgba(255,255,255,0.05)',
                   backdropFilter: 'blur(10px)'
                 }}>
-                  {currentUser.displayName || t('no_name')}
+                  {currentUser.displayName || 'Без имени'}
                 </div>
                 
                 <div 
@@ -404,7 +399,7 @@ function App() {
                     backdropFilter: 'blur(10px)'
                   }}
                 >
-                  {ordaMode ? t('orda') : t('personal')}
+                  {ordaMode ? 'Орда' : 'Личный'}
                 </button>
                 <div 
                   className="tour-trigger"
@@ -454,7 +449,7 @@ function App() {
             }}>
               <div>
                 <div style={{ fontSize: '12px', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>
-                  {isDrawingMode ? t('plan_area') : (ordaMode ? (currentUser.ordaName || t('no_orda')) : t('your_area'))}
+                  {isDrawingMode ? 'Площадь плана' : (ordaMode ? (currentUser.ordaName || 'Нет орды') : 'Твоя площадь')}
                 </div>
                 <div style={{ fontSize: '28px', fontWeight: 'bold', color: 'var(--text-main)', display: 'flex', alignItems: 'baseline', gap: '4px' }}>
                   {isDrawingMode ? (
@@ -478,7 +473,7 @@ function App() {
                     cursor: 'pointer'
                   }}
                 >
-                  {isDrawingMode ? t('cancel') : t('plan')}
+                  {isDrawingMode ? 'Отмена' : 'План'}
                 </button>
               </div>
             </div>

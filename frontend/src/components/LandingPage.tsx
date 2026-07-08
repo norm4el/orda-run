@@ -1,6 +1,4 @@
-import { useTranslation } from 'react-i18next';
 export function LandingPage() {
-  const { t } = useTranslation();
   return (
     <div style={{
       minHeight: '100vh',

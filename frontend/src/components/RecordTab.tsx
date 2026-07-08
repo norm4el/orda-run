@@ -197,7 +197,7 @@ export function RecordTab({ currentUser, onCoordinatesUpdate, onRunFinished, onG
 
 
   return (
-    <div className="tab-container" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: 'calc(100vh - 72px)', zIndex: 1000, padding: '20px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', pointerEvents: 'auto', paddingTop: '40px', overflowY: 'auto' }}>
+    <div className="tab-container" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: 'calc(100vh - 72px)', zIndex: 1000, padding: '20px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', pointerEvents: 'none', paddingTop: '40px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
         <h2 style={{ fontSize: '16px', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '2px', color: 'var(--text-dim)', margin: 0 }}>{t('tracker')}</h2>
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-dim)' }}>
@@ -219,7 +219,7 @@ export function RecordTab({ currentUser, onCoordinatesUpdate, onRunFinished, onG
       )}
 
       {!currentUser?.stravaAccessToken && (
-        <div style={{ background: 'rgba(252, 76, 2, 0.1)', border: '1px solid #fc4c02', color: 'var(--text-main)', padding: '16px', borderRadius: '12px', marginBottom: '20px', textAlign: 'center', pointerEvents: 'auto', flexShrink: 0 }}>
+        <div style={{ background: 'rgba(252, 76, 2, 0.1)', border: '1px solid #fc4c02', color: 'var(--text-main)', padding: '16px', borderRadius: '12px', marginBottom: '20px', textAlign: 'center', pointerEvents: 'auto' }}>
           <div style={{ marginBottom: '12px', fontSize: '14px' }}>{t('strava_prompt')}</div>
           <button onClick={onGoToStrava} style={{ background: '#fc4c02', color: 'white', border: 'none', padding: '10px 16px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>
             {t('connect_strava_btn')}
@@ -227,7 +227,7 @@ export function RecordTab({ currentUser, onCoordinatesUpdate, onRunFinished, onG
         </div>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '30px', width: '100%', pointerEvents: 'none', background: 'var(--surface)', padding: '30px', borderRadius: '32px', boxShadow: '0 12px 40px rgba(0,0,0,0.5)', zIndex: 10, flexShrink: 0 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '30px', width: '100%', pointerEvents: 'none', background: 'var(--surface)', padding: '30px', borderRadius: '32px', boxShadow: '0 12px 40px rgba(0,0,0,0.5)', zIndex: 10 }}>
         <div>
           <div style={{ fontSize: '12px', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>{t('kilometers')}</div>
           <div style={{ fontSize: '42px', fontWeight: '500', color: 'var(--text-main)', lineHeight: '1' }}>{distanceKm}</div>
@@ -248,7 +248,7 @@ export function RecordTab({ currentUser, onCoordinatesUpdate, onRunFinished, onG
       
       <div style={{ flex: 1 }} />
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', marginTop: 'auto', marginBottom: '20px', gap: '30px', pointerEvents: 'auto', zIndex: 10, flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', marginTop: 'auto', marginBottom: '20px', gap: '30px', pointerEvents: 'auto', zIndex: 10 }}>
         <div style={{ color: 'var(--text-dim)', padding: '15px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '50%' }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
         </div>

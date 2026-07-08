@@ -1,4 +1,3 @@
-import { useTranslation } from 'react-i18next';
 import { useEffect, useState } from 'react';
 import { getRankFromPoints } from '../utils/ranks';
 
@@ -18,7 +17,6 @@ type Props = {
 };
 
 export function PublicProfileModal({ userId, onClose }: Props) {
-  const { t } = useTranslation();
   const [user, setUser] = useState<PublicUser | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -42,7 +40,7 @@ export function PublicProfileModal({ userId, onClose }: Props) {
     return (
       <div style={overlayStyle} onClick={onClose}>
         <div style={modalStyle} onClick={e => e.stopPropagation()}>
-          <div style={{ color: '#fff', textAlign: 'center', padding: '40px' }}>{t('loading')}</div>
+          <div style={{ color: '#fff', textAlign: 'center', padding: '40px' }}>Загрузка...</div>
         </div>
       </div>
     );
