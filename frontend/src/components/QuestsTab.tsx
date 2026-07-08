@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { AuthenticatedUser } from '../App';
 
 type Quest = {
@@ -18,6 +19,7 @@ type Props = {
 };
 
 export function QuestsTab({ currentUser, reloadMapData }: Props) {
+  const { t } = useTranslation();
   const [quests, setQuests] = useState<Quest[]>([]);
   const [loading, setLoading] = useState(true);
   const [claimingId, setClaimingId] = useState<string | null>(null);
@@ -79,7 +81,7 @@ export function QuestsTab({ currentUser, reloadMapData }: Props) {
       </div>
 
       {loading ? (
-        <div style={{ color: 'var(--text-dim)', textAlign: 'center', padding: '40px 0' }}>Загрузка...</div>
+        <div style={{ color: 'var(--text-dim)', textAlign: 'center', padding: '40px 0' }}>{t('loading')}</div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
           {quests.map(quest => (
@@ -105,7 +107,7 @@ export function QuestsTab({ currentUser, reloadMapData }: Props) {
               {!quest.claimed && (
                 <div style={{ marginTop: '15px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-dim)', marginBottom: '5px' }}>
-                    <span>Прогресс</span>
+                    <span>{t('q_prog')}</span>
                     <span>{Math.floor(quest.progress)} / {quest.target}</span>
                   </div>
                   <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px' }}>

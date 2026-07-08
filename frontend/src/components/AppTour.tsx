@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { TabType } from './BottomNav';
 
 type Props = {
@@ -8,34 +9,35 @@ type Props = {
 };
 
 export function AppTour({ run, onFinish }: Props) {
+  const { t } = useTranslation();
   const [stepIndex, setStepIndex] = useState(0);
 
   if (!run) return null;
 
   const steps = [
     {
-      title: 'Добро пожаловать!',
-      content: 'Сейчас я покажу, что здесь есть.',
+      title: t('tour_welcome'),
+      content: t('tour_welcome_desc'),
       position: { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }
     },
     {
-      title: 'Твоя Территория',
-      content: 'Сверху ты можешь переключать видимость: смотреть свою территорию или территорию своей Орды.',
+      title: t('tour_map'),
+      content: t('tour_map_desc'),
       position: { top: '100px', left: '50%', transform: 'translateX(-50%)' }
     },
     {
-      title: 'Профиль',
-      content: 'В профиле (справа внизу) ты можешь вступить в Орду или создать свою, а также поменять цвет своей территории.',
+      title: t('tour_profile'),
+      content: t('tour_profile_desc'),
       position: { bottom: '100px', right: '16px' }
     },
     {
-      title: 'Задания',
-      content: 'Выполняй задания (в центре внизу) каждый день, чтобы зарабатывать бонусные очки (XP) и быстрее расти в таблице лидеров!',
+      title: t('quests'),
+      content: t('tour_quests_desc'),
       position: { bottom: '100px', left: '50%', transform: 'translateX(-50%)' }
     },
     {
-      title: 'Начать пробежку',
-      content: 'А здесь начинается самое главное — запись пробежки. Нажми старт (вторая кнопка слева) и захватывай улицы!',
+      title: t('tour_record'),
+      content: t('tour_record_desc'),
       position: { bottom: '100px', left: '16px' }
     }
   ];
@@ -120,7 +122,7 @@ export function AppTour({ run, onFinish }: Props) {
             letterSpacing: '1px'
           }}
         >
-          {stepIndex === steps.length - 1 ? 'Понятно' : 'Далее'}
+          {stepIndex === steps.length - 1 ? t('got_it') : t('tour_next')}
         </button>
       </div>
     </>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { AuthenticatedUser } from '../App';
 
 type RouteHistory = {
@@ -29,6 +30,7 @@ function formatDate(isoStr: string) {
 }
 
 export function HistoryModal({ currentUser, onClose, onShowRouteOnMap }: Props) {
+  const { t } = useTranslation();
   const [routes, setRoutes] = useState<RouteHistory[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -62,7 +64,7 @@ export function HistoryModal({ currentUser, onClose, onShowRouteOnMap }: Props) 
         {loading ? (
           <div style={{ color: 'var(--text-dim)', textAlign: 'center', padding: '40px 0' }}>Загрузка...</div>
         ) : routes.length === 0 ? (
-          <div style={{ color: 'var(--text-dim)', textAlign: 'center', padding: '40px 0' }}>Вы еще не совершили ни одной пробежки.</div>
+          <div style={{ color: 'var(--text-dim)', textAlign: 'center', padding: '40px 0' }}>{t('no_runs')}</div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', maxHeight: '60vh', overflowY: 'auto', paddingRight: '5px' }}>
             {routes.map(r => (

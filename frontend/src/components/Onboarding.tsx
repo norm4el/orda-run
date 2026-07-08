@@ -1,26 +1,28 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
   onComplete: () => void;
 };
 
 export function Onboarding({ onComplete }: Props) {
+  const { t } = useTranslation();
   const [step, setStep] = useState(0);
 
   const slides = [
     {
-      title: 'Добро пожаловать в Орду! 🐎',
-      description: 'Это игра, где реальные пробежки превращаются в захват территорий на карте твоего города.',
+      title: t('onb_w'),
+      description: t('onb_d1'),
       color: '#d8a760'
     },
     {
-      title: 'Беги и Захватывай 🏃‍♂️',
-      description: 'Записывай маршрут во вкладке ЗАПИСЬ. Чем больше ты бегаешь по замкнутому кругу, тем большую площадь захватываешь!',
+      title: t('onb_t2'),
+      description: t('onb_d2'),
       color: '#22c55e'
     },
     {
-      title: 'Объединяйся в Орды 🛡️',
-      description: 'Создай свою Орду или вступи в существующую. Захватывай территории вместе с друзьями и станьте Ханством!',
+      title: t('onb_t3'),
+      description: t('onb_d3'),
       color: '#ef4444'
     }
   ];
@@ -108,7 +110,7 @@ export function Onboarding({ onComplete }: Props) {
             letterSpacing: '1px'
           }}
         >
-          {step < slides.length - 1 ? 'Далее' : 'Начать игру'}
+          {step < slides.length - 1 ? 'Далее' : t('onb_start')}
         </button>
       </div>
     </div>

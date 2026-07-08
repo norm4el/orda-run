@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { AuthenticatedUser } from '../App';
 import { getRankFromPoints } from '../utils/ranks';
 
@@ -14,6 +15,7 @@ type Props = {
 };
 
 export function LeaderboardTab({ currentUser, onUserClick }: Props) {
+  const { t } = useTranslation();
   const [data, setData] = useState<LeaderboardEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [mode, setMode] = useState<'personal' | 'orda'>('personal');
@@ -51,7 +53,7 @@ export function LeaderboardTab({ currentUser, onUserClick }: Props) {
 
   return (
     <div className="content-area">
-      <h2 className="tab-title">Лидерборд</h2>
+      <h2 className="tab-title">{t('leaderboard')}</h2>
 
       <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '4px', marginBottom: '20px' }}>
         <button 

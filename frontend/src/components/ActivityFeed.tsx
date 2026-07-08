@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 type GameEvent = {
   id: string;
@@ -14,6 +15,7 @@ type Props = {
 };
 
 export function ActivityFeed({ onUserClick }: Props) {
+  const { t } = useTranslation();
   const [events, setEvents] = useState<GameEvent[]>([]);
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(() => {
     const saved = localStorage.getItem('dismissedEvents');
@@ -132,7 +134,7 @@ export function ActivityFeed({ onUserClick }: Props) {
           >
             <span style={{ fontSize: '18px' }}>{icon}</span>
             <span style={{ flex: 1 }}>
-              <strong style={{ color: color }}>{ev.display_name || 'Игрок'}</strong> {ev.message}
+              <strong style={{ color: color }}>{ev.display_name || t('player')}</strong> {ev.message}
             </span>
           </div>
         );
