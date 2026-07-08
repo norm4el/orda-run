@@ -223,8 +223,8 @@ export function RecordTab({ currentUser, onCoordinatesUpdate, onRunFinished, onG
       {!currentUser?.stravaAccessToken && (
         <div style={{ background: 'rgba(252, 76, 2, 0.1)', border: '1px solid #fc4c02', color: 'var(--text-main)', padding: '16px', borderRadius: '12px', marginBottom: '20px', textAlign: 'center', pointerEvents: 'auto', flexShrink: 0 }}>
           <div style={{ marginBottom: '12px', fontSize: '14px' }}>{t('strava_prompt')}</div>
-          <button onClick={onGoToStrava} style={{ background: 'transparent', border: 'none', padding: '0', cursor: 'pointer', display: 'flex', justifyContent: 'center', width: '100%' }}>
-            <img src="/images/btn_strava_connectwith_orange.svg" alt={t('connect_strava_btn')} style={{ height: '48px' }} />
+          <button onClick={onGoToStrava} style={{ background: '#fc4c02', color: 'white', border: 'none', padding: '10px 16px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>
+            {t('connect_strava_btn')}
           </button>
         </div>
       )}

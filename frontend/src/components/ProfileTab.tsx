@@ -466,16 +466,17 @@ export function ProfileTab({
               </button>
             </>
           ) : (
-            <button style={{ width: '100%', background: 'transparent', border: 'none', cursor: 'pointer', padding: '0', display: 'flex', justifyContent: 'center' }} onClick={handleStravaClick}>
-              <img src="/images/btn_strava_connectwith_orange.svg" alt={t('connect_strava')} style={{ height: '48px' }} />
+            <button style={{ width: '100%', padding: '14px', background: '#fc4c02', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer' }} onClick={handleStravaClick}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
+              {t('connect_strava')}
             </button>
           )}
         </div>
       )}
 
       <div style={{ marginTop: '40px', textAlign: 'center', paddingBottom: '20px' }}>
-        <div style={{ marginBottom: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <img src="/images/api_logo_pwrdBy_strava_horiz_light.svg" alt="Powered by Strava" style={{ height: '30px' }} />
+        <div style={{ color: 'var(--text-dim)', fontSize: '12px', marginBottom: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontWeight: '500' }}>
+          Powered by <span style={{ color: '#fc4c02', fontWeight: 'bold', fontSize: '14px', letterSpacing: '1px' }}>STRAVA</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', fontSize: '12px' }}>
           <a href="/privacy.html" target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', textDecoration: 'none' }}>Privacy Policy</a>
