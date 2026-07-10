@@ -223,8 +223,9 @@ export function RecordTab({ currentUser, onCoordinatesUpdate, onRunFinished, onG
       {!currentUser?.stravaAccessToken && (
         <div style={{ background: 'rgba(252, 76, 2, 0.1)', border: '1px solid #fc4c02', color: 'var(--text-main)', padding: '16px', borderRadius: '12px', marginBottom: '20px', textAlign: 'center', pointerEvents: 'auto', flexShrink: 0 }}>
           <div style={{ marginBottom: '12px', fontSize: '14px' }}>{t('strava_prompt')}</div>
-          <button onClick={onGoToStrava} style={{ background: 'transparent', border: 'none', padding: 0, display: 'flex', justifyContent: 'center', margin: '0 auto', cursor: 'pointer' }}>
-            <img src="/btn_strava_connectwith_orange.svg" alt={t('connect_strava_btn')} style={{ height: '48px', width: 'auto' }} />
+          <button onClick={onGoToStrava} style={{ width: '100%', padding: '14px', background: '#fc4c02', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer' }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
+            {t('connect_strava_btn')}
           </button>
         </div>
       )}

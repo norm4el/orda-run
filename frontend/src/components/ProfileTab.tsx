@@ -466,8 +466,9 @@ export function ProfileTab({
               </button>
             </>
           ) : (
-            <button style={{ width: '100%', background: 'transparent', border: 'none', padding: 0, display: 'flex', justifyContent: 'center', cursor: 'pointer' }} onClick={handleStravaClick}>
-              <img src="/btn_strava_connectwith_orange.svg" alt={t('connect_strava')} style={{ height: '48px', width: 'auto' }} />
+            <button style={{ width: '100%', padding: '14px', background: '#fc4c02', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer' }} onClick={handleStravaClick}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
+              {t('connect_strava')}
             </button>
           )}
         </div>
