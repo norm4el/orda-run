@@ -1,6 +1,34 @@
 import { Router } from 'express';
 import axios from 'axios';
 import polyline from '@mapbox/polyline';
+
+const stravaApi = axios.create();
+let rateLimit15m = 100;
+let rateUsage15m = 0;
+
+stravaApi.interceptors.response.use(
+  (response) => {
+    const limitHeader = response.headers['x-ratelimit-limit'];
+    const usageHeader = response.headers['x-ratelimit-usage'];
+    if (limitHeader) rateLimit15m = parseInt(limitHeader.split(',')[0] || '100', 10);
+    if (usageHeader) rateUsage15m = parseInt(usageHeader.split(',')[0] || '0', 10);
+    return response;
+  },
+  (error) => {
+    if (error.response?.status === 429) {
+      console.error('[Strava API] Rate Limit Exceeded (429)!');
+    }
+    return Promise.reject(error);
+  }
+);
+
+stravaApi.interceptors.request.use((config) => {
+  if (rateLimit15m > 0 && rateUsage15m >= rateLimit15m) {
+    console.warn(`[Strava API] Request blocked locally to prevent 429. Usage: ${rateUsage15m}/${rateLimit15m}`);
+    return Promise.reject(new Error('Strava Rate Limit Reached locally'));
+  }
+  return config;
+});
 import { query } from '../db';
 import { captureTerritory } from '../db/territory';
 
@@ -53,7 +81,7 @@ stravaRouter.get('/callback', async (req, res) => {
   }
 
   try {
-    const response = await axios.post(STRAVA_TOKEN_URL, {
+    const response = await stravaApi.post(STRAVA_TOKEN_URL, {
       client_id: clientId,
       client_secret: clientSecret,
       code,
@@ -110,7 +138,7 @@ stravaRouter.post('/sync', async (req, res) => {
     const athleteRes = await query<{ strava_athlete_id: string | null }>(`SELECT strava_athlete_id FROM users WHERE telegram_id = $1`, [String(telegramId)]);
     if (athleteRes.rows[0] && !athleteRes.rows[0].strava_athlete_id) {
       try {
-        const stravaAthleteResponse = await axios.get('https://www.strava.com/api/v3/athlete', {
+        const stravaAthleteResponse = await stravaApi.get('https://www.strava.com/api/v3/athlete', {
           headers: { Authorization: `Bearer ${accessToken}` }
         });
         if (stravaAthleteResponse.data?.id) {
@@ -155,7 +183,7 @@ async function ensureValidStravaToken(telegramId: string): Promise<string> {
       throw new Error('STRAVA_CLIENT_ID or STRAVA_CLIENT_SECRET is missing');
     }
 
-    const response = await axios.post(STRAVA_TOKEN_URL, {
+    const response = await stravaApi.post(STRAVA_TOKEN_URL, {
       client_id: clientId,
       client_secret: clientSecret,
       grant_type: 'refresh_token',
@@ -198,7 +226,7 @@ async function fetchAndSaveActivities(telegramId: string, accessToken: string) {
 
     const oneWeekAgo = Math.floor(Date.now() / 1000) - 7 * 24 * 60 * 60;
 
-    const response = await axios.get('https://www.strava.com/api/v3/athlete/activities', {
+    const response = await stravaApi.get('https://www.strava.com/api/v3/athlete/activities', {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
@@ -317,7 +345,7 @@ async function processNewActivity(activityId: number, stravaOwnerId: number) {
     const accessToken = await ensureValidStravaToken(telegramId);
 
     // Загружаем данные о конкретной тренировке
-    const response = await axios.get(`https://www.strava.com/api/v3/activities/${activityId}`, {
+    const response = await stravaApi.get(`https://www.strava.com/api/v3/activities/${activityId}`, {
       headers: { Authorization: `Bearer ${accessToken}` }
     });
 
