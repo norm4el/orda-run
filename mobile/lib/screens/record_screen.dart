@@ -101,10 +101,10 @@ class _RecordScreenState extends State<RecordScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           decoration: BoxDecoration(
-                            color: Colors.redAccent.withOpacity(0.9),
+                            color: Colors.redAccent.withValues(alpha: 0.9),
                             borderRadius: BorderRadius.circular(30),
                             boxShadow: [
-                              BoxShadow(color: Colors.redAccent.withOpacity(0.5), blurRadius: 10, spreadRadius: 2),
+                              BoxShadow(color: Colors.redAccent.withValues(alpha: 0.5), blurRadius: 10, spreadRadius: 2),
                             ],
                           ),
                           child: const Row(
@@ -128,7 +128,7 @@ class _RecordScreenState extends State<RecordScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.fromLTRB(30, 40, 30, 100), // extra padding for bottom nav
                       decoration: BoxDecoration(
-                        color: const Color(0xFF0A0B0E).withOpacity(0.65),
+                        color: const Color(0xFF0A0B0E).withValues(alpha: 0.65),
                         border: const Border(
                           top: BorderSide(color: Colors.white24, width: 1.5),
                         ),
@@ -250,7 +250,7 @@ class _RecordScreenState extends State<RecordScreen> {
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.4),
+              color: color.withValues(alpha: 0.4),
               blurRadius: 20,
               spreadRadius: 5,
             ),

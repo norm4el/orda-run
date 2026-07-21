@@ -152,7 +152,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
               // Toggle
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.05),
+                  color: Colors.white.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(

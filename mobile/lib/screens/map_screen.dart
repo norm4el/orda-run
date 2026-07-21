@@ -93,16 +93,16 @@ class _MapScreenState extends State<MapScreen> {
       final color = _getTerritoryColor(t, currentUser);
       return t.polygons.map((points) => Polygon(
         points: points,
-        color: color.withOpacity(0.6),
+        color: color.withValues(alpha: 0.8),
         borderColor: color,
-        borderStrokeWidth: 3.5,
+        borderStrokeWidth: 4.5,
       ));
     }).toList();
 
     _cachedPolylines = _routes.map((r) {
       return Polyline(
         points: r.coordinates,
-        color: Colors.white.withOpacity(0.5),
+        color: Colors.white.withValues(alpha: 0.5),
         strokeWidth: 2.0,
       );
     }).toList();
@@ -124,7 +124,7 @@ class _MapScreenState extends State<MapScreen> {
       return HSVColor.fromAHSV(1.0, hue, 0.7, 0.6).toColor();
     } else {
       if (currentUser != null && t.ownerId == currentUser.id) {
-        return const Color(0xFFF5D142); // Primary color for self
+        return const Color(0xFFFFD700); // Primary color for self
       }
       // Color by ownerId
       int hash = 0;
@@ -391,8 +391,8 @@ class _MapScreenState extends State<MapScreen> {
                     polygons: [
                       Polygon(
                         points: _plannedPoints,
-                        color: const Color(0xFFF5D142).withOpacity(0.5), // Gold for own plan
-                        borderColor: const Color(0xFFF5D142),
+                        color: const Color(0xFFFFD700).withValues(alpha: 0.5), // Gold for own plan
+                        borderColor: const Color(0xFFFFD700),
                         borderStrokeWidth: 3.5,
                       ),
                     ],
@@ -402,7 +402,7 @@ class _MapScreenState extends State<MapScreen> {
                     polylines: [
                       Polyline(
                         points: _plannedPoints,
-                        color: const Color(0xFFF5D142),
+                        color: const Color(0xFFFFD700),
                         strokeWidth: 2.0,
                       ),
                     ],
@@ -417,7 +417,7 @@ class _MapScreenState extends State<MapScreen> {
                         onTap: () => _claimDrop(drop),
                         child: Container(
                           decoration: BoxDecoration(
-                            color: drop.type == 'XP_BOOST' ? Colors.blue.withOpacity(0.8) : Colors.orange.withOpacity(0.8),
+                            color: drop.type == 'XP_BOOST' ? Colors.blue.withValues(alpha: 0.8) : Colors.orange.withValues(alpha: 0.8),
                             shape: BoxShape.circle,
                             border: Border.all(color: Colors.white, width: 2),
                             boxShadow: [

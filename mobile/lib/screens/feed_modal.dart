@@ -40,27 +40,27 @@ class _FeedModalState extends State<FeedModal> {
         );
       case 'CAPTURE':
         return CircleAvatar(
-          backgroundColor: const Color(0xFFF5D142).withOpacity(0.2),
-          child: const Icon(Icons.map, color: Color(0xFFF5D142), size: 20),
+          backgroundColor: const Color(0xFFFFD700).withValues(alpha: 0.2),
+          child: const Icon(Icons.map, color: Color(0xFFFFD700), size: 20),
         );
       case 'ORDA_CREATE':
         return CircleAvatar(
-          backgroundColor: Colors.purpleAccent.withOpacity(0.2),
+          backgroundColor: Colors.purpleAccent.withValues(alpha: 0.2),
           child: const Icon(Icons.shield, color: Colors.purpleAccent, size: 20),
         );
       case 'ORDA_JOIN':
         return CircleAvatar(
-          backgroundColor: Colors.blueAccent.withOpacity(0.2),
+          backgroundColor: Colors.blueAccent.withValues(alpha: 0.2),
           child: const Icon(Icons.group_add, color: Colors.blueAccent, size: 20),
         );
       case 'QUEST_CLAIM':
         return CircleAvatar(
-          backgroundColor: Colors.greenAccent.withOpacity(0.2),
+          backgroundColor: Colors.greenAccent.withValues(alpha: 0.2),
           child: const Icon(Icons.star, color: Colors.greenAccent, size: 20),
         );
       default:
         return CircleAvatar(
-          backgroundColor: Colors.white.withOpacity(0.1),
+          backgroundColor: Colors.white.withValues(alpha: 0.1),
           child: const Icon(Icons.info_outline, color: Colors.white, size: 20),
         );
     }
@@ -91,7 +91,7 @@ class _FeedModalState extends State<FeedModal> {
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.refresh, color: Color(0xFFF5D142)),
+                icon: const Icon(Icons.refresh, color: Color(0xFFFFD700)),
                 onPressed: () {
                   setState(() => _isLoading = true);
                   _loadEvents();
@@ -102,7 +102,7 @@ class _FeedModalState extends State<FeedModal> {
           const SizedBox(height: 16),
           Expanded(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator(color: Color(0xFFF5D142)))
+                ? const Center(child: CircularProgressIndicator(color: Color(0xFFFFD700)))
                 : _events.isEmpty
                     ? const Center(child: Text('Пока в городе тихо...', style: TextStyle(color: Colors.grey)))
                     : ListView.separated(
@@ -124,7 +124,7 @@ class _FeedModalState extends State<FeedModal> {
                             title: Text(
                               isSteal ? 'КОНФЛИКТ!' : username,
                               style: TextStyle(
-                                color: isSteal ? Colors.redAccent : const Color(0xFFF5D142),
+                                color: isSteal ? Colors.redAccent : const Color(0xFFFFD700),
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
                               ),

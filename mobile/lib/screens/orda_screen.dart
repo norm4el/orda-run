@@ -47,9 +47,9 @@ class _OrdaScreenState extends State<OrdaScreen> {
           style: const TextStyle(color: Colors.white),
           decoration: InputDecoration(
             hintText: 'Название вашей Орды',
-            hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
-            enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFF5D142))),
-            focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFF5D142))),
+            hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+            enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFFFD700))),
+            focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFFFD700))),
           ),
         ),
         actions: [
@@ -59,7 +59,7 @@ class _OrdaScreenState extends State<OrdaScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, controller.text),
-            child: const Text('СОЗДАТЬ', style: TextStyle(color: Color(0xFFF5D142))),
+            child: const Text('СОЗДАТЬ', style: TextStyle(color: Color(0xFFFFD700))),
           ),
         ],
       ),
@@ -139,10 +139,10 @@ class _OrdaScreenState extends State<OrdaScreen> {
         title: const Text('Управление Ордой', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2)),
         backgroundColor: Colors.black,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFFF5D142)),
+        iconTheme: const IconThemeData(color: Color(0xFFFFD700)),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFFF5D142)))
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFFFFD700)))
           : user?.ordaId == null
               ? _buildNoOrdaView()
               : _buildHasOrdaView(user!),
@@ -173,7 +173,7 @@ class _OrdaScreenState extends State<OrdaScreen> {
             icon: const Icon(Icons.add_moderator),
             label: const Text('СОЗДАТЬ СВОЮ ОРДУ', style: TextStyle(fontWeight: FontWeight.bold)),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFF5D142),
+              backgroundColor: const Color(0xFFFFD700),
               foregroundColor: Colors.black,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -192,12 +192,12 @@ class _OrdaScreenState extends State<OrdaScreen> {
                   color: const Color(0xFF15181E),
                   margin: const EdgeInsets.only(bottom: 8),
                   child: ListTile(
-                    leading: const Icon(Icons.shield, color: Color(0xFFF5D142)),
+                    leading: const Icon(Icons.shield, color: Color(0xFFFFD700)),
                     title: Text(orda['name'], style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                     subtitle: Text('Участников: ${orda['member_count']}', style: const TextStyle(color: Colors.grey)),
                     trailing: TextButton(
                       onPressed: () => _joinOrda(orda['id'], orda['name']),
-                      child: const Text('ВСТУПИТЬ', style: TextStyle(color: Color(0xFFF5D142))),
+                      child: const Text('ВСТУПИТЬ', style: TextStyle(color: Color(0xFFFFD700))),
                     ),
                   ),
                 );
@@ -215,7 +215,7 @@ class _OrdaScreenState extends State<OrdaScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Icon(Icons.shield, size: 100, color: Color(0xFFF5D142)),
+          const Icon(Icons.shield, size: 100, color: Color(0xFFFFD700)),
           const SizedBox(height: 20),
           Text(
             user.ordaName ?? 'Ваша Орда',
@@ -228,7 +228,7 @@ class _OrdaScreenState extends State<OrdaScreen> {
             decoration: BoxDecoration(
               color: const Color(0xFF15181E),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFF5D142).withOpacity(0.3)),
+              border: Border.all(color: const Color(0xFFFFD700).withValues(alpha: 0.3)),
             ),
             child: const Column(
               children: [

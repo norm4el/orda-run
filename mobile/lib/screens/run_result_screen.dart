@@ -69,7 +69,7 @@ class _RunResultScreenState extends State<RunResultScreen> with SingleTickerProv
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Icon(Icons.workspace_premium, size: 100, color: Color(0xFFF5D142)),
+                      const Icon(Icons.workspace_premium, size: 100, color: Color(0xFFFFD700)),
                       const SizedBox(height: 30),
                       const Text(
                         'ЗАХВАТ УСПЕШЕН!',
@@ -97,7 +97,7 @@ class _RunResultScreenState extends State<RunResultScreen> with SingleTickerProv
                       const SizedBox(height: 50),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFF5D142),
+                          backgroundColor: const Color(0xFFFFD700),
                           foregroundColor: Colors.black,
                           padding: const EdgeInsets.symmetric(vertical: 20),
                           shape: RoundedRectangleBorder(
@@ -127,13 +127,13 @@ class _RunResultScreenState extends State<RunResultScreen> with SingleTickerProv
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF5D142).withOpacity(0.3)),
+        border: Border.all(color: const Color(0xFFFFD700).withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
-          Icon(icon, color: const Color(0xFFF5D142), size: 28),
+          Icon(icon, color: const Color(0xFFFFD700), size: 28),
           const SizedBox(width: 16),
           Expanded(
             child: Text(
@@ -144,7 +144,7 @@ class _RunResultScreenState extends State<RunResultScreen> with SingleTickerProv
           Text(
             value,
             style: const TextStyle(
-              color: Color(0xFFF5D142),
+              color: Color(0xFFFFD700),
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),

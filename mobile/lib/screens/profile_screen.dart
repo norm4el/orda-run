@@ -330,7 +330,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.05),
+                      color: Colors.white.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -369,15 +369,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       decoration: BoxDecoration(
                         color: Colors.transparent,
-                        border: Border.all(color: const Color(0xFFF5D142)),
+                        border: Border.all(color: const Color(0xFFFFD700)),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.shield, color: Color(0xFFF5D142)),
+                          const Icon(Icons.shield, color: Color(0xFFFFD700)),
                           const SizedBox(width: 8),
-                          const Text('УПРАВЛЕНИЕ ОРДОЙ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFFF5D142))),
+                          const Text('УПРАВЛЕНИЕ ОРДОЙ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFFFFD700))),
                         ],
                       ),
                     ),

@@ -21,7 +21,7 @@ class TitleHelper {
     } else if (points < 100000000) {
       return const TitleInfo('Каган', Colors.orangeAccent);
     } else {
-      return const TitleInfo('Император Степи', Color(0xFFF5D142));
+      return const TitleInfo('Император Степи', Color(0xFFFFD700));
     }
   }
 }
