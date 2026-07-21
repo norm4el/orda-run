@@ -26,6 +26,9 @@ class _MapScreenState extends State<MapScreen> {
   List<LatLng> _plannedPoints = [];
   bool _isSavingPlan = false;
   final MapController _mapController = MapController();
+  
+  List<Polygon> _cachedPolygons = [];
+  List<Polyline> _cachedPolylines = [];
 
   int _lastRefresh = 0;
 
@@ -58,8 +61,29 @@ class _MapScreenState extends State<MapScreen> {
         _territories = territories;
         _routes = routes;
         _isLoading = false;
+        _buildMapObjects(context.read<AppState>().currentUser);
       });
     }
+  }
+
+  void _buildMapObjects(AuthenticatedUser? currentUser) {
+    _cachedPolygons = _territories.expand((t) {
+      final color = _getTerritoryColor(t, currentUser);
+      return t.polygons.map((points) => Polygon(
+        points: points,
+        color: color.withOpacity(0.4),
+        borderColor: color,
+        borderStrokeWidth: 2.0,
+      ));
+    }).toList();
+
+    _cachedPolylines = _routes.map((r) {
+      return Polyline(
+        points: r.coordinates,
+        color: Colors.white.withOpacity(0.5),
+        strokeWidth: 2.0,
+      );
+    }).toList();
   }
 
   Color _getTerritoryColor(Territory t, AuthenticatedUser? currentUser) {
@@ -302,24 +326,10 @@ class _MapScreenState extends State<MapScreen> {
                 retinaMode: true,
               ),
               PolygonLayer(
-                polygons: _territories.expand((t) {
-                  final color = _getTerritoryColor(t, currentUser);
-                  return t.polygons.map((points) => Polygon(
-                    points: points,
-                    color: color.withOpacity(0.4),
-                    borderColor: color,
-                    borderStrokeWidth: 2.0,
-                  ));
-                }).toList(),
+                polygons: _cachedPolygons,
               ),
               PolylineLayer(
-                polylines: _routes.map((r) {
-                  return Polyline(
-                    points: r.coordinates,
-                    color: Colors.white.withOpacity(0.5),
-                    strokeWidth: 2.0,
-                  );
-                }).toList(),
+                polylines: _cachedPolylines,
               ),
               if (runTracker.isRecording && runTracker.routePoints.length >= 2)
                 PolylineLayer(
@@ -435,7 +445,10 @@ class _MapScreenState extends State<MapScreen> {
                           const SizedBox(width: 10),
                           GestureDetector(
                             onTap: () {
-                              setState(() => _isOrdaMode = !_isOrdaMode);
+                              setState(() {
+                                _isOrdaMode = !_isOrdaMode;
+                                _buildMapObjects(currentUser);
+                              });
                             },
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
