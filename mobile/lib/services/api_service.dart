@@ -66,9 +66,12 @@ class ApiService {
   }
 
   Future<AuthenticatedUser?> signInWithGoogle() async {
+    final GoogleSignIn googleSignIn = GoogleSignIn(
+      clientId: '422197727001-ovgnsce2ju5hhpu7pr8alfj9gbkgrrov.apps.googleusercontent.com',
+    );
     try {
-      await GoogleSignIn.instance.initialize();
-      final GoogleSignInAccount googleUser = await GoogleSignIn.instance.authenticate();
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      if (googleUser == null) return null;
 
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
       final idToken = googleAuth.idToken;
