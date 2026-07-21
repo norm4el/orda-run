@@ -109,6 +109,10 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Color _getTerritoryColor(Territory t, AuthenticatedUser? currentUser) {
+    if (t.ownerId == '00000000-0000-0000-0000-000000000001') {
+      return Colors.grey.shade700; // Нейтральная зона
+    }
+    
     if (_isOrdaMode) {
       // Color by Orda
       int hash = 0;
@@ -133,6 +137,28 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _showUserProfile(String userId) async {
+    if (userId == '00000000-0000-0000-0000-000000000001') {
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: const Color(0xFF15181E),
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+        builder: (context) => const Padding(
+          padding: EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('НЕЙТРАЛЬНАЯ ЗОНА', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
+              SizedBox(height: 10),
+              Text('Эта территория пока никому не принадлежит. Пробегите через нее, чтобы присоединить к своим владениям!', style: TextStyle(fontSize: 16, color: Colors.grey)),
+              SizedBox(height: 30),
+            ],
+          ),
+        ),
+      );
+      return;
+    }
+
     // Show a bottom sheet with public profile
     showModalBottomSheet(
       context: context,
