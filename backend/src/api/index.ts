@@ -306,15 +306,16 @@ apiRouter.get('/territories', async (_req, res) => {
     }>(
         `
             SELECT
-                t.id::text AS id,
+                MAX(t.id::text) AS id,
                 t.owner_id,
                 t.health,
-                u.orda_id::text AS owner_orda_id,
-                u.display_name AS owner_display_name,
-                u.influence_points AS owner_influence_points,
-                ST_AsGeoJSON(t.polygon)::json AS polygon
+                MAX(u.orda_id::text)::uuid AS owner_orda_id,
+                MAX(u.display_name) AS owner_display_name,
+                MAX(u.influence_points) AS owner_influence_points,
+                ST_AsGeoJSON(ST_Union(t.polygon))::json AS polygon
             FROM territories t
             JOIN users u ON t.owner_id = u.id
+            GROUP BY t.owner_id, t.health
         `
     );
 
