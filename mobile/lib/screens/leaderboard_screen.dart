@@ -68,16 +68,16 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'Орда: \${profile["ordaName"] ?? "Нет"}',
+                    'Орда: ${profile["ordaName"] ?? "Нет"}',
                     style: const TextStyle(fontSize: 16, color: Colors.grey),
                   ),
                   const SizedBox(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildStatColumn('ТЕРРИТОРИЯ', "\${((profile['influencePoints'] ?? 0) / 1000000).toStringAsFixed(2)} км²"),
-                      _buildStatColumn('ПРОБЕЖКИ', '\${profile["runs"] ?? 0}'),
-                      _buildStatColumn('ДИСТАНЦИЯ', '\${profile["distance"]?.toStringAsFixed(1) ?? "0.0"} км'),
+                      _buildStatColumn('ТЕРРИТОРИЯ', "${((profile['influencePoints'] ?? 0) / 1000000).toStringAsFixed(2)} км²"),
+                      _buildStatColumn('ПРОБЕЖКИ', '${profile["runs"] ?? 0}'),
+                      _buildStatColumn('ДИСТАНЦИЯ', '${profile["distance"]?.toStringAsFixed(1) ?? "0.0"} км'),
                     ],
                   ),
                   const SizedBox(height: 30),
@@ -220,7 +220,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                             contentPadding: EdgeInsets.zero,
                             onTap: (!_isOrdaMode && item['id'] != null) ? () => _showUserProfile(item['id']) : null,
                             leading: Text(
-                              '\${index + 1}',
+                              '${index + 1}',
                               style: const TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,

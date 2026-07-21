@@ -146,7 +146,7 @@ class MyApp extends StatelessWidget {
         brightness: Brightness.dark,
         scaffoldBackgroundColor: const Color(0xFF0A0B0E),
         colorScheme: const ColorScheme.dark(
-          primary: Color(0xFFD8A760),
+          primary: Color(0xFFF5D142),
           secondary: Color(0xFF2C5A5A),
           surface: Color(0xFF15181E),
           background: Color(0xFF0A0B0E),

@@ -71,9 +71,9 @@ class _MapScreenState extends State<MapScreen> {
       final color = _getTerritoryColor(t, currentUser);
       return t.polygons.map((points) => Polygon(
         points: points,
-        color: color.withOpacity(0.4),
+        color: color.withOpacity(0.6),
         borderColor: color,
-        borderStrokeWidth: 2.0,
+        borderStrokeWidth: 3.5,
       ));
     }).toList();
 
@@ -98,7 +98,7 @@ class _MapScreenState extends State<MapScreen> {
       return HSVColor.fromAHSV(1.0, hue, 0.7, 0.6).toColor();
     } else {
       if (currentUser != null && t.ownerId == currentUser.id) {
-        return const Color(0xFFD8A760); // Primary color for self
+        return const Color(0xFFF5D142); // Primary color for self
       }
       // Color by ownerId
       int hash = 0;
@@ -142,16 +142,16 @@ class _MapScreenState extends State<MapScreen> {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'Орда: \${profile["ordaName"] ?? "Нет"}',
+                    'Орда: ${profile["ordaName"] ?? "Нет"}',
                     style: const TextStyle(fontSize: 16, color: Colors.grey),
                   ),
                   const SizedBox(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildStatColumn('ТЕРРИТОРИЯ', "\${((profile['influencePoints'] ?? 0) / 1000000).toStringAsFixed(2)} км²"),
-                      _buildStatColumn('ПРОБЕЖКИ', '\${profile["runs"] ?? 0}'),
-                      _buildStatColumn('ДИСТАНЦИЯ', '\${profile["distance"]?.toStringAsFixed(1) ?? "0.0"} км'),
+                      _buildStatColumn('ТЕРРИТОРИЯ', "${((profile['influencePoints'] ?? 0) / 1000000).toStringAsFixed(2)} км²"),
+                      _buildStatColumn('ПРОБЕЖКИ', '${profile["runs"] ?? 0}'),
+                      _buildStatColumn('ДИСТАНЦИЯ', '${profile["distance"]?.toStringAsFixed(1) ?? "0.0"} км'),
                     ],
                   ),
                   const SizedBox(height: 30),
@@ -363,9 +363,9 @@ class _MapScreenState extends State<MapScreen> {
                     polygons: [
                       Polygon(
                         points: _plannedPoints,
-                        color: const Color(0xFFD8A760).withOpacity(0.3), // Gold for own plan
-                        borderColor: const Color(0xFFD8A760),
-                        borderStrokeWidth: 2.0,
+                        color: const Color(0xFFF5D142).withOpacity(0.5), // Gold for own plan
+                        borderColor: const Color(0xFFF5D142),
+                        borderStrokeWidth: 3.5,
                       ),
                     ],
                   ),
@@ -374,7 +374,7 @@ class _MapScreenState extends State<MapScreen> {
                     polylines: [
                       Polyline(
                         points: _plannedPoints,
-                        color: const Color(0xFFD8A760),
+                        color: const Color(0xFFF5D142),
                         strokeWidth: 2.0,
                       ),
                     ],

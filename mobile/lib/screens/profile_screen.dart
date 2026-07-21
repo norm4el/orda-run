@@ -213,7 +213,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   ),
                                 ),
                                 Text(
-                                  '\${currentUser.influencePoints} / 500 XP',
+                                  '${currentUser.influencePoints} / 500 XP',
                                   style: const TextStyle(color: Color(0xFF8B929C), fontSize: 12),
                                 ),
                               ],

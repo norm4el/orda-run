@@ -348,7 +348,7 @@ class ApiService {
       if (response.statusCode == 200) {
         return true;
       } else {
-        print('Failed to save planned run: \${response.body}');
+        print('Failed to save planned run: ${response.body}');
         return false;
       }
     } catch (e) {

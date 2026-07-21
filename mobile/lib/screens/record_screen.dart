@@ -6,6 +6,7 @@ import '../services/run_tracker.dart';
 import '../services/api_service.dart';
 import '../models/models.dart';
 import '../main.dart';
+import 'run_result_screen.dart';
 
 class RecordScreen extends StatefulWidget {
   const RecordScreen({super.key});
@@ -51,13 +52,17 @@ class _RecordScreenState extends State<RecordScreen> {
     if (mounted) {
       setState(() => _isSaving = false);
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Маршрут сохранен!'.tr()),
-            backgroundColor: Colors.green,
+        context.read<AppState>().triggerMapRefresh();
+        
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => RunResultScreen(
+              distanceKm: tracker.distanceKm,
+              elapsedSeconds: tracker.elapsedSeconds,
+            ),
           ),
         );
-        context.read<AppState>().triggerMapRefresh();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

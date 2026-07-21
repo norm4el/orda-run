@@ -137,7 +137,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         height: 8,
                         width: _currentPage == index ? 24 : 8,
                         decoration: BoxDecoration(
-                          color: _currentPage == index ? const Color(0xFFD8A760) : Colors.white24,
+                          color: _currentPage == index ? const Color(0xFFF5D142) : Colors.white24,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       );
@@ -150,7 +150,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     width: double.infinity,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFD8A760),
+                        backgroundColor: const Color(0xFFF5D142),
                         foregroundColor: Colors.black,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
@@ -192,9 +192,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             padding: const EdgeInsets.all(30),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: const Color(0xFFD8A760).withOpacity(0.1),
+              color: const Color(0xFFF5D142).withOpacity(0.1),
             ),
-            child: Icon(icon, size: 80, color: const Color(0xFFD8A760)),
+            child: Icon(icon, size: 80, color: const Color(0xFFF5D142)),
           ),
           const SizedBox(height: 50),
           Text(
@@ -265,12 +265,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
                             color: isSelected 
-                              ? const Color(0xFFD8A760).withOpacity(0.2)
+                              ? const Color(0xFFF5D142).withOpacity(0.2)
                               : Colors.white.withOpacity(0.05),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
                               color: isSelected 
-                                ? const Color(0xFFD8A760)
+                                ? const Color(0xFFF5D142)
                                 : Colors.transparent,
                               width: 2,
                             ),
@@ -283,11 +283,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
-                                  color: isSelected ? const Color(0xFFD8A760) : Colors.white,
+                                  color: isSelected ? const Color(0xFFF5D142) : Colors.white,
                                 ),
                               ),
                               Text(
-                                "\${orda['member_count']} чел.",
+                                "${orda['member_count']} чел.",
                                 style: const TextStyle(color: Colors.grey),
                               ),
                             ],

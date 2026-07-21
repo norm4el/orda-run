@@ -121,7 +121,7 @@ class _QuestsScreenState extends State<QuestsScreen> {
                             id: q['id'],
                             title: q['title'] ?? '',
                             description: q['description'] ?? '',
-                            reward: "+ \${q['reward']} XP",
+                            reward: "+ ${q['reward']} XP",
                             progress: ratio,
                             currentVal: current,
                             targetVal: target,
@@ -216,7 +216,7 @@ class _QuestsScreenState extends State<QuestsScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('q_prog'.tr(), style: const TextStyle(fontSize: 12, color: Color(0xFF8B929C))),
-                Text('\${currentVal.toInt()} / \${targetVal.toInt()}', style: const TextStyle(fontSize: 12, color: Color(0xFF8B929C))),
+                Text('${currentVal.toInt()} / ${targetVal.toInt()}', style: const TextStyle(fontSize: 12, color: Color(0xFF8B929C))),
               ],
             ),
             const SizedBox(height: 8),
