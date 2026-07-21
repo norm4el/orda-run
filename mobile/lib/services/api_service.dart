@@ -84,8 +84,8 @@ class ApiService {
 
         if (response.statusCode == 200) {
           final data = jsonDecode(response.body);
-          if (data['status'] == 'success' && data['user'] != null) {
-            return AuthenticatedUser.fromJson(data['user']);
+          if (data['id'] != null) {
+            return AuthenticatedUser.fromJson(data);
           }
         }
       }
@@ -116,8 +116,8 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data['status'] == 'success' && data['user'] != null) {
-          return AuthenticatedUser.fromJson(data['user']);
+        if (data['id'] != null) {
+          return AuthenticatedUser.fromJson(data);
         }
       }
     } catch (e) {
