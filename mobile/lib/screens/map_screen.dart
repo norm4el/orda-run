@@ -91,11 +91,13 @@ class _MapScreenState extends State<MapScreen> {
   void _buildMapObjects(AuthenticatedUser? currentUser) {
     _cachedPolygons = _territories.expand((t) {
       final color = _getTerritoryColor(t, currentUser);
+      final double healthRatio = t.health / 100.0;
+      final double fillAlpha = 0.2 + (0.6 * healthRatio);
       return t.polygons.map((points) => Polygon(
         points: points,
-        color: color.withValues(alpha: 0.8),
-        borderColor: color,
-        borderStrokeWidth: 4.5,
+        color: color.withValues(alpha: fillAlpha),
+        borderColor: color.withValues(alpha: 0.3 + (0.7 * healthRatio)),
+        borderStrokeWidth: 4.5 * healthRatio.clamp(0.5, 1.0),
       ));
     }).toList();
 
@@ -136,7 +138,8 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
-  void _showUserProfile(String userId) async {
+  void _showUserProfile(Territory territory) async {
+    final userId = territory.ownerId;
     if (userId == '00000000-0000-0000-0000-000000000001') {
       showModalBottomSheet(
         context: context,
@@ -203,6 +206,35 @@ class _MapScreenState extends State<MapScreen> {
                     ],
                   ),
                   const SizedBox(height: 30),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1F222A),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: territory.health < 50 ? Colors.redAccent.withValues(alpha: 0.5) : const Color(0xFFFFD700).withValues(alpha: 0.3)),
+                    ),
+                    child: Column(
+                      children: [
+                        const Text('СОСТОЯНИЕ ТЕРРИТОРИИ', style: TextStyle(fontSize: 12, color: Colors.grey, letterSpacing: 1)),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Прочность: ${territory.health}%',
+                          style: TextStyle(
+                            fontSize: 18, 
+                            fontWeight: FontWeight.bold, 
+                            color: territory.health < 50 ? Colors.redAccent : const Color(0xFFFFD700),
+                          ),
+                        ),
+                        if (territory.health < 100)
+                          const Padding(
+                            padding: EdgeInsets.only(top: 8.0),
+                            child: Text('Территория разрушается из-за бездействия.', style: TextStyle(fontSize: 12, color: Colors.white70)),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 30),
                 ],
               ),
             );
@@ -247,7 +279,7 @@ class _MapScreenState extends State<MapScreen> {
     for (var territory in _territories) {
       for (var poly in territory.polygons) {
         if (_isPointInPolygon(point, poly)) {
-          _showUserProfile(territory.ownerId);
+          _showUserProfile(territory);
           return;
         }
       }

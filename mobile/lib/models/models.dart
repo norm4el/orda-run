@@ -6,6 +6,7 @@ class Territory {
   final String? ownerOrdaId;
   final String? ownerDisplayName;
   final int ownerInfluencePoints;
+  final int health; // Add health
   // Simplifying polygon for now to a list of points per polygon ring
   final List<List<LatLng>> polygons;
 
@@ -15,6 +16,7 @@ class Territory {
     this.ownerOrdaId,
     this.ownerDisplayName,
     required this.ownerInfluencePoints,
+    required this.health,
     required this.polygons,
   });
 
@@ -55,6 +57,7 @@ class Territory {
       ownerOrdaId: json['owner_orda_id'],
       ownerDisplayName: json['owner_display_name'],
       ownerInfluencePoints: (json['owner_influence_points'] as num?)?.toInt() ?? 0,
+      health: (json['health'] as num?)?.toInt() ?? 100,
       polygons: multiPolygons,
     );
   }
