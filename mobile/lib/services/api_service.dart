@@ -9,7 +9,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 class ApiService {
-  static const String baseUrl = String.fromEnvironment('API_URL', defaultValue: kIsWeb ? 'http://localhost:3000/api' : 'http://10.0.2.2:3000/api'); 
+  static const String baseUrl = String.fromEnvironment('API_URL', defaultValue: kIsWeb ? 'http://localhost:3000/api' : 'http://192.168.1.12:3000/api'); 
   static const Duration timeoutDuration = Duration(seconds: 10); // 10 second timeout
 
   Future<AuthenticatedUser?> authenticate(String initData) async {
