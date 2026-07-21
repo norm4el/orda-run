@@ -370,4 +370,39 @@ class ApiService {
       return false;
     }
   }
+
+  Future<List<LootDrop>> getDrops() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/drops')).timeout(timeoutDuration);
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((json) => LootDrop.fromJson(json)).toList();
+      } else {
+        return [];
+      }
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<Map<String, dynamic>?> claimDrop({required String userId, required String dropId}) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/drops/claim'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'user_id': userId,
+          'drop_id': dropId,
+        }),
+      ).timeout(timeoutDuration);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        return null;
+      }
+    } catch (e) {
+      return null;
+    }
+  }
 }

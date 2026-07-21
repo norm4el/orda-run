@@ -476,7 +476,7 @@ apiRouter.post('/runs/manual', async (req, res) => {
                 VALUES ($1, $2, $3, $4, $5)
                 ON CONFLICT (strava_activity_id) DO NOTHING
             `,
-            [userId, Date.now(), JSON.stringify(decodedPoints), distance, duration]
+            [userId, Date.now(), JSON.stringify(decodedPoints), distance, Math.round(duration)]
         );
 
         const result = await captureTerritory(userId, polylineString);
@@ -898,5 +898,55 @@ apiRouter.post('/orda/leave', async (req, res) => {
     } catch (e) {
         console.error(e);
         res.status(500).json({ error: 'Failed to leave orda' });
+    }
+});
+
+apiRouter.get('/drops', async (req, res) => {
+    try {
+        const result = await query(
+            `SELECT id, lat, lng, type, value, is_active FROM loot_drops WHERE is_active = true`
+        );
+        res.json(result.rows);
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Failed to get drops' });
+    }
+});
+
+apiRouter.post('/drops/claim', async (req, res) => {
+    const { telegram_id, user_id, drop_id } = req.body;
+    const targetId = user_id || telegram_id;
+    if (!targetId || !drop_id) return res.status(400).json({ error: 'Missing fields' });
+    try {
+        let userId = targetId;
+        const isUuid = String(targetId).includes('-');
+        if (!isUuid) {
+            const userRes = await query('SELECT id FROM users WHERE telegram_id = $1', [String(targetId)]);
+            if (userRes.rowCount === 0) return res.status(404).json({ error: 'User not found' });
+            userId = userRes.rows[0].id;
+        }
+
+        // Check if active
+        const dropRes = await query('SELECT type, value, is_active FROM loot_drops WHERE id = $1 FOR UPDATE', [drop_id]);
+        if (dropRes.rowCount === 0) return res.status(404).json({ error: 'Drop not found' });
+        
+        const drop = dropRes.rows[0];
+        if (!drop.is_active) {
+            return res.status(400).json({ error: 'Drop already claimed' });
+        }
+
+        // Deactivate drop
+        await query('UPDATE loot_drops SET is_active = false WHERE id = $1', [drop_id]);
+
+        // Reward user
+        if (drop.type === 'XP_BOOST') {
+            await query('UPDATE users SET influence_points = influence_points + $1 WHERE id = $2', [drop.value, userId]);
+            await query(`INSERT INTO game_events (user_id, event_type, message) VALUES ($1, 'QUEST_CLAIM', 'нашел сундук с Ордой и получил +' || $2 || ' XP!')`, [userId, drop.value]);
+        }
+        
+        res.json({ ok: true, type: drop.type, value: drop.value });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Failed to claim drop' });
     }
 });

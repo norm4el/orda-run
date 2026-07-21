@@ -31,7 +31,8 @@ class _MapScreenState extends State<MapScreen> {
   
   List<Polygon> _cachedPolygons = [];
   List<Polyline> _cachedPolylines = [];
-
+  List<LootDrop> _drops = [];
+  final Distance _distance = const Distance();
   int _lastRefresh = 0;
 
   @override
@@ -74,11 +75,13 @@ class _MapScreenState extends State<MapScreen> {
     // In a real app, you might want to fetch these concurrently
     final territories = await _apiService.getTerritories();
     final routes = await _apiService.getRoutes();
+    final drops = await _apiService.getDrops();
     
     if (mounted) {
       setState(() {
         _territories = territories;
         _routes = routes;
+        _drops = drops;
         _isLoading = false;
         _buildMapObjects(context.read<AppState>().currentUser);
       });
@@ -271,6 +274,34 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
+  Future<void> _claimDrop(LootDrop drop) async {
+    final currentUser = context.read<AppState>().currentUser;
+    if (currentUser == null) return;
+
+    try {
+      final position = await Geolocator.getCurrentPosition();
+      final userLatLng = LatLng(position.latitude, position.longitude);
+      final dist = _distance.distance(userLatLng, drop.position);
+
+      if (dist > 100) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Слишком далеко! Подойдите ближе (еще ${(dist - 100).toInt()} м)')));
+        return;
+      }
+
+      final res = await _apiService.claimDrop(userId: currentUser.id, dropId: drop.id);
+      if (res != null) {
+        setState(() {
+          _drops.removeWhere((d) => d.id == drop.id);
+        });
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Вы нашли сундук! +${res['value']} ${res['type'] == 'XP_BOOST' ? 'XP' : 'Энергии'}!'), backgroundColor: Colors.green));
+      } else {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Не удалось забрать сундук. Возможно, его уже кто-то забрал.')));
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ошибка доступа к геопозиции')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentUser = context.watch<AppState>().currentUser;
@@ -350,6 +381,38 @@ class _MapScreenState extends State<MapScreen> {
                       ),
                     ],
                   ),
+                MarkerLayer(
+                  markers: _drops.map((drop) {
+                    return Marker(
+                      point: drop.position,
+                      width: 40,
+                      height: 40,
+                      child: GestureDetector(
+                        onTap: () => _claimDrop(drop),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: drop.type == 'XP_BOOST' ? Colors.blue.withOpacity(0.8) : Colors.orange.withOpacity(0.8),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                            boxShadow: [
+                              BoxShadow(
+                                color: drop.type == 'XP_BOOST' ? Colors.blue : Colors.orange,
+                                blurRadius: 10,
+                                spreadRadius: 2,
+                              ),
+                            ],
+                          ),
+                          child: Center(
+                            child: Text(
+                              drop.type == 'XP_BOOST' ? '🎁' : '⚡',
+                              style: const TextStyle(fontSize: 20),
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
             ],
           ),
           if (_isDrawingMode)

@@ -87,3 +87,29 @@ class RouteData {
     );
   }
 }
+
+class LootDrop {
+  final String id;
+  final LatLng position;
+  final String type;
+  final int value;
+  final bool isActive;
+
+  LootDrop({
+    required this.id,
+    required this.position,
+    required this.type,
+    required this.value,
+    required this.isActive,
+  });
+
+  factory LootDrop.fromJson(Map<String, dynamic> json) {
+    return LootDrop(
+      id: json['id'],
+      position: LatLng((json['lat'] as num).toDouble(), (json['lng'] as num).toDouble()),
+      type: json['type'],
+      value: (json['value'] as num).toInt(),
+      isActive: json['is_active'] ?? true,
+    );
+  }
+}
