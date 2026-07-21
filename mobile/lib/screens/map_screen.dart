@@ -290,8 +290,8 @@ class _MapScreenState extends State<MapScreen> {
               initialCenter: const LatLng(51.13, 71.43), // Astana coordinates
               initialZoom: 13.0,
               onTap: _handleMapTap,
-              interactionOptions: const InteractionOptions(
-                flags: InteractiveFlag.all,
+              interactionOptions: InteractionOptions(
+                flags: _isDrawingMode ? InteractiveFlag.none : InteractiveFlag.all,
               ),
             ),
             children: [
@@ -371,6 +371,22 @@ class _MapScreenState extends State<MapScreen> {
                   ),
             ],
           ),
+          if (_isDrawingMode)
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onPanUpdate: (details) {
+                  final latlng = _mapController.camera.screenOffsetToLatLng(details.localPosition);
+                  if (_plannedPoints.isEmpty || const Distance().distance(_plannedPoints.last, latlng) > 5) {
+                    setState(() => _plannedPoints.add(latlng));
+                  }
+                },
+                onTapDown: (details) {
+                  final latlng = _mapController.camera.screenOffsetToLatLng(details.localPosition);
+                  setState(() => _plannedPoints.add(latlng));
+                },
+              ),
+            ),
           if (_isLoading)
             const Center(
               child: CircularProgressIndicator(),
