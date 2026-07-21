@@ -10,6 +10,7 @@ import '../services/run_tracker.dart';
 import '../main.dart';
 import 'feed_modal.dart';
 import 'package:google_polyline_algorithm/google_polyline_algorithm.dart';
+import 'package:geolocator/geolocator.dart';
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
 
@@ -37,6 +38,23 @@ class _MapScreenState extends State<MapScreen> {
   void initState() {
     super.initState();
     _loadData();
+    _centerOnUser();
+  }
+
+  Future<void> _centerOnUser() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) return;
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) return;
+    }
+    
+    if (permission == LocationPermission.deniedForever) return;
+
+    final position = await Geolocator.getCurrentPosition();
+    _mapController.move(LatLng(position.latitude, position.longitude), 15.0);
   }
 
   @override

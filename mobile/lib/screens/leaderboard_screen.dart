@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../services/api_service.dart';
+import '../utils/title_helper.dart';
 
 class LeaderboardScreen extends StatefulWidget {
   const LeaderboardScreen({super.key});
@@ -65,6 +66,21 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                   Text(
                     (profile['displayName'] ?? 'Без имени').toUpperCase(),
                     style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                  const SizedBox(height: 4),
+                  Builder(
+                    builder: (context) {
+                      final titleInfo = TitleHelper.getTitleForInfluence(profile['influencePoints'] ?? 0);
+                      return Text(
+                        titleInfo.title,
+                        style: TextStyle(
+                          color: titleInfo.color,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1,
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 10),
                   Text(
@@ -234,6 +250,19 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                                 fontSize: 16,
                                 letterSpacing: 1,
                               ),
+                            ),
+                            subtitle: Builder(
+                              builder: (context) {
+                                final titleInfo = TitleHelper.getTitleForInfluence(score);
+                                return Text(
+                                  titleInfo.title,
+                                  style: TextStyle(
+                                    color: titleInfo.color,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                );
+                              },
                             ),
                             trailing: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

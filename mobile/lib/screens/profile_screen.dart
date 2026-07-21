@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/api_service.dart';
+import '../utils/title_helper.dart';
 import '../main.dart';
 import 'orda_screen.dart';
 
@@ -200,6 +201,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 letterSpacing: 1,
                                 color: Colors.white,
                               ),
+                            ),
+                            const SizedBox(height: 4),
+                            Builder(
+                              builder: (context) {
+                                final titleInfo = TitleHelper.getTitleForInfluence(currentUser.influencePoints);
+                                return Text(
+                                  titleInfo.title,
+                                  style: TextStyle(
+                                    color: titleInfo.color,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1,
+                                  ),
+                                );
+                              },
                             ),
                             const SizedBox(height: 8),
                             Row(
