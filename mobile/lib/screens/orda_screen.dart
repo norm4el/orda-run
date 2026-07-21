@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/api_service.dart';
 import '../main.dart';
+import 'orda_chat_screen.dart';
 
 class OrdaScreen extends StatefulWidget {
   const OrdaScreen({super.key});
@@ -230,14 +231,34 @@ class _OrdaScreenState extends State<OrdaScreen> {
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: const Color(0xFFFFD700).withValues(alpha: 0.3)),
             ),
-            child: const Column(
+            child: Column(
               children: [
-                Text('Здесь скоро появится статистика вашей Орды, чат и список участников.', 
+                const Text('Здесь скоро появится статистика вашей Орды и список участников.', 
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.grey, fontSize: 16, height: 1.5),
                 ),
-                SizedBox(height: 20),
-                Icon(Icons.construction, color: Colors.grey, size: 40),
+                const SizedBox(height: 20),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.chat),
+                  label: const Text('ЧАТ ОРДЫ', style: TextStyle(fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFFD700),
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => OrdaChatScreen(
+                          ordaId: user.ordaId!,
+                          ordaName: user.ordaName!,
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ],
             ),
           ),

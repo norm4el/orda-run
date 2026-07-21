@@ -405,4 +405,32 @@ class ApiService {
       return null;
     }
   }
+
+  Future<List<dynamic>> getOrdaMessages(String ordaId) async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/orda/$ordaId/messages')).timeout(timeoutDuration);
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<bool> sendOrdaMessage(String ordaId, String userId, String message) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/orda/$ordaId/messages'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'user_id': userId,
+          'message': message,
+        }),
+      ).timeout(timeoutDuration);
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
 }

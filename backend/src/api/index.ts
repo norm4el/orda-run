@@ -950,3 +950,46 @@ apiRouter.post('/drops/claim', async (req, res) => {
         res.status(500).json({ error: 'Failed to claim drop' });
     }
 });
+
+apiRouter.get('/orda/:ordaId/messages', async (req, res) => {
+    const { ordaId } = req.params;
+    try {
+        const result = await query(
+            `SELECT m.id, m.message, m.created_at, u.display_name as user_name 
+             FROM orda_messages m 
+             JOIN users u ON m.user_id = u.id 
+             WHERE m.orda_id = $1 
+             ORDER BY m.created_at ASC LIMIT 100`,
+            [ordaId]
+        );
+        res.json(result.rows);
+    } catch (e) {
+        console.error('orda messages error:', e);
+        res.status(500).json({ error: 'Failed to get messages' });
+    }
+});
+
+apiRouter.post('/orda/:ordaId/messages', async (req, res) => {
+    const { ordaId } = req.params;
+    const { telegram_id, user_id, message } = req.body;
+    const targetId = user_id || telegram_id;
+    if (!targetId || !message) return res.status(400).json({ error: 'Missing fields' });
+    try {
+        let userId = targetId;
+        const isUuid = String(targetId).includes('-');
+        if (!isUuid) {
+            const userRes = await query('SELECT id FROM users WHERE telegram_id = $1', [String(targetId)]);
+            if (userRes.rowCount === 0) return res.status(404).json({ error: 'User not found' });
+            userId = userRes.rows[0].id;
+        }
+
+        await query(
+            `INSERT INTO orda_messages (orda_id, user_id, message) VALUES ($1, $2, $3)`,
+            [ordaId, userId, message]
+        );
+        res.json({ ok: true });
+    } catch (e) {
+        console.error('orda message error:', e);
+        res.status(500).json({ error: 'Failed to send message' });
+    }
+});
