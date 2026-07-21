@@ -297,6 +297,20 @@ class ApiService {
     return null;
   }
 
+  Future<bool> leaveOrda(String userId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/orda/leave'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'user_id': userId}),
+      ).timeout(timeoutDuration);
+      return response.statusCode == 200;
+    } catch (e) {
+      print('leaveOrda error: $e');
+      return false;
+    }
+  }
+
   Future<Map<String, dynamic>?> getUserPublicProfile(String id) async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/user/public/$id')).timeout(timeoutDuration);
