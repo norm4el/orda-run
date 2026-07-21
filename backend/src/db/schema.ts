@@ -96,7 +96,10 @@ export async function ensureDatabaseSchema() {
 
   await pool.query(`
     ALTER TABLE users
-      ADD COLUMN IF NOT EXISTS bonus_points INT NOT NULL DEFAULT 0
+      ADD COLUMN IF NOT EXISTS bonus_points INT NOT NULL DEFAULT 0;
+
+    ALTER TABLE territories
+      ADD COLUMN IF NOT EXISTS health INT NOT NULL DEFAULT 100;
   `);
 
   await pool.query(`
