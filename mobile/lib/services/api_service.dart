@@ -118,12 +118,16 @@ class ApiService {
         final data = jsonDecode(response.body);
         if (data['id'] != null) {
           return AuthenticatedUser.fromJson(data);
+        } else {
+          throw Exception('Неверный формат ответа от сервера');
         }
+      } else {
+        throw Exception('Ошибка сервера: ${response.statusCode}');
       }
     } catch (e) {
       print('Apple sign in error: $e');
+      throw Exception(e.toString());
     }
-    return null;
   }
 
   String lastTerritoryError = '';

@@ -79,13 +79,17 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _handleAppleSignIn() async {
     setState(() => _isLoading = true);
-    final user = await _apiService.signInWithApple();
-    if (user != null && mounted) {
-      context.read<AppState>().setUser(user);
-    } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Вход через Apple не удался. Требуется включить Sign In with Apple в Apple Developer Portal.')),
-      );
+    try {
+      final user = await _apiService.signInWithApple();
+      if (user != null && mounted) {
+        context.read<AppState>().setUser(user);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка Apple: $e\nОтправьте этот текст разработчику!')),
+        );
+      }
     }
     if (mounted) setState(() => _isLoading = false);
   }
