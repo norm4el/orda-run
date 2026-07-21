@@ -188,16 +188,20 @@ class _AppShellState extends State<AppShell> {
     return Scaffold(
       body: Stack(
         children: [
-          IndexedStack(
-            index: _currentIndex,
-            children: const [
-              MapScreen(),
-              RecordScreen(),
-              QuestsScreen(),
-              LeaderboardScreen(),
-              ProfileScreen(),
-            ],
-          ),
+          // 1. Always show MapScreen if we are on Map (0) or Record (1) tabs
+          if (_currentIndex == 0 || _currentIndex == 1)
+            const MapScreen(),
+            
+          // 2. Show other screens on top
+          if (_currentIndex == 1)
+            const RecordScreen()
+          else if (_currentIndex == 2)
+            const QuestsScreen()
+          else if (_currentIndex == 3)
+            const LeaderboardScreen()
+          else if (_currentIndex == 4)
+            const ProfileScreen(),
+            
           Positioned(
             left: 0,
             right: 0,

@@ -35,13 +35,22 @@ class RunTracker extends ChangeNotifier {
     });
 
     await _locationService.startTracking();
-    _locationSub = _locationService.locationStream.listen((LatLng point) {
+    _locationSub = _locationService.locationStream.listen((Position position) {
+      // 1. Accuracy filter: Ignore points with bad accuracy (e.g. > 20 meters)
+      if (position.accuracy > 20.0) return;
+
+      final point = LatLng(position.latitude, position.longitude);
+
       if (_routePoints.isNotEmpty) {
         final last = _routePoints.last;
         final d = Geolocator.distanceBetween(
           last.latitude, last.longitude,
           point.latitude, point.longitude,
         );
+        
+        // 2. Jitter filter: Only accumulate if we moved at least 3 meters
+        if (d < 3.0) return;
+        
         _distanceMeters += d;
       }
       _routePoints.add(point);

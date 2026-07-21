@@ -4,9 +4,9 @@ import 'package:latlong2/latlong.dart';
 
 class LocationService {
   StreamSubscription<Position>? _positionStreamSubscription;
-  final StreamController<LatLng> _locationStreamController = StreamController<LatLng>.broadcast();
+  final StreamController<Position> _locationStreamController = StreamController<Position>.broadcast();
 
-  Stream<LatLng> get locationStream => _locationStreamController.stream;
+  Stream<Position> get locationStream => _locationStreamController.stream;
 
   Future<bool> requestPermission() async {
     bool serviceEnabled;
@@ -44,7 +44,7 @@ class LocationService {
     _positionStreamSubscription = Geolocator.getPositionStream(
       locationSettings: locationSettings,
     ).listen((Position position) {
-      _locationStreamController.add(LatLng(position.latitude, position.longitude));
+      _locationStreamController.add(position);
     });
   }
 
