@@ -8,6 +8,7 @@ import '../models/models.dart';
 import '../services/api_service.dart';
 import '../services/run_tracker.dart';
 import '../main.dart';
+import 'feed_modal.dart';
 import 'package:google_polyline_algorithm/google_polyline_algorithm.dart';
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -246,57 +247,9 @@ class _MapScreenState extends State<MapScreen> {
   void _showActivityFeed() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF15181E),
+      backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return FutureBuilder(
-          future: _apiService.getEvents(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const SizedBox(height: 300, child: Center(child: CircularProgressIndicator()));
-            }
-            if (!snapshot.hasData || (snapshot.data as List).isEmpty) {
-              return const SizedBox(height: 300, child: Center(child: Text('Нет событий')));
-            }
-            final events = snapshot.data as List;
-            return Container(
-              height: MediaQuery.of(context).size.height * 0.6,
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('ЛЕНТА СОБЫТИЙ', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 2, color: Colors.grey)),
-                  const SizedBox(height: 20),
-                  Expanded(
-                    child: ListView.separated(
-                      itemCount: events.length,
-                      separatorBuilder: (context, index) => const Divider(color: Colors.white10),
-                      itemBuilder: (context, index) {
-                        final e = events[index];
-                        return ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(e['message'] ?? '', style: const TextStyle(color: Colors.white)),
-                          subtitle: Text(
-                            DateTime.parse(e['created_at']).toLocal().toString().split('.')[0],
-                            style: const TextStyle(color: Colors.grey, fontSize: 12),
-                          ),
-                          onTap: () {
-                            Navigator.pop(context);
-                            _showUserProfile(e['user_id']);
-                          },
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
+      builder: (context) => const FeedModal(),
     );
   }
 

@@ -72,7 +72,7 @@ class _OrdaScreenState extends State<OrdaScreen> {
         final appState = context.read<AppState>();
         user.ordaId = ordaId;
         user.ordaName = name.trim();
-        appState.updateUser(user);
+        appState.setUser(user);
       }
       setState(() => _isLoading = false);
     }
@@ -88,7 +88,7 @@ class _OrdaScreenState extends State<OrdaScreen> {
       final appState = context.read<AppState>();
       user.ordaId = ordaId;
       user.ordaName = ordaName;
-      appState.updateUser(user);
+      appState.setUser(user);
     }
     setState(() => _isLoading = false);
   }
@@ -123,7 +123,7 @@ class _OrdaScreenState extends State<OrdaScreen> {
         final appState = context.read<AppState>();
         user.ordaId = null;
         user.ordaName = null;
-        appState.updateUser(user);
+        appState.setUser(user);
       }
       setState(() => _isLoading = false);
     }
