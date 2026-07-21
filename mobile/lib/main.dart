@@ -10,6 +10,8 @@ import 'screens/profile_screen.dart';
 import 'screens/leaderboard_screen.dart';
 import 'screens/quests_screen.dart';
 import 'screens/login_screen.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/onboarding_screen.dart';
 
 class AuthenticatedUser {
@@ -36,6 +38,16 @@ class AuthenticatedUser {
       ordaName: json['ordaName'],
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'displayName': displayName,
+      'influencePoints': influencePoints,
+      'ordaId': ordaId,
+      'ordaName': ordaName,
+    };
+  }
 }
 
 class AppState extends ChangeNotifier {
@@ -46,6 +58,16 @@ class AppState extends ChangeNotifier {
   void setUser(AuthenticatedUser? user) {
     currentUser = user;
     notifyListeners();
+    _saveUserToPrefs(user);
+  }
+
+  Future<void> _saveUserToPrefs(AuthenticatedUser? user) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (user == null) {
+      await prefs.remove('cached_user');
+    } else {
+      await prefs.setString('cached_user', jsonEncode(user.toJson()));
+    }
   }
 
   void skipOnboarding() {
@@ -54,8 +76,7 @@ class AppState extends ChangeNotifier {
   }
 
   void logout() {
-    currentUser = null;
-    notifyListeners();
+    setUser(null);
   }
 
   void triggerMapRefresh() {
@@ -69,6 +90,22 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EasyLocalization.ensureInitialized();
 
+  final prefs = await SharedPreferences.getInstance();
+  AuthenticatedUser? savedUser;
+  final savedUserStr = prefs.getString('cached_user');
+  if (savedUserStr != null) {
+    try {
+      savedUser = AuthenticatedUser.fromJson(jsonDecode(savedUserStr));
+    } catch (e) {
+      // Ignored
+    }
+  }
+
+  final appState = AppState();
+  if (savedUser != null) {
+    appState.setUser(savedUser);
+  }
+
   runApp(
     EasyLocalization(
       supportedLocales: const [Locale('en'), Locale('ru')],
@@ -76,7 +113,7 @@ void main() async {
       fallbackLocale: const Locale('en'),
       child: MultiProvider(
         providers: [
-          ChangeNotifierProvider(create: (_) => AppState()),
+          ChangeNotifierProvider.value(value: appState),
           ChangeNotifierProvider(create: (_) => RunTracker()),
         ],
         child: const MyApp(),

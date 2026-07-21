@@ -69,6 +69,10 @@ class _LoginScreenState extends State<LoginScreen> {
     final user = await _apiService.signInWithGoogle();
     if (user != null && mounted) {
       context.read<AppState>().setUser(user);
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Вход через Google не удался. Требуется настройка GoogleService-Info.plist в консоли Firebase.')),
+      );
     }
     if (mounted) setState(() => _isLoading = false);
   }
@@ -78,6 +82,10 @@ class _LoginScreenState extends State<LoginScreen> {
     final user = await _apiService.signInWithApple();
     if (user != null && mounted) {
       context.read<AppState>().setUser(user);
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Вход через Apple не удался. Требуется включить Sign In with Apple в Apple Developer Portal.')),
+      );
     }
     if (mounted) setState(() => _isLoading = false);
   }

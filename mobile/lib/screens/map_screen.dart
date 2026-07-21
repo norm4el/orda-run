@@ -290,8 +290,8 @@ class _MapScreenState extends State<MapScreen> {
               initialCenter: const LatLng(51.13, 71.43), // Astana coordinates
               initialZoom: 13.0,
               onTap: _handleMapTap,
-              interactionOptions: InteractionOptions(
-                flags: _isDrawingMode ? InteractiveFlag.none : InteractiveFlag.all,
+              interactionOptions: const InteractionOptions(
+                flags: InteractiveFlag.all,
               ),
             ),
             children: [
@@ -348,45 +348,29 @@ class _MapScreenState extends State<MapScreen> {
                     ),
                   ],
                 ),
-              if (_isDrawingMode && _plannedPoints.length >= 3)
-                PolygonLayer(
-                  polygons: [
-                    Polygon(
-                      points: _plannedPoints,
-                      color: Colors.green.withOpacity(0.3),
-                      borderColor: Colors.green,
-                      borderStrokeWidth: 2.0,
-                    ),
-                  ],
-                ),
-              if (_isDrawingMode && _plannedPoints.isNotEmpty)
-                PolylineLayer(
-                  polylines: [
-                    Polyline(
-                      points: _plannedPoints,
-                      color: Colors.green,
-                      strokeWidth: 4.0,
-                    ),
-                  ],
-                ),
+                if (_isDrawingMode && _plannedPoints.length >= 3)
+                  PolygonLayer(
+                    polygons: [
+                      Polygon(
+                        points: _plannedPoints,
+                        color: const Color(0xFFD8A760).withOpacity(0.3), // Gold for own plan
+                        borderColor: const Color(0xFFD8A760),
+                        borderStrokeWidth: 2.0,
+                      ),
+                    ],
+                  ),
+                if (_isDrawingMode && _plannedPoints.isNotEmpty)
+                  PolylineLayer(
+                    polylines: [
+                      Polyline(
+                        points: _plannedPoints,
+                        color: const Color(0xFFD8A760),
+                        strokeWidth: 2.0,
+                      ),
+                    ],
+                  ),
             ],
           ),
-          if (_isDrawingMode)
-            Positioned.fill(
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onPanUpdate: (details) {
-                  final latlng = _mapController.camera.screenOffsetToLatLng(details.localPosition);
-                  if (_plannedPoints.isEmpty || const Distance().distance(_plannedPoints.last, latlng) > 5) {
-                    setState(() => _plannedPoints.add(latlng));
-                  }
-                },
-                onTapDown: (details) {
-                  final latlng = _mapController.camera.screenOffsetToLatLng(details.localPosition);
-                  setState(() => _plannedPoints.add(latlng));
-                },
-              ),
-            ),
           if (_isLoading)
             const Center(
               child: CircularProgressIndicator(),
@@ -520,10 +504,21 @@ class _MapScreenState extends State<MapScreen> {
                               });
                             },
                           ),
-                          const SizedBox(width: 8),
+                          if (_plannedPoints.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8.0),
+                            child: IconButton(
+                              icon: const Icon(Icons.undo, color: Colors.white),
+                              onPressed: () {
+                                setState(() {
+                                  _plannedPoints.removeLast();
+                                });
+                              },
+                            ),
+                          ),
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF22C55E),
+                              backgroundColor: Colors.white,
                               foregroundColor: Colors.black,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                             ),
@@ -532,7 +527,7 @@ class _MapScreenState extends State<MapScreen> {
                                 : null,
                             child: _isSavingPlan 
                                 ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
-                                : Text('Сохранить', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                : Text('save'.tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
                           ),
                         ],
                       ),
