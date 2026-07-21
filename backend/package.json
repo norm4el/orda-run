@@ -18,10 +18,12 @@
   "dependencies": {
     "@mapbox/polyline": "^1.2.1",
     "@tma.js/init-data-node": "^2.0.8",
+    "apple-signin-auth": "^2.0.0",
     "axios": "^1.18.1",
     "cors": "^2.8.6",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "google-auth-library": "^10.9.0",
     "grammy": "^1.35.0",
     "pg": "^8.13.1"
   },

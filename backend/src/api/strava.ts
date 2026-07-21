@@ -47,9 +47,12 @@ stravaRouter.get('/auth', (req, res) => {
   }
 
   const telegramId = req.query.telegram_id;
+  const userId = req.query.user_id;
 
-  if (!telegramId || typeof telegramId !== 'string') {
-    res.status(400).send('telegram_id is required');
+  const statePayload = userId ? String(userId) : String(telegramId);
+
+  if (!statePayload || statePayload === 'undefined') {
+    res.status(400).send('user_id or telegram_id is required');
     return;
   }
 
@@ -59,7 +62,7 @@ stravaRouter.get('/auth', (req, res) => {
   authUrl.searchParams.set('response_type', 'code');
   authUrl.searchParams.set('approval_prompt', 'auto');
   authUrl.searchParams.set('scope', process.env.STRAVA_SCOPE ?? 'read,activity:read_all');
-  authUrl.searchParams.set('state', telegramId);
+  authUrl.searchParams.set('state', statePayload);
 
   res.redirect(authUrl.toString());
 });
@@ -97,19 +100,35 @@ stravaRouter.get('/callback', async (req, res) => {
 
     const athleteId = tokenData.athlete?.id || null;
 
-    // Update user in DB
-    await query(
-      `
-        UPDATE users
-        SET strava_access_token = $1,
-            strava_refresh_token = $2,
-            strava_expires_at = $3,
-            strava_athlete_id = COALESCE($4, strava_athlete_id),
-            updated_at = NOW()
-        WHERE telegram_id = $5
-      `,
-      [tokenData.access_token, tokenData.refresh_token, tokenData.expires_at, athleteId, state],
-    );
+    const isUuid = state.includes('-');
+
+    if (isUuid) {
+      await query(
+        `
+          UPDATE users
+          SET strava_access_token = $1,
+              strava_refresh_token = $2,
+              strava_expires_at = $3,
+              strava_athlete_id = COALESCE($4, strava_athlete_id),
+              updated_at = NOW()
+          WHERE id = $5
+        `,
+        [tokenData.access_token, tokenData.refresh_token, tokenData.expires_at, athleteId, state],
+      );
+    } else {
+      await query(
+        `
+          UPDATE users
+          SET strava_access_token = $1,
+              strava_refresh_token = $2,
+              strava_expires_at = $3,
+              strava_athlete_id = COALESCE($4, strava_athlete_id),
+              updated_at = NOW()
+          WHERE telegram_id = $5
+        `,
+        [tokenData.access_token, tokenData.refresh_token, tokenData.expires_at, athleteId, state],
+      );
+    }
 
     // After saving token, we can trigger the fetch activities right away in the background (or await it)
     await fetchAndSaveActivities(state, tokenData.access_token);
@@ -126,31 +145,38 @@ stravaRouter.get('/callback', async (req, res) => {
 
 stravaRouter.post('/sync', async (req, res) => {
   const telegramId = req.body?.telegram_id;
-  if (!telegramId) {
-    res.status(400).send('telegram_id is required');
+  const userId = req.body?.user_id;
+
+  const targetId = userId ? String(userId) : String(telegramId);
+
+  if (!targetId || targetId === 'undefined') {
+    res.status(400).send('user_id or telegram_id is required');
     return;
   }
 
   try {
-    const accessToken = await ensureValidStravaToken(String(telegramId));
+    const accessToken = await ensureValidStravaToken(targetId);
     
     // Patch: Fetch and save strava_athlete_id if missing
-    const athleteRes = await query<{ strava_athlete_id: string | null }>(`SELECT strava_athlete_id FROM users WHERE telegram_id = $1`, [String(telegramId)]);
+    const isUuid = targetId.includes('-');
+    const queryCond = isUuid ? 'id = $1' : 'telegram_id = $1';
+    
+    const athleteRes = await query<{ strava_athlete_id: string | null }>(`SELECT strava_athlete_id FROM users WHERE ${queryCond}`, [targetId]);
     if (athleteRes.rows[0] && !athleteRes.rows[0].strava_athlete_id) {
       try {
         const stravaAthleteResponse = await stravaApi.get('https://www.strava.com/api/v3/athlete', {
           headers: { Authorization: `Bearer ${accessToken}` }
         });
         if (stravaAthleteResponse.data?.id) {
-          await query(`UPDATE users SET strava_athlete_id = $1 WHERE telegram_id = $2`, [stravaAthleteResponse.data.id, String(telegramId)]);
-          console.log(`Migrated strava_athlete_id for user ${telegramId}`);
+          await query(`UPDATE users SET strava_athlete_id = $1 WHERE ${queryCond}`, [stravaAthleteResponse.data.id, targetId]);
+          console.log(`Migrated strava_athlete_id for user ${targetId}`);
         }
       } catch (err) {
         console.error('Failed to fetch athlete ID for migration:', err);
       }
     }
 
-    await fetchAndSaveActivities(String(telegramId), accessToken);
+    await fetchAndSaveActivities(targetId, accessToken);
     res.json({ success: true });
   } catch (error) {
     console.error('Strava sync error:', error);
@@ -158,10 +184,13 @@ stravaRouter.post('/sync', async (req, res) => {
   }
 });
 
-async function ensureValidStravaToken(telegramId: string): Promise<string> {
+async function ensureValidStravaToken(targetId: string): Promise<string> {
+  const isUuid = targetId.includes('-');
+  const queryCond = isUuid ? 'id = $1' : 'telegram_id = $1';
+
   const userResult = await query<{ strava_access_token: string, strava_refresh_token: string, strava_expires_at: number }>(
-    'SELECT strava_access_token, strava_refresh_token, strava_expires_at FROM users WHERE telegram_id = $1',
-    [telegramId]
+    `SELECT strava_access_token, strava_refresh_token, strava_expires_at FROM users WHERE ${queryCond}`,
+    [targetId]
   );
 
   if (userResult.rowCount === 0 || !userResult.rows[0]) {
@@ -199,9 +228,9 @@ async function ensureValidStravaToken(telegramId: string): Promise<string> {
             strava_refresh_token = $2,
             strava_expires_at = $3,
             updated_at = NOW()
-        WHERE telegram_id = $4
+        WHERE ${queryCond}
       `,
-      [tokenData.access_token, tokenData.refresh_token, tokenData.expires_at, telegramId],
+      [tokenData.access_token, tokenData.refresh_token, tokenData.expires_at, targetId],
     );
 
     return tokenData.access_token;
@@ -210,16 +239,19 @@ async function ensureValidStravaToken(telegramId: string): Promise<string> {
   return strava_access_token;
 }
 
-async function fetchAndSaveActivities(telegramId: string, accessToken: string) {
+async function fetchAndSaveActivities(targetId: string, accessToken: string) {
   try {
+    const isUuid = targetId.includes('-');
+    const queryCond = isUuid ? 'id = $1' : 'telegram_id = $1';
+
     // Get the user ID from our DB to link routes to them
     const userResult = await query<{ id: string }>(
-      'SELECT id FROM users WHERE telegram_id = $1',
-      [telegramId]
+      `SELECT id FROM users WHERE ${queryCond}`,
+      [targetId]
     );
 
     if (userResult.rowCount === 0 || !userResult.rows[0]) {
-      throw new Error(`User not found for telegram_id: ${telegramId}`);
+      throw new Error(`User not found for id: ${targetId}`);
     }
 
     const userId = userResult.rows[0].id;

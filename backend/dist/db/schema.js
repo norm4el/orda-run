@@ -8,7 +8,7 @@ async function ensureDatabaseSchema() {
     await _1.pool.query(`
     CREATE TABLE IF NOT EXISTS users (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      telegram_id BIGINT UNIQUE NOT NULL,
+      telegram_id BIGINT UNIQUE,
       username TEXT,
       first_name TEXT,
       display_name TEXT,
@@ -41,8 +41,18 @@ async function ensureDatabaseSchema() {
       ADD COLUMN IF NOT EXISTS orda_id UUID REFERENCES ordas(id) ON DELETE SET NULL,
       ADD COLUMN IF NOT EXISTS color_self TEXT NOT NULL DEFAULT '#d8a760',
       ADD COLUMN IF NOT EXISTS color_others TEXT NOT NULL DEFAULT '#2c5a5a',
+      ADD COLUMN IF NOT EXISTS google_id TEXT UNIQUE,
+      ADD COLUMN IF NOT EXISTS apple_id TEXT UNIQUE,
+      ADD COLUMN IF NOT EXISTS email TEXT,
       ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  `);
+    await _1.pool.query(`
+    CREATE TABLE IF NOT EXISTS mobile_auth_sessions (
+      session_id TEXT PRIMARY KEY,
+      user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+      expires_at TIMESTAMPTZ NOT NULL
+    )
   `);
     await _1.pool.query(`
     UPDATE users

@@ -32,13 +32,20 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.apiRouter = void 0;
 const express_1 = require("express");
 const init_data_node_1 = require("@tma.js/init-data-node");
 const db_1 = require("../db");
 const territory_1 = require("../db/territory");
+const google_auth_library_1 = require("google-auth-library");
+const apple_signin_auth_1 = __importDefault(require("apple-signin-auth"));
+const crypto_1 = require("crypto");
 exports.apiRouter = (0, express_1.Router)();
+const googleClient = new google_auth_library_1.OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const INIT_DATA_MAX_AGE_SECONDS = 24 * 60 * 60;
 function mapUserRow(row) {
     return row;
@@ -119,6 +126,144 @@ exports.apiRouter.post('/auth', async (req, res) => {
         res.status(500).json({ error: message });
     }
 });
+exports.apiRouter.post('/auth/google', async (req, res) => {
+    const { idToken } = req.body;
+    if (!idToken) {
+        res.status(400).json({ error: 'idToken is required' });
+        return;
+    }
+    try {
+        const ticket = await googleClient.verifyIdToken({
+            idToken,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+        const payload = ticket.getPayload();
+        if (!payload || !payload.sub)
+            throw new Error('Invalid token');
+        const googleId = payload.sub;
+        const email = payload.email;
+        const name = payload.name || 'Google User';
+        const result = await (0, db_1.query)(`
+                WITH upsert AS (
+                    INSERT INTO users (google_id, email, display_name, first_name)
+                    VALUES ($1, $2, $3, $3)
+                    ON CONFLICT (google_id) DO UPDATE
+                    SET email = EXCLUDED.email,
+                        display_name = COALESCE(users.display_name, EXCLUDED.display_name),
+                        updated_at = NOW()
+                    RETURNING *
+                )
+                SELECT
+                    u.id, u.telegram_id AS "telegramId", u.username, u.first_name AS "firstName",
+                    u.display_name AS "displayName", u.strava_access_token AS "stravaAccessToken",
+                    u.strava_refresh_token AS "stravaRefreshToken", u.strava_expires_at AS "stravaExpiresAt",
+                    u.influence_points AS "influencePoints", u.color_self AS "colorSelf",
+                    u.color_others AS "colorOthers", u.orda_id AS "ordaId", o.name AS "ordaName",
+                    u.created_at AS "createdAt", u.updated_at AS "updatedAt"
+                FROM upsert u LEFT JOIN ordas o ON u.orda_id = o.id
+            `, [googleId, email || null, name]);
+        if (result.rowCount === 0)
+            throw new Error('Failed to authorize');
+        res.json(mapUserRow(result.rows[0]));
+    }
+    catch (error) {
+        console.error('Google Auth Error:', error);
+        res.status(401).json({ error: 'Unauthorized' });
+    }
+});
+exports.apiRouter.post('/auth/apple', async (req, res) => {
+    const { identityToken, fullName } = req.body;
+    if (!identityToken) {
+        res.status(400).json({ error: 'identityToken is required' });
+        return;
+    }
+    try {
+        const payload = await apple_signin_auth_1.default.verifyIdToken(identityToken, {
+            audience: process.env.APPLE_CLIENT_ID,
+            ignoreExpiration: true, // adjust for production
+        });
+        const appleId = payload.sub;
+        const email = payload.email;
+        const name = fullName || 'Apple User';
+        const result = await (0, db_1.query)(`
+                WITH upsert AS (
+                    INSERT INTO users (apple_id, email, display_name, first_name)
+                    VALUES ($1, $2, $3, $3)
+                    ON CONFLICT (apple_id) DO UPDATE
+                    SET email = EXCLUDED.email,
+                        display_name = CASE WHEN $3 != 'Apple User' THEN $3 ELSE users.display_name END,
+                        updated_at = NOW()
+                    RETURNING *
+                )
+                SELECT
+                    u.id, u.telegram_id AS "telegramId", u.username, u.first_name AS "firstName",
+                    u.display_name AS "displayName", u.strava_access_token AS "stravaAccessToken",
+                    u.strava_refresh_token AS "stravaRefreshToken", u.strava_expires_at AS "stravaExpiresAt",
+                    u.influence_points AS "influencePoints", u.color_self AS "colorSelf",
+                    u.color_others AS "colorOthers", u.orda_id AS "ordaId", o.name AS "ordaName",
+                    u.created_at AS "createdAt", u.updated_at AS "updatedAt"
+                FROM upsert u LEFT JOIN ordas o ON u.orda_id = o.id
+            `, [appleId, email || null, name]);
+        if (result.rowCount === 0)
+            throw new Error('Failed to authorize');
+        res.json(mapUserRow(result.rows[0]));
+    }
+    catch (error) {
+        console.error('Apple Auth Error:', error);
+        res.status(401).json({ error: 'Unauthorized' });
+    }
+});
+exports.apiRouter.post('/auth/mobile/init', async (req, res) => {
+    try {
+        const sessionId = (0, crypto_1.randomBytes)(16).toString('hex');
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes valid
+        await (0, db_1.query)('INSERT INTO mobile_auth_sessions (session_id, expires_at) VALUES ($1, $2)', [sessionId, expiresAt]);
+        res.json({ sessionId });
+    }
+    catch (error) {
+        console.error('Mobile Auth Init Error:', error);
+        res.status(500).json({ error: 'Internal error' });
+    }
+});
+exports.apiRouter.post('/auth/mobile/poll', async (req, res) => {
+    const { sessionId } = req.body;
+    if (!sessionId) {
+        res.status(400).json({ error: 'sessionId is required' });
+        return;
+    }
+    try {
+        const sessionRes = await (0, db_1.query)('SELECT user_id FROM mobile_auth_sessions WHERE session_id = $1 AND expires_at > NOW()', [sessionId]);
+        if (sessionRes.rowCount === 0) {
+            res.status(404).json({ error: 'Session expired or invalid' });
+            return;
+        }
+        const userId = sessionRes.rows[0].user_id;
+        if (!userId) {
+            res.json({ status: 'pending' });
+            return;
+        }
+        // Clean up the session
+        await (0, db_1.query)('DELETE FROM mobile_auth_sessions WHERE session_id = $1', [sessionId]);
+        const result = await (0, db_1.query)(`
+                SELECT
+                    u.id, u.telegram_id AS "telegramId", u.username, u.first_name AS "firstName",
+                    u.display_name AS "displayName", u.strava_access_token AS "stravaAccessToken",
+                    u.strava_refresh_token AS "stravaRefreshToken", u.strava_expires_at AS "stravaExpiresAt",
+                    u.influence_points AS "influencePoints", u.color_self AS "colorSelf",
+                    u.color_others AS "colorOthers", u.orda_id AS "ordaId", o.name AS "ordaName",
+                    u.created_at AS "createdAt", u.updated_at AS "updatedAt"
+                FROM users u LEFT JOIN ordas o ON u.orda_id = o.id
+                WHERE u.id = $1
+            `, [userId]);
+        if (result.rowCount === 0)
+            throw new Error('User not found');
+        res.json({ status: 'success', user: mapUserRow(result.rows[0]) });
+    }
+    catch (error) {
+        console.error('Mobile Auth Poll Error:', error);
+        res.status(500).json({ error: 'Internal error' });
+    }
+});
 exports.apiRouter.get('/territories', async (_req, res) => {
     const result = await (0, db_1.query)(`
             SELECT
@@ -190,58 +335,10 @@ exports.apiRouter.get('/territories/:telegram_id', async (req, res) => {
         res.status(500).json({ error: message });
     }
 });
-exports.apiRouter.post('/test-capture', async (req, res) => {
+exports.apiRouter.post('/user/disconnect', async (req, res) => {
     const telegramId = req.body?.telegram_id;
-    const polylineString = req.body?.polyline;
-    if ((typeof telegramId !== 'string' && typeof telegramId !== 'number') || typeof polylineString !== 'string') {
-        res.status(400).json({ error: 'telegram_id and polyline are required' });
-        return;
-    }
-    try {
-        const userResult = await (0, db_1.query)(`
-                INSERT INTO users (telegram_id)
-                VALUES ($1)
-                ON CONFLICT (telegram_id) DO UPDATE
-                SET telegram_id = EXCLUDED.telegram_id
-                RETURNING id
-            `, [String(telegramId)]);
-        if (userResult.rowCount === 0 || !userResult.rows[0]) {
-            res.status(404).json({ error: 'User not found' });
-            return;
-        }
-        const userId = userResult.rows[0].id;
-        const result = await (0, territory_1.captureTerritory)(userId, polylineString);
-        await (0, db_1.query)(`INSERT INTO game_events (user_id, event_type, message) VALUES ($1, 'CAPTURE', 'захватил новую территорию')`, [userId]);
-        if (result.stolen_victims_telegram_ids && result.stolen_victims_telegram_ids.length > 0) {
-            const { bot } = await Promise.resolve().then(() => __importStar(require('../bot')));
-            const userDispNameResult = await (0, db_1.query)(`SELECT display_name FROM users WHERE id = $1`, [userId]);
-            const thiefName = userDispNameResult.rows[0]?.display_name || 'Неизвестный игрок';
-            await (0, db_1.query)(`INSERT INTO game_events (user_id, event_type, message) VALUES ($1, 'STEAL', 'отвоевал часть чужой территории!')`, [userId]);
-            for (const victimTgId of result.stolen_victims_telegram_ids) {
-                if (victimTgId && victimTgId !== String(telegramId)) {
-                    bot.api.sendMessage(victimTgId, `⚠️ Игрок **${thiefName}** откусил кусок вашей территории! Зайдите в приложение, чтобы отвоевать свои земли!`, { parse_mode: 'Markdown' }).catch(e => console.error('Failed to send notification to', victimTgId, e));
-                }
-            }
-        }
-        res.json({
-            ok: true,
-            user_id: userId,
-            ...result,
-        });
-    }
-    catch (error) {
-        const message = error instanceof Error ? error.message : 'Unknown error';
-        console.error('test-capture error:', error);
-        res.status(500).json({ error: message });
-    }
-});
-exports.apiRouter.post('/runs/manual', async (req, res) => {
-    const telegramId = req.body?.telegram_id;
-    const polylineString = req.body?.polyline;
-    const distance = req.body?.distance || 0;
-    const duration = req.body?.duration || 0;
-    if (!telegramId || !polylineString) {
-        res.status(400).json({ error: 'telegram_id and polyline are required' });
+    if (!telegramId) {
+        res.status(400).json({ error: 'telegram_id is required' });
         return;
     }
     try {
@@ -251,6 +348,44 @@ exports.apiRouter.post('/runs/manual', async (req, res) => {
             return;
         }
         const userId = userResult.rows[0].id;
+        // Delete all territories and runs for this user
+        await (0, db_1.query)(`DELETE FROM territories WHERE owner_id = $1`, [userId]);
+        await (0, db_1.query)(`DELETE FROM raw_activities WHERE user_id = $1`, [userId]);
+        // Remove Strava tokens and reset influence points
+        await (0, db_1.query)(`UPDATE users 
+             SET strava_access_token = NULL, 
+                 strava_refresh_token = NULL, 
+                 strava_athlete_id = NULL,
+                 influence_points = 0
+             WHERE id = $1`, [userId]);
+        res.json({ success: true, message: 'Disconnected successfully' });
+    }
+    catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        console.error('/user/disconnect error:', error);
+        res.status(500).json({ error: message });
+    }
+});
+exports.apiRouter.post('/runs/manual', async (req, res) => {
+    const telegramId = req.body?.telegram_id;
+    const directUserId = req.body?.user_id; // Added support for user_id directly
+    const polylineString = req.body?.polyline;
+    const distance = req.body?.distance || 0;
+    const duration = req.body?.duration || 0;
+    if ((!telegramId && !directUserId) || !polylineString) {
+        res.status(400).json({ error: 'telegram_id (or user_id) and polyline are required' });
+        return;
+    }
+    try {
+        let userId = directUserId;
+        if (!userId) {
+            const userResult = await (0, db_1.query)(`SELECT id FROM users WHERE telegram_id = $1`, [String(telegramId)]);
+            if (userResult.rowCount === 0 || !userResult.rows[0]) {
+                res.status(404).json({ error: 'User not found' });
+                return;
+            }
+            userId = userResult.rows[0].id;
+        }
         // Save the manual route
         const decodedPoints = require('@mapbox/polyline').decode(polylineString);
         await (0, db_1.query)(`
@@ -349,15 +484,17 @@ exports.apiRouter.get('/leaderboard', async (req, res) => {
         res.status(500).json({ error: 'Failed to get leaderboard' });
     }
 });
-exports.apiRouter.get('/user/stats/:telegram_id', async (req, res) => {
-    const telegramId = req.params.telegram_id;
+exports.apiRouter.get('/user/stats/:id', async (req, res) => {
+    const idParam = req.params.id;
     try {
-        const userRes = await (0, db_1.query)(`SELECT id FROM users WHERE telegram_id = $1`, [telegramId]);
-        if (userRes.rowCount === 0)
-            return res.json({ runs: 0, distance: 0 });
-        const userId = userRes.rows[0].id;
-        // Mock distance calculation, since we don't have explicit distance column 
-        // We will just return routes_count and a fake distance multiplier (e.g. 5km per run)
+        const isUuid = idParam.includes('-');
+        let userId = idParam;
+        if (!isUuid) {
+            const userRes = await (0, db_1.query)(`SELECT id FROM users WHERE telegram_id = $1`, [idParam]);
+            if (userRes.rowCount === 0)
+                return res.json({ runs: 0, distance: 0 });
+            userId = userRes.rows[0].id;
+        }
         const routesRes = await (0, db_1.query)(`SELECT COUNT(*) as cnt FROM routes WHERE user_id = $1`, [userId]);
         const runs = parseInt(routesRes.rows[0]?.cnt || '0', 10);
         const distance = runs * 5.4; // 5.4km per run avg
@@ -398,13 +535,17 @@ exports.apiRouter.get('/user/public/:id', async (req, res) => {
         res.status(500).json({ error: 'Failed' });
     }
 });
-exports.apiRouter.get('/user/routes/:telegram_id', async (req, res) => {
-    const telegramId = req.params.telegram_id;
+exports.apiRouter.get('/user/routes/:id', async (req, res) => {
+    const idParam = req.params.id;
     try {
-        const userRes = await (0, db_1.query)(`SELECT id FROM users WHERE telegram_id = $1`, [telegramId]);
-        if (userRes.rowCount === 0)
-            return res.json([]);
-        const userId = userRes.rows[0].id;
+        const isUuid = idParam.includes('-');
+        let userId = idParam;
+        if (!isUuid) {
+            const userRes = await (0, db_1.query)(`SELECT id FROM users WHERE telegram_id = $1`, [idParam]);
+            if (userRes.rowCount === 0)
+                return res.json([]);
+            userId = userRes.rows[0].id;
+        }
         const routesRes = await (0, db_1.query)(`
             SELECT id, strava_activity_id, distance, duration, created_at, coordinates 
             FROM routes 
@@ -424,13 +565,17 @@ const DAILY_QUESTS = [
     { id: 'run_3km', title: 'Марафонец', description: 'Пробежать 3 км за сегодня', target: 3000, reward: 1500 },
     { id: 'capture_1', title: 'Завоеватель', description: 'Сделать 1 пробежку сегодня', target: 1, reward: 1000 }
 ];
-exports.apiRouter.get('/user/quests/:telegram_id', async (req, res) => {
-    const telegramId = req.params.telegram_id;
+exports.apiRouter.get('/user/quests/:id', async (req, res) => {
+    const idParam = req.params.id;
     try {
-        const userRes = await (0, db_1.query)(`SELECT id FROM users WHERE telegram_id = $1`, [telegramId]);
-        if (userRes.rowCount === 0)
-            return res.status(404).json({ error: 'Not found' });
-        const userId = userRes.rows[0].id;
+        const isUuid = idParam.includes('-');
+        let userId = idParam;
+        if (!isUuid) {
+            const userRes = await (0, db_1.query)(`SELECT id FROM users WHERE telegram_id = $1`, [idParam]);
+            if (userRes.rowCount === 0)
+                return res.status(404).json({ error: 'Not found' });
+            userId = userRes.rows[0].id;
+        }
         // Calculate progress for today
         const runsTodayRes = await (0, db_1.query)(`
             SELECT COUNT(*) as count, COALESCE(SUM(distance), 0) as total_distance 
@@ -468,14 +613,19 @@ exports.apiRouter.get('/user/quests/:telegram_id', async (req, res) => {
     }
 });
 exports.apiRouter.post('/user/quests/claim', async (req, res) => {
-    const { telegram_id, quest_id } = req.body;
-    if (!telegram_id || !quest_id)
+    const { telegram_id, user_id, quest_id } = req.body;
+    const targetId = user_id || telegram_id;
+    if (!targetId || !quest_id)
         return res.status(400).json({ error: 'Missing fields' });
     try {
-        const userRes = await (0, db_1.query)(`SELECT id FROM users WHERE telegram_id = $1`, [String(telegram_id)]);
-        if (userRes.rowCount === 0)
-            return res.status(404).json({ error: 'Not found' });
-        const userId = userRes.rows[0].id;
+        const isUuid = String(targetId).includes('-');
+        let userId = targetId;
+        if (!isUuid) {
+            const userRes = await (0, db_1.query)(`SELECT id FROM users WHERE telegram_id = $1`, [String(targetId)]);
+            if (userRes.rowCount === 0)
+                return res.status(404).json({ error: 'Not found' });
+            userId = userRes.rows[0].id;
+        }
         const quest = DAILY_QUESTS.find(q => q.id === quest_id);
         if (!quest)
             return res.status(404).json({ error: 'Quest not found' });
@@ -540,14 +690,19 @@ exports.apiRouter.get('/orda/list', async (_req, res) => {
     }
 });
 exports.apiRouter.post('/orda/create', async (req, res) => {
-    const { telegram_id, name } = req.body;
-    if (!telegram_id || !name)
+    const { telegram_id, user_id, name } = req.body;
+    const targetId = user_id || telegram_id;
+    if (!targetId || !name)
         return res.status(400).json({ error: 'Missing fields' });
     try {
-        const userRes = await db_1.pool.query('SELECT id FROM users WHERE telegram_id = $1', [String(telegram_id)]);
-        if (userRes.rowCount === 0)
-            return res.status(404).json({ error: 'User not found' });
-        const userId = userRes.rows[0].id;
+        let userId = targetId;
+        const isUuid = String(targetId).includes('-');
+        if (!isUuid) {
+            const userRes = await db_1.pool.query('SELECT id FROM users WHERE telegram_id = $1', [String(targetId)]);
+            if (userRes.rowCount === 0)
+                return res.status(404).json({ error: 'User not found' });
+            userId = userRes.rows[0].id;
+        }
         const insertRes = await db_1.pool.query('INSERT INTO ordas (name, khan_id) VALUES ($1, $2) RETURNING id', [name, userId]);
         const ordaId = insertRes.rows[0].id;
         await db_1.pool.query('UPDATE users SET orda_id = $1 WHERE id = $2', [ordaId, userId]);
@@ -560,14 +715,19 @@ exports.apiRouter.post('/orda/create', async (req, res) => {
     }
 });
 exports.apiRouter.post('/orda/join', async (req, res) => {
-    const { telegram_id, orda_id } = req.body;
-    if (!telegram_id || !orda_id)
+    const { telegram_id, user_id, orda_id } = req.body;
+    const targetId = user_id || telegram_id;
+    if (!targetId || !orda_id)
         return res.status(400).json({ error: 'Missing fields' });
     try {
-        const userRes = await db_1.pool.query('SELECT id FROM users WHERE telegram_id = $1', [String(telegram_id)]);
-        if (userRes.rowCount === 0)
-            return res.status(404).json({ error: 'User not found' });
-        const userId = userRes.rows[0].id;
+        let userId = targetId;
+        const isUuid = String(targetId).includes('-');
+        if (!isUuid) {
+            const userRes = await db_1.pool.query('SELECT id FROM users WHERE telegram_id = $1', [String(targetId)]);
+            if (userRes.rowCount === 0)
+                return res.status(404).json({ error: 'User not found' });
+            userId = userRes.rows[0].id;
+        }
         const ordaRes = await db_1.pool.query('SELECT name FROM ordas WHERE id = $1', [orda_id]);
         const ordaName = ordaRes.rows[0]?.name || 'Орда';
         await db_1.pool.query('UPDATE users SET orda_id = $1 WHERE id = $2', [orda_id, userId]);
@@ -580,17 +740,27 @@ exports.apiRouter.post('/orda/join', async (req, res) => {
     }
 });
 exports.apiRouter.post('/orda/leave', async (req, res) => {
-    const { telegram_id } = req.body;
-    if (!telegram_id)
-        return res.status(400).json({ error: 'Missing telegram_id' });
+    const { telegram_id, user_id } = req.body;
+    const targetId = user_id || telegram_id;
+    if (!targetId)
+        return res.status(400).json({ error: 'Missing fields' });
     try {
-        const userRes = await db_1.pool.query('SELECT id, orda_id FROM users WHERE telegram_id = $1', [String(telegram_id)]);
-        if (userRes.rowCount === 0)
-            return res.status(404).json({ error: 'User not found' });
-        const { id: userId, orda_id: ordaId } = userRes.rows[0];
+        let userId = targetId;
+        const isUuid = String(targetId).includes('-');
+        if (!isUuid) {
+            const userRes = await (0, db_1.query)('SELECT id, orda_id FROM users WHERE telegram_id = $1', [String(targetId)]);
+            if (userRes.rowCount === 0)
+                return res.status(404).json({ error: 'User not found' });
+            userId = userRes.rows[0].id;
+            var { orda_id: ordaId } = userRes.rows[0];
+        }
+        else {
+            const userRes = await (0, db_1.query)('SELECT orda_id FROM users WHERE id = $1', [targetId]);
+            var { orda_id: ordaId } = userRes.rows[0];
+        }
         if (ordaId) {
-            await db_1.pool.query('UPDATE users SET orda_id = NULL WHERE id = $1', [userId]);
-            const khanCheck = await db_1.pool.query('SELECT id FROM ordas WHERE id = $1 AND khan_id = $2', [ordaId, userId]);
+            await (0, db_1.query)('UPDATE users SET orda_id = NULL WHERE id = $1', [userId]);
+            const khanCheck = await (0, db_1.query)('SELECT id FROM ordas WHERE id = $1 AND khan_id = $2', [ordaId, userId]);
             if (khanCheck.rowCount && khanCheck.rowCount > 0) {
                 // Khan left the Orda. Disband it.
                 await db_1.pool.query('UPDATE users SET orda_id = NULL WHERE orda_id = $1', [ordaId]);

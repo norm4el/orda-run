@@ -1,0 +1,224 @@
+import 'dart:ui';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'services/run_tracker.dart';
+import 'screens/map_screen.dart';
+import 'screens/record_screen.dart';
+import 'screens/profile_screen.dart';
+import 'screens/leaderboard_screen.dart';
+import 'screens/quests_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/onboarding_screen.dart';
+
+class AuthenticatedUser {
+  final String id;
+  final String displayName;
+  final int influencePoints;
+  String? ordaId;
+  String? ordaName;
+
+  AuthenticatedUser({
+    required this.id,
+    required this.displayName,
+    required this.influencePoints,
+    this.ordaId,
+    this.ordaName,
+  });
+
+  factory AuthenticatedUser.fromJson(Map<String, dynamic> json) {
+    return AuthenticatedUser(
+      id: json['id'],
+      displayName: json['displayName'] ?? json['firstName'] ?? 'Игрок',
+      influencePoints: json['influencePoints'] ?? 0,
+      ordaId: json['ordaId'],
+      ordaName: json['ordaName'],
+    );
+  }
+}
+
+class AppState extends ChangeNotifier {
+  AuthenticatedUser? currentUser;
+  int lastMapRefresh = DateTime.now().millisecondsSinceEpoch;
+  bool hasSkippedOnboarding = false;
+
+  void setUser(AuthenticatedUser? user) {
+    currentUser = user;
+    notifyListeners();
+  }
+
+  void skipOnboarding() {
+    hasSkippedOnboarding = true;
+    notifyListeners();
+  }
+
+  void logout() {
+    currentUser = null;
+    notifyListeners();
+  }
+
+  void triggerMapRefresh() {
+    lastMapRefresh = DateTime.now().millisecondsSinceEpoch;
+    notifyListeners();
+  }
+}
+
+// --- Main ---
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await EasyLocalization.ensureInitialized();
+
+  runApp(
+    EasyLocalization(
+      supportedLocales: const [Locale('en'), Locale('ru')],
+      path: 'assets/translations',
+      fallbackLocale: const Locale('en'),
+      child: MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => AppState()),
+          ChangeNotifierProvider(create: (_) => RunTracker()),
+        ],
+        child: const MyApp(),
+      ),
+    ),
+  );
+}
+
+// --- App ---
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Orda Run',
+      localizationsDelegates: context.localizationDelegates,
+      supportedLocales: context.supportedLocales,
+      locale: context.locale,
+      debugShowCheckedModeBanner: false,
+      scrollBehavior: const MaterialScrollBehavior().copyWith(
+        dragDevices: {
+          PointerDeviceKind.mouse,
+          PointerDeviceKind.touch,
+          PointerDeviceKind.trackpad,
+        },
+      ),
+      theme: ThemeData(
+        useMaterial3: true,
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: const Color(0xFF0A0B0E),
+        colorScheme: const ColorScheme.dark(
+          primary: Color(0xFFD8A760),
+          secondary: Color(0xFF2C5A5A),
+          surface: Color(0xFF15181E),
+          background: Color(0xFF0A0B0E),
+        ),
+        textTheme: GoogleFonts.outfitTextTheme(ThemeData.dark().textTheme).apply(
+          bodyColor: Colors.white,
+          displayColor: Colors.white,
+        ),
+      ),
+      home: Consumer<AppState>(
+        builder: (context, appState, child) {
+          final currentUser = appState.currentUser;
+          if (currentUser == null) {
+            return const LoginScreen();
+          }
+          if (currentUser.ordaId == null && !appState.hasSkippedOnboarding) {
+            return const OnboardingScreen();
+          }
+          return const AppShell();
+        },
+      ),
+    );
+  }
+}
+
+// --- App Shell (Navigation) ---
+class AppShell extends StatefulWidget {
+  const AppShell({super.key});
+
+  @override
+  State<AppShell> createState() => _AppShellState();
+}
+
+class _AppShellState extends State<AppShell> {
+  int _currentIndex = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Stack(
+        children: [
+          IndexedStack(
+            index: _currentIndex,
+            children: const [
+              MapScreen(),
+              RecordScreen(),
+              QuestsScreen(),
+              LeaderboardScreen(),
+              ProfileScreen(),
+            ],
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: _buildBottomNav(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomNav() {
+    return Container(
+      height: 72,
+      decoration: const BoxDecoration(
+        color: Color(0xFF0A0B0E), // No blur, solid background
+        border: Border(top: BorderSide(color: Color.fromRGBO(255, 255, 255, 0.05))),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildNavItem(0, Icons.map_outlined),
+          _buildNavItem(1, Icons.play_circle_outline),
+          _buildNavItem(2, Icons.flag_outlined),
+          _buildNavItem(3, Icons.bar_chart_outlined),
+          _buildNavItem(4, Icons.person_outline),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNavItem(int index, IconData icon) {
+    final isActive = _currentIndex == index;
+    final color = isActive ? Theme.of(context).colorScheme.primary : const Color(0xFF8B929C);
+
+    return Expanded(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => setState(() => _currentIndex = index),
+        child: Column(
+          children: [
+            Container(
+              height: 3,
+              width: 32,
+              decoration: BoxDecoration(
+                color: isActive ? Theme.of(context).colorScheme.primary : Colors.transparent,
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(3),
+                  bottomRight: Radius.circular(3),
+                ),
+              ),
+            ),
+            const Spacer(),
+            Icon(icon, color: color, size: 24),
+            const Spacer(),
+          ],
+        ),
+      ),
+    );
+  }
+}

@@ -63,7 +63,9 @@ if (spaDirectory) {
 }
 app.use('/api', api_1.apiRouter);
 app.use('/api/strava', strava_1.stravaRouter);
-app.use(webhookPath, (0, grammy_1.webhookCallback)(bot_1.bot, 'express'));
+if (process.env.BOT_WEBHOOK_URL) {
+    app.use(webhookPath, (0, grammy_1.webhookCallback)(bot_1.bot, 'express'));
+}
 app.get('*', (_req, res) => {
     if (!spaDirectory) {
         res.status(404).send('Frontend build not found');
@@ -74,7 +76,15 @@ app.get('*', (_req, res) => {
 async function start() {
     await (0, schema_1.ensureDatabaseSchema)();
     if (process.env.BOT_WEBHOOK_URL) {
-        await bot_1.bot.api.setWebhook(new URL(webhookPath, process.env.BOT_WEBHOOK_URL).toString());
+        const fullWebhookUrl = new URL(webhookPath, process.env.BOT_WEBHOOK_URL).toString();
+        console.log(`Setting Telegram webhook to: ${fullWebhookUrl}`);
+        await bot_1.bot.api.setWebhook(fullWebhookUrl);
+    }
+    else {
+        console.log('BOT_WEBHOOK_URL is not set. Falling back to long polling (bot.start()).');
+        // We should delete webhook before starting polling just in case it was set previously
+        await bot_1.bot.api.deleteWebhook();
+        bot_1.bot.start();
     }
     app.listen(port, () => {
         console.log(`Server is running on port ${port}`);

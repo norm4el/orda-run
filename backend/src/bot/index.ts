@@ -24,6 +24,38 @@ bot.command('start', async (ctx) => {
     return;
   }
 
+  // Handle deep link for mobile auth: /start login_<session_id>
+  const payload = ctx.match;
+  if (typeof payload === 'string' && payload.startsWith('login_')) {
+    const sessionId = payload.replace('login_', '');
+    
+    // Find or create user
+    const existingUser = await query<{ id: string }>(
+      'SELECT id FROM users WHERE telegram_id = $1 LIMIT 1',
+      [String(telegramId)],
+    );
+
+    let userId: string;
+    if (existingUser.rowCount === 0) {
+      const insertRes = await query<{ id: string }>(
+        'INSERT INTO users (telegram_id, first_name, username) VALUES ($1, $2, $3) RETURNING id',
+        [String(telegramId), ctx.from?.first_name || 'Player', ctx.from?.username || null],
+      );
+      userId = insertRes.rows[0].id;
+    } else {
+      userId = existingUser.rows[0].id;
+    }
+
+    // Link session to this user
+    await query(
+      'UPDATE mobile_auth_sessions SET user_id = $1 WHERE session_id = $2',
+      [userId, sessionId]
+    );
+
+    await ctx.reply('✅ Вы успешно авторизованы в приложении! Вернитесь в Orda Run.');
+    return;
+  }
+
   const existingUser = await query<{ id: string }>(
     'SELECT id FROM users WHERE telegram_id = $1 LIMIT 1',
     [String(telegramId)],
