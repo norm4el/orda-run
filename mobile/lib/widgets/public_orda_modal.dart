@@ -69,7 +69,7 @@ class PublicOrdaModal extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Хан: \${orda["khan_name"] ?? "Неизвестно"}',
+                          'Хан: ${orda["khan_name"] ?? "Неизвестно"}',
                           style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -81,8 +81,8 @@ class PublicOrdaModal extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildStatColumn(context, 'УЧАСТНИКИ', '\${orda["member_count"] ?? 0} чел.'),
-                  _buildStatColumn(context, 'ВЛИЯНИЕ', '\${orda["total_influence"] ?? 0} XP'),
+                  _buildStatColumn(context, 'УЧАСТНИКИ', '${orda["member_count"] ?? 0} чел.'),
+                  _buildStatColumn(context, 'ВЛИЯНИЕ', '${orda["total_influence"] ?? 0} XP'),
                 ],
               ),
               const SizedBox(height: 20),
