@@ -183,4 +183,13 @@ export async function ensureDatabaseSchema() {
       UNIQUE (user_id, quest_id, claimed_at)
     )
   `);
+
+  await pool.query(`
+    ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS avatar_url TEXT,
+      ADD COLUMN IF NOT EXISTS social_links JSONB;
+
+    ALTER TABLE ordas
+      ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+  `);
 }

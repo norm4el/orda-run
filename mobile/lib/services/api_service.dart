@@ -199,6 +199,61 @@ class ApiService {
     return null;
   }
 
+  Future<String?> uploadAvatar(String userId, String filePath) async {
+    try {
+      var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/user/$userId/avatar'));
+      request.files.add(await http.MultipartFile.fromPath('avatar', filePath));
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['avatarUrl'];
+      }
+    } catch (e) {
+      print('Upload avatar error: $e');
+    }
+    return null;
+  }
+
+  Future<String?> uploadOrdaAvatar(String ordaId, String filePath) async {
+    try {
+      var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/orda/$ordaId/avatar'));
+      request.files.add(await http.MultipartFile.fromPath('avatar', filePath));
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['avatarUrl'];
+      }
+    } catch (e) {
+      print('Upload orda avatar error: $e');
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> updateSocials(String userId, String instagram, String telegram) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/user/$userId/socials'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'instagram': instagram,
+          'telegram': telegram,
+        }),
+      ).timeout(timeoutDuration);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['socialLinks'];
+      }
+    } catch (e) {
+      print('Update socials error: $e');
+    }
+    return null;
+  }
+
   Future<bool> syncStrava(String userId) async {
     try {
       final response = await http.post(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 import '../services/api_service.dart';
 import '../main.dart';
 import 'orda_chat_screen.dart';
@@ -257,19 +258,70 @@ class _OrdaScreenState extends State<OrdaScreen> {
   }
 
   Widget _buildHasOrdaView(AuthenticatedUser user) {
+    final serverHost = ApiService.baseUrl.replaceAll('/api', '');
+    final myOrdaInfo = _availableOrdas.firstWhere(
+      (o) => o['id'] == user.ordaId,
+      orElse: () => null,
+    );
+    final avatarUrl = myOrdaInfo?['avatar_url'];
+    final isKhan = myOrdaInfo?['khan_id'] == user.id;
+
     return Padding(
       padding: const EdgeInsets.all(24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SizedBox(height: 20),
-          const Center(child: Text('🏴', style: TextStyle(fontSize: 80))),
+          GestureDetector(
+            onTap: () async {
+              if (!isKhan) return;
+              final picker = ImagePicker();
+              final pickedFile = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+              if (pickedFile != null) {
+                setState(() => _isLoading = true);
+                final url = await _apiService.uploadOrdaAvatar(user.ordaId!, pickedFile.path);
+                if (url != null) {
+                  await _fetchOrdas(); // refresh the list to get new avatar_url
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Герб Орды обновлен!'), backgroundColor: Colors.green));
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ошибка загрузки'), backgroundColor: Colors.red));
+                }
+                setState(() => _isLoading = false);
+              }
+            },
+            child: Center(
+              child: Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF15181E),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFFFFD60A), width: 2),
+                  image: avatarUrl != null
+                    ? DecorationImage(
+                        image: NetworkImage(serverHost + avatarUrl),
+                        fit: BoxFit.cover,
+                      )
+                    : null,
+                ),
+                child: avatarUrl == null 
+                  ? const Center(child: Text('🏴', style: TextStyle(fontSize: 50)))
+                  : null,
+              ),
+            ),
+          ),
           const SizedBox(height: 20),
           Text(
             (user.ordaName ?? 'ВАША ОРДА').toUpperCase(),
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 2),
           ),
+          if (isKhan)
+            const Text(
+              'Вы Хан этой Орды (нажмите на герб для изменения)',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Color(0xFF8A9099), fontSize: 12),
+            ),
           const SizedBox(height: 40),
           
           FutureBuilder(

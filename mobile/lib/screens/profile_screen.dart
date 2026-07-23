@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:image_picker/image_picker.dart';
 import '../services/api_service.dart';
 import '../utils/title_helper.dart';
 import '../main.dart';
@@ -22,7 +23,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    // Delay fetching stats until context is ready to read current user
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final user = context.read<AppState>().currentUser;
       if (user != null) {
@@ -33,13 +33,96 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
+  Future<void> _pickAvatar() async {
+    final user = context.read<AppState>().currentUser;
+    if (user == null) return;
+
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+    
+    if (pickedFile != null) {
+      final url = await _apiService.uploadAvatar(user.id, pickedFile.path);
+      if (url != null) {
+        setState(() {
+          user.avatarUrl = url;
+          context.read<AppState>().setUser(user); // trigger save
+        });
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Фото профиля обновлено!'), backgroundColor: Colors.green));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ошибка загрузки фото'), backgroundColor: Colors.red));
+      }
+    }
+  }
+
+  void _showSocialsDialog() {
+    final user = context.read<AppState>().currentUser;
+    if (user == null) return;
+
+    final igController = TextEditingController(text: user.socialLinks?['instagram'] ?? '');
+    final tgController = TextEditingController(text: user.socialLinks?['telegram'] ?? '');
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF15181E),
+          title: const Text('Социальные сети', style: TextStyle(color: Colors.white)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: igController,
+                decoration: const InputDecoration(labelText: 'Instagram (только никнейм)', labelStyle: TextStyle(color: Colors.grey)),
+                style: const TextStyle(color: Colors.white),
+              ),
+              TextField(
+                controller: tgController,
+                decoration: const InputDecoration(labelText: 'Telegram (только никнейм)', labelStyle: TextStyle(color: Colors.grey)),
+                style: const TextStyle(color: Colors.white),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Отмена'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                final updated = await _apiService.updateSocials(user.id, igController.text.trim(), tgController.text.trim());
+                if (updated != null) {
+                  setState(() {
+                    user.socialLinks = updated;
+                    context.read<AppState>().setUser(user);
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Соцсети сохранены'), backgroundColor: Colors.green));
+                }
+              },
+              child: const Text('Сохранить'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _launchSocial(String platform, String username) async {
+    if (username.isEmpty) return;
+    String url = '';
+    if (platform == 'instagram') url = 'https://instagram.com/$username';
+    if (platform == 'telegram') url = 'https://t.me/$username';
+
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
   void _connectStrava() async {
-    // В реальном приложении здесь должен открываться WebView / url_launcher
-    // для OAuth флоу со Strava.
     final user = context.read<AppState>().currentUser;
     if (user == null) return;
     
-    // Hardcoded OAuth URL
     final url = Uri.parse('https://www.strava.com/oauth/mobile/authorize?client_id=127394&redirect_uri=https://f0bd-212-98-154-152.ngrok-free.app/api/strava/callback?user_id=${user.id}&response_type=code&approval_prompt=auto&scope=activity:read_all');
     try {
       if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
@@ -145,6 +228,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final currentUser = context.watch<AppState>().currentUser;
+    final serverHost = ApiService.baseUrl.replaceAll('/api', '');
 
     return Scaffold(
       backgroundColor: Colors.transparent, // Let parent background show if any
@@ -175,18 +259,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   // Profile Info
                   Row(
                     children: [
-                      Container(
-                        width: 80,
-                        height: 80,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                              color: Theme.of(context).colorScheme.primary,
-                              width: 2),
+                      GestureDetector(
+                        onTap: _pickAvatar,
+                        child: Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                                color: Theme.of(context).colorScheme.primary,
+                                width: 2),
+                            image: currentUser.avatarUrl != null
+                              ? DecorationImage(
+                                  image: NetworkImage(serverHost + currentUser.avatarUrl!),
+                                  fit: BoxFit.cover,
+                                )
+                              : null,
+                          ),
+                          child: currentUser.avatarUrl == null
+                            ? Icon(Icons.person_outline,
+                              size: 40,
+                              color: Theme.of(context).colorScheme.primary)
+                            : null,
                         ),
-                        child: Icon(Icons.person_outline,
-                            size: 40,
-                            color: Theme.of(context).colorScheme.primary),
                       ),
                       const SizedBox(width: 20),
                       Expanded(
@@ -334,6 +429,62 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
                     ),
+                  ),
+
+                  const SizedBox(height: 40),
+
+                  // Social Networks
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'СОЦСЕТИ',
+                        style: TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF8B929C),
+                            letterSpacing: 2,
+                            fontWeight: FontWeight.w500),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.edit, color: Color(0xFF8B929C), size: 18),
+                        onPressed: _showSocialsDialog,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      if (currentUser.socialLinks?['instagram']?.isNotEmpty == true)
+                        GestureDetector(
+                          onTap: () => _launchSocial('instagram', currentUser.socialLinks!['instagram']),
+                          child: Container(
+                            margin: const EdgeInsets.only(right: 12),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE1306C).withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: const Color(0xFFE1306C)),
+                            ),
+                            child: const Text('Instagram', style: TextStyle(color: Color(0xFFE1306C), fontWeight: FontWeight.bold)),
+                          ),
+                        ),
+                      if (currentUser.socialLinks?['telegram']?.isNotEmpty == true)
+                        GestureDetector(
+                          onTap: () => _launchSocial('telegram', currentUser.socialLinks!['telegram']),
+                          child: Container(
+                            margin: const EdgeInsets.only(right: 12),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0088cc).withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: const Color(0xFF0088cc)),
+                            ),
+                            child: const Text('Telegram', style: TextStyle(color: Color(0xFF0088cc), fontWeight: FontWeight.bold)),
+                          ),
+                        ),
+                      if (currentUser.socialLinks == null || (currentUser.socialLinks!['instagram']?.isEmpty ?? true) && (currentUser.socialLinks!['telegram']?.isEmpty ?? true))
+                        const Text('Не указаны', style: TextStyle(color: Colors.grey)),
+                    ],
                   ),
 
                   const SizedBox(height: 40),

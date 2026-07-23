@@ -20,6 +20,8 @@ class AuthenticatedUser {
   final int influencePoints;
   String? ordaId;
   String? ordaName;
+  String? avatarUrl;
+  Map<String, dynamic>? socialLinks;
 
   AuthenticatedUser({
     required this.id,
@@ -27,6 +29,8 @@ class AuthenticatedUser {
     required this.influencePoints,
     this.ordaId,
     this.ordaName,
+    this.avatarUrl,
+    this.socialLinks,
   });
 
   factory AuthenticatedUser.fromJson(Map<String, dynamic> json) {
@@ -36,6 +40,8 @@ class AuthenticatedUser {
       influencePoints: json['influencePoints'] ?? 0,
       ordaId: json['ordaId'],
       ordaName: json['ordaName'],
+      avatarUrl: json['avatarUrl'],
+      socialLinks: json['socialLinks'] != null ? Map<String, dynamic>.from(json['socialLinks']) : null,
     );
   }
 
@@ -46,6 +52,8 @@ class AuthenticatedUser {
       'influencePoints': influencePoints,
       'ordaId': ordaId,
       'ordaName': ordaName,
+      'avatarUrl': avatarUrl,
+      'socialLinks': socialLinks,
     };
   }
 }

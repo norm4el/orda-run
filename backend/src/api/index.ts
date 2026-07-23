@@ -5,8 +5,11 @@ import { captureTerritory } from '../db/territory';
 import { OAuth2Client } from 'google-auth-library';
 import appleSignin from 'apple-signin-auth';
 import { randomBytes } from 'crypto';
+import { profileRouter } from './profile';
 
 export const apiRouter = Router();
+
+apiRouter.use(profileRouter);
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -33,6 +36,8 @@ type AuthenticatedUserResponse = {
     colorOthers: string;
     ordaId: string | null;
     ordaName: string | null;
+    avatarUrl: string | null;
+    socialLinks: Record<string, string> | null;
     createdAt: string;
     updatedAt: string;
 };
@@ -110,6 +115,8 @@ apiRouter.post('/auth', async (req, res) => {
                     u.color_self AS "colorSelf",
                     u.color_others AS "colorOthers",
                     u.orda_id AS "ordaId",
+                    u.avatar_url AS "avatarUrl",
+                    u.social_links AS "socialLinks",
                     o.name AS "ordaName",
                     u.created_at AS "createdAt",
                     u.updated_at AS "updatedAt"
@@ -168,6 +175,7 @@ apiRouter.post('/auth/google', async (req, res) => {
                     u.strava_refresh_token AS "stravaRefreshToken", u.strava_expires_at AS "stravaExpiresAt",
                     u.influence_points AS "influencePoints", u.color_self AS "colorSelf",
                     u.color_others AS "colorOthers", u.orda_id AS "ordaId", o.name AS "ordaName",
+                    u.avatar_url AS "avatarUrl", u.social_links AS "socialLinks",
                     u.created_at AS "createdAt", u.updated_at AS "updatedAt"
                 FROM upsert u LEFT JOIN ordas o ON u.orda_id = o.id
             `,
@@ -216,6 +224,7 @@ apiRouter.post('/auth/apple', async (req, res) => {
                     u.strava_refresh_token AS "stravaRefreshToken", u.strava_expires_at AS "stravaExpiresAt",
                     u.influence_points AS "influencePoints", u.color_self AS "colorSelf",
                     u.color_others AS "colorOthers", u.orda_id AS "ordaId", o.name AS "ordaName",
+                    u.avatar_url AS "avatarUrl", u.social_links AS "socialLinks",
                     u.created_at AS "createdAt", u.updated_at AS "updatedAt"
                 FROM upsert u LEFT JOIN ordas o ON u.orda_id = o.id
             `,
@@ -281,6 +290,7 @@ apiRouter.post('/auth/mobile/poll', async (req, res) => {
                     u.strava_refresh_token AS "stravaRefreshToken", u.strava_expires_at AS "stravaExpiresAt",
                     u.influence_points AS "influencePoints", u.color_self AS "colorSelf",
                     u.color_others AS "colorOthers", u.orda_id AS "ordaId", o.name AS "ordaName",
+                    u.avatar_url AS "avatarUrl", u.social_links AS "socialLinks",
                     u.created_at AS "createdAt", u.updated_at AS "updatedAt"
                 FROM users u LEFT JOIN ordas o ON u.orda_id = o.id
                 WHERE u.id = $1
@@ -807,7 +817,7 @@ apiRouter.get('/orda/leaderboard', async (req, res) => {
 apiRouter.get('/orda/list', async (_req, res) => {
     try {
         const result = await query(
-            `SELECT id, name, khan_id, created_at, (SELECT count(*) FROM users WHERE orda_id = ordas.id) as member_count FROM ordas ORDER BY member_count DESC`
+            `SELECT id, name, khan_id, avatar_url, created_at, (SELECT count(*) FROM users WHERE orda_id = ordas.id) as member_count FROM ordas ORDER BY member_count DESC`
         );
         res.json(result.rows);
     } catch (e) {
