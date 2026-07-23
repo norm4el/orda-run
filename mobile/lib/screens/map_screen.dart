@@ -190,7 +190,7 @@ class _MapScreenState extends State<MapScreen> {
       return Color((hash & 0xFFFFFF) + 0xFF000000).withValues(alpha: 1.0);
     } else {
       if (currentUser != null && t.ownerId == currentUser.id) {
-        return Color(int.parse(currentUser.colorSelf?.replaceFirst('#', '0xff') ?? '0xffd8a760'));
+        return const Color(0xFFD8A760);
       }
       int hash = t.ownerId.hashCode;
       final hue = (hash.abs() % 360).toDouble();
@@ -618,10 +618,13 @@ class _MapScreenState extends State<MapScreen> {
               child: Column(
                 children: [
                   _buildSideButton(
-                    _showOrdaMode ? Icons.groups : Icons.person,
-                    _showOrdaMode ? 'Режим Орд' : 'Личный режим',
-                    () => setState(() => _showOrdaMode = !_showOrdaMode),
-                    isActive: _showOrdaMode,
+                    _isOrdaMode ? Icons.groups : Icons.person,
+                    _isOrdaMode ? 'Режим Орд' : 'Личный режим',
+                    () {
+                      setState(() => _isOrdaMode = !_isOrdaMode);
+                      _updatePolygons();
+                    },
+                    isActive: _isOrdaMode,
                   ),
                   const SizedBox(height: 12),
                   _buildSideButton(Icons.my_location, 'Центрировать\nкарту', _centerOnUser),
