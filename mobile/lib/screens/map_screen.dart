@@ -108,22 +108,39 @@ class _MapScreenState extends State<MapScreen> {
         points: points,
         color: color.withValues(alpha: fillAlpha),
         borderColor: color,
-        borderStrokeWidth: 2.0,
+        borderStrokeWidth: 3.0,
       ));
     }).toList();
 
     _cachedCenterMarkers = _territories.expand((t) {
       final isSelf = currentUser != null && t.ownerId == currentUser.id;
-      final String icon = isSelf ? '🏴' : '🏕';
+      final displayName = t.ownerDisplayName ?? (isSelf ? currentUser!.displayName : 'Игрок');
+      final color = _getTerritoryColor(t, currentUser);
+      
       return t.polygons.map((points) {
         return Marker(
           point: _computeCenter(points),
-          width: 30,
-          height: 30,
+          width: 100,
+          height: 32,
           child: Center(
-            child: Text(
-              icon,
-              style: const TextStyle(fontSize: 16),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFF15181E).withValues(alpha: 0.8),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: color.withValues(alpha: 0.5), width: 1.5),
+              ),
+              child: Text(
+                displayName.toUpperCase(),
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 0.5,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ),
         );
@@ -530,79 +547,24 @@ class _MapScreenState extends State<MapScreen> {
               child: CircularProgressIndicator(),
             ),
           
-          // Top HUD
-          if (currentUser != null)
-            Positioned(
-              top: 40,
-              left: 16,
-              right: 16,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF15181E),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.white10),
-                          boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 12, offset: Offset(0, 4))],
-                        ),
-                        child: Text(
-                          currentUser.displayName.toUpperCase(),
-                          style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14, color: Colors.white),
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          GestureDetector(
-                            onTap: _showActivityFeed,
-                            child: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF15181E),
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white10),
-                                boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 12, offset: Offset(0, 4))],
-                              ),
-                              child: const Icon(Icons.inbox_outlined, color: Colors.white, size: 18),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _isOrdaMode = !_isOrdaMode;
-                                _buildMapObjects(currentUser);
-                              });
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: _isOrdaMode ? Theme.of(context).colorScheme.primary : const Color(0xFF15181E),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: Colors.white10),
-                                boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 12, offset: Offset(0, 4))],
-                              ),
-                              child: Text(
-                                (_isOrdaMode ? 'orda' : 'personal').tr().toUpperCase(),
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold, 
-                                  fontSize: 12, 
-                                  color: _isOrdaMode ? Colors.black : Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
+          // Top Inbox Button
+          Positioned(
+            top: 50,
+            right: 16,
+            child: GestureDetector(
+              onTap: _showActivityFeed,
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF15181E).withValues(alpha: 0.8),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white10),
+                  boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 12, offset: Offset(0, 4))],
+                ),
+                child: const Icon(Icons.inbox_outlined, color: Colors.white, size: 22),
               ),
             ),
+          ),
 
           // Bottom HUD panel
           if (currentUser != null)
