@@ -112,23 +112,54 @@ class _MapScreenState extends State<MapScreen> {
       ));
     }).toList();
 
-    _cachedCenterMarkers = _territories.expand((t) {
+    final groupedByOwner = <String, List<Territory>>{};
+    for (var t in _territories) {
+      if (t.ownerId != '00000000-0000-0000-0000-000000000001') {
+        groupedByOwner.putIfAbsent(t.ownerId, () => []).add(t);
+      }
+    }
+
+    _cachedCenterMarkers = groupedByOwner.values.map((userTerritories) {
+      // For simplicity, just place the marker on the first territory of this user
+      final t = userTerritories.first;
+      final isSelf = currentUser != null && t.ownerId == currentUser.id;
+      final displayName = t.ownerDisplayName ?? (isSelf ? currentUser!.displayName : 'Игрок');
       final color = _getTerritoryColor(t, currentUser);
       
-      return t.polygons.map((points) {
-        return Marker(
-          point: _computeCenter(points),
-          width: 40,
-          height: 40,
-          child: Center(
-            child: Icon(
-              Icons.flag_rounded,
-              color: color,
-              size: 24,
+      // Compute center from the largest polygon or just the first one
+      var largestPolygon = t.polygons.first;
+      for (var poly in t.polygons) {
+        if (poly.length > largestPolygon.length) {
+          largestPolygon = poly;
+        }
+      }
+      
+      return Marker(
+        point: _computeCenter(largestPolygon),
+        width: 120,
+        height: 32,
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0D1117).withValues(alpha: 0.9),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: color.withValues(alpha: 0.8), width: 1.5),
+            ),
+            child: Text(
+              displayName.toUpperCase(),
+              style: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                letterSpacing: 0.5,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-        );
-      });
+        ),
+      );
     }).toList();
 
     _cachedPolylines = _routes.map((r) {
@@ -537,92 +568,102 @@ class _MapScreenState extends State<MapScreen> {
               top: 50,
               left: 16,
               right: 16,
-              child: Column(
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: 56,
-                        height: 56,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Theme.of(context).colorScheme.primary, width: 2),
-                          color: const Color(0xFF15181E),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0D1117).withValues(alpha: 0.95),
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 20, offset: Offset(0, 4))],
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Theme.of(context).colorScheme.primary, width: 2),
+                            color: const Color(0xFF15181E),
+                          ),
+                          child: const Center(child: Text('👤', style: TextStyle(fontSize: 32))),
                         ),
-                        child: const Center(child: Text('👤', style: TextStyle(fontSize: 28))),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              currentUser.displayName.toUpperCase(),
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'Воин II',
-                              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Theme.of(context).colorScheme.primary),
-                            ),
-                            const SizedBox(height: 8),
-                            Container(
-                              height: 4,
-                              width: 100,
-                              decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(2)),
-                              child: FractionallySizedBox(
-                                alignment: Alignment.centerLeft,
-                                widthFactor: 0.45,
-                                child: Container(
-                                  decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary, borderRadius: BorderRadius.circular(2)),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                currentUser.displayName.toUpperCase(),
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white, letterSpacing: 0.5),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Воин II',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Theme.of(context).colorScheme.primary),
+                              ),
+                              const SizedBox(height: 8),
+                              Container(
+                                height: 4,
+                                width: 120,
+                                decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(2)),
+                                child: FractionallySizedBox(
+                                  alignment: Alignment.centerLeft,
+                                  widthFactor: 0.45,
+                                  child: Container(
+                                    decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary, borderRadius: BorderRadius.circular(2)),
+                                  ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(height: 6),
-                            const Text('450 / 1000 XP', style: TextStyle(color: Color(0xFF8A9099), fontSize: 12, fontWeight: FontWeight.w500)),
-                          ],
-                        ),
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Row(
-                            children: const [
-                              Text('🔥', style: TextStyle(fontSize: 16)),
-                              SizedBox(width: 4),
-                              Text('17', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.white)),
+                              const SizedBox(height: 6),
+                              const Text('450 / 1000 XP', style: TextStyle(color: Color(0xFF8A9099), fontSize: 12)),
                             ],
                           ),
-                          const Text('серия дней', style: TextStyle(color: Color(0xFF8A9099), fontSize: 12)),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _buildStatCol('${(currentUser.influencePoints / 1000000).toStringAsFixed(1)} км²', 'твоя земля'),
-                      _buildStatCol('245', 'место\nв рейтинге'),
-                      _buildStatCol('1.2k XP', 'до след. ранга'),
-                    ],
-                  ),
-                ],
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Row(
+                              children: const [
+                                Text('🔥', style: TextStyle(fontSize: 16)),
+                                SizedBox(width: 4),
+                                Text('17', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
+                              ],
+                            ),
+                            const Text('серия дней', style: TextStyle(color: Color(0xFF8A9099), fontSize: 12)),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    Container(height: 1, color: Colors.white.withOpacity(0.05)),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildStatCol('${(currentUser.influencePoints / 1000000).toStringAsFixed(1)} км²', 'твоя земля'),
+                        _buildStatCol('245', 'место\nв рейтинге'),
+                        _buildStatCol('1.2k XP', 'до след. ранга'),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
 
           // Left side buttons
           if (currentUser != null)
             Positioned(
-              top: 250,
+              top: 260,
               left: 16,
               child: Column(
                 children: [
                   _buildSideButton(Icons.my_location, 'Центрировать\nкарту', _centerOnUser),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   _buildSideButton(Icons.shield_outlined, 'Защита\nтерритории', () {}),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   _buildSideButton(Icons.layers_outlined, 'Слои карты\nвкл / выкл', () {}),
                 ],
               ),
@@ -635,7 +676,7 @@ class _MapScreenState extends State<MapScreen> {
               left: 16,
               right: 16,
               child: Container(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: const Color(0xFF0D1117),
                   borderRadius: BorderRadius.circular(24),
@@ -664,41 +705,41 @@ class _MapScreenState extends State<MapScreen> {
                               children: [
                                 Text(
                                   (currentUser.influencePoints / 1000000).toStringAsFixed(1),
-                                  style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: Colors.white),
+                                  style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
                                 ),
                                 const Padding(
-                                  padding: EdgeInsets.only(bottom: 6, left: 4),
+                                  padding: EdgeInsets.only(bottom: 5, left: 4),
                                   child: Text(
                                     'км²',
-                                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                                   ),
                                 ),
                               ],
                             ),
                             const Text(
                               'площадь владений',
-                              style: TextStyle(fontSize: 13, color: Color(0xFF8A9099)),
+                              style: TextStyle(fontSize: 12, color: Color(0xFF8A9099)),
                             ),
                           ],
                         ),
                         Container(
-                          width: 56,
-                          height: 56,
+                          width: 48,
+                          height: 48,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             border: Border.all(color: Colors.white.withOpacity(0.1), width: 1.5),
                           ),
-                          child: const Icon(Icons.flag_outlined, color: Colors.white, size: 28),
+                          child: const Icon(Icons.flag_outlined, color: Colors.white, size: 24),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
                     Container(
-                      height: 6,
+                      height: 4,
                       width: double.infinity,
                       decoration: BoxDecoration(
                         color: Colors.white10,
-                        borderRadius: BorderRadius.circular(3),
+                        borderRadius: BorderRadius.circular(2),
                       ),
                       child: FractionallySizedBox(
                         alignment: Alignment.centerLeft,
@@ -706,7 +747,7 @@ class _MapScreenState extends State<MapScreen> {
                         child: Container(
                           decoration: BoxDecoration(
                             color: Theme.of(context).colorScheme.primary,
-                            borderRadius: BorderRadius.circular(3),
+                            borderRadius: BorderRadius.circular(2),
                           ),
                         ),
                       ),
@@ -714,9 +755,9 @@ class _MapScreenState extends State<MapScreen> {
                     const SizedBox(height: 8),
                     const Text(
                       'До следующего ранга: 320 XP',
-                      style: TextStyle(fontSize: 13, color: Color(0xFF8A9099)),
+                      style: TextStyle(fontSize: 12, color: Color(0xFF8A9099)),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
                     if (_isDrawingMode) ...[
                       Row(
                         children: [
@@ -746,7 +787,7 @@ class _MapScreenState extends State<MapScreen> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Theme.of(context).colorScheme.primary,
                                 foregroundColor: Colors.black,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding: const EdgeInsets.symmetric(vertical: 14),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                               ),
                               onPressed: (_plannedPoints.length >= 3 && !_isSavingPlan) 
@@ -767,12 +808,14 @@ class _MapScreenState extends State<MapScreen> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Theme.of(context).colorScheme.primary,
                                 foregroundColor: Colors.black,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding: const EdgeInsets.symmetric(vertical: 14),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                               ),
-                              onPressed: () {},
+                              onPressed: () {
+                                context.read<AppState>().setTabIndex(1); // Перекидывает во вкладку трекера
+                              },
                               icon: const Icon(Icons.directions_run),
-                              label: const Text('НАЧАТЬ ЗАХВАТ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                              label: const Text('НАЧАТЬ ЗАХВАТ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -780,19 +823,19 @@ class _MapScreenState extends State<MapScreen> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF15181E),
                               foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
                                 side: const BorderSide(color: Colors.white10),
                               ),
                             ),
                             onPressed: () => setState(() => _isDrawingMode = true),
-                            child: const Text('ПЛАН', style: TextStyle(fontWeight: FontWeight.bold)),
+                            child: const Text('ПЛАН', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                           ),
                         ],
                       ),
                     ],
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
                     const Center(
                       child: Text('Перейдите в трекер и захватите новую землю', style: TextStyle(color: Color(0xFF8A9099), fontSize: 12)),
                     ),

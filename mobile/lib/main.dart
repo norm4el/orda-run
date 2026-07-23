@@ -54,6 +54,12 @@ class AppState extends ChangeNotifier {
   AuthenticatedUser? currentUser;
   int lastMapRefresh = DateTime.now().millisecondsSinceEpoch;
   bool hasSkippedOnboarding = false;
+  int currentTabIndex = 0;
+
+  void setTabIndex(int index) {
+    currentTabIndex = index;
+    notifyListeners();
+  }
 
   void setUser(AuthenticatedUser? user) {
     currentUser = user;
@@ -189,10 +195,9 @@ class AppShell extends StatefulWidget {
 }
 
 class _AppShellState extends State<AppShell> {
-  int _currentIndex = 0;
-
   @override
   Widget build(BuildContext context) {
+    final _currentIndex = context.watch<AppState>().currentTabIndex;
     return Scaffold(
       body: Stack(
         children: [
@@ -231,24 +236,24 @@ class _AppShellState extends State<AppShell> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildNavItem(0, Icons.map_outlined),
-          _buildNavItem(1, Icons.play_circle_outline),
-          _buildNavItem(2, Icons.flag_outlined),
-          _buildNavItem(3, Icons.bar_chart_outlined),
-          _buildNavItem(4, Icons.person_outline),
+          _buildNavItem(0, Icons.map_outlined, context.watch<AppState>().currentTabIndex),
+          _buildNavItem(1, Icons.play_circle_outline, context.watch<AppState>().currentTabIndex),
+          _buildNavItem(2, Icons.flag_outlined, context.watch<AppState>().currentTabIndex),
+          _buildNavItem(3, Icons.bar_chart_outlined, context.watch<AppState>().currentTabIndex),
+          _buildNavItem(4, Icons.person_outline, context.watch<AppState>().currentTabIndex),
         ],
       ),
     );
   }
 
-  Widget _buildNavItem(int index, IconData icon) {
-    final isActive = _currentIndex == index;
+  Widget _buildNavItem(int index, IconData icon, int currentIndex) {
+    final isActive = currentIndex == index;
     final color = isActive ? Theme.of(context).colorScheme.primary : const Color(0xFF8B929C);
 
     return Expanded(
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: () => setState(() => _currentIndex = index),
+        onTap: () => context.read<AppState>().setTabIndex(index),
         child: Column(
           children: [
             Container(
