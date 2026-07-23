@@ -65,7 +65,7 @@ class PublicProfileModal extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Орда: \${profile["ordaName"] ?? "Нет"}',
+                          'Орда: ${profile["ordaName"] ?? "Нет"}',
                           style: const TextStyle(fontSize: 16, color: Colors.grey),
                         ),
                       ],
@@ -125,9 +125,9 @@ class PublicProfileModal extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildStatColumn('ТЕРРИТОРИЯ', "\${((profile['influencePoints'] ?? 0) / 1000000).toStringAsFixed(2)} км²"),
-                  _buildStatColumn('ПРОБЕЖКИ', '\${profile["runs"] ?? 0}'),
-                  _buildStatColumn('ДИСТАНЦИЯ', '\${profile["distance"]?.toStringAsFixed(1) ?? "0.0"} км'),
+                  _buildStatColumn('ТЕРРИТОРИЯ', "${((profile['influencePoints'] ?? 0) / 1000000).toStringAsFixed(2)} км²"),
+                  _buildStatColumn('ПРОБЕЖКИ', '${profile["runs"] ?? 0}'),
+                  _buildStatColumn('ДИСТАНЦИЯ', '${profile["distance"]?.toStringAsFixed(1) ?? "0.0"} км'),
                 ],
               ),
               const SizedBox(height: 30),
@@ -144,7 +144,7 @@ class PublicProfileModal extends StatelessWidget {
                     const Text('СОСТОЯНИЕ ТЕРРИТОРИИ', style: TextStyle(fontSize: 12, color: Colors.grey, letterSpacing: 1)),
                     const SizedBox(height: 8),
                     Text(
-                      'Прочность: \${territory.health}%',
+                      'Прочность: ${territory.health}%',
                       style: TextStyle(
                         fontSize: 20, 
                         fontWeight: FontWeight.bold, 
