@@ -192,4 +192,14 @@ export async function ensureDatabaseSchema() {
     ALTER TABLE ordas
       ADD COLUMN IF NOT EXISTS avatar_url TEXT;
   `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS orda_messages (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      orda_id UUID NOT NULL REFERENCES ordas(id) ON DELETE CASCADE,
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      message TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
 }

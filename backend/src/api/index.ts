@@ -912,6 +912,42 @@ apiRouter.post('/orda/leave', async (req, res) => {
     }
 });
 
+apiRouter.get('/orda/:id/messages', async (req, res) => {
+    const ordaId = req.params.id;
+    try {
+        const result = await query(
+            `SELECT m.id, m.user_id, m.message, m.created_at, u.display_name as user_name
+             FROM orda_messages m
+             JOIN users u ON m.user_id = u.id
+             WHERE m.orda_id = $1
+             ORDER BY m.created_at ASC
+             LIMIT 50`,
+            [ordaId]
+        );
+        res.json(result.rows);
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Failed to get messages' });
+    }
+});
+
+apiRouter.post('/orda/:id/messages', async (req, res) => {
+    const ordaId = req.params.id;
+    const { user_id, message } = req.body;
+    if (!user_id || !message) return res.status(400).json({ error: 'Missing fields' });
+    
+    try {
+        await query(
+            `INSERT INTO orda_messages (orda_id, user_id, message) VALUES ($1, $2, $3)`,
+            [ordaId, user_id, message]
+        );
+        res.json({ ok: true });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Failed to send message' });
+    }
+});
+
 apiRouter.get('/drops', async (req, res) => {
     try {
         const result = await query(
