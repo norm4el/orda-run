@@ -79,7 +79,7 @@ class PublicProfileModal extends StatelessWidget {
                   children: [
                     if (profile['socialLinks']['instagram'] != null && profile['socialLinks']['instagram'].toString().isNotEmpty)
                       GestureDetector(
-                        onTap: () => _launchUrl('https://instagram.com/\${profile['socialLinks']['instagram']}'),
+                        onTap: () => _launchUrl("https://instagram.com/${profile['socialLinks']['instagram']}"),
                         child: Container(
                           margin: const EdgeInsets.only(right: 12),
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -100,7 +100,7 @@ class PublicProfileModal extends StatelessWidget {
                       ),
                     if (profile['socialLinks']['telegram'] != null && profile['socialLinks']['telegram'].toString().isNotEmpty)
                       GestureDetector(
-                        onTap: () => _launchUrl('https://t.me/\${profile['socialLinks']['telegram'].toString().replaceAll('@', '')}'),
+                        onTap: () => _launchUrl("https://t.me/${profile['socialLinks']['telegram'].toString().replaceAll('@', '')}"),
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                           decoration: BoxDecoration(
