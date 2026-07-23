@@ -418,7 +418,6 @@ class _MapScreenState extends State<MapScreen> {
               ),
               PolygonLayer(
                 polygons: _cachedPolygons,
-                useCulling: true,
                 simplificationTolerance: 0.5,
               ),
               MarkerLayer(
@@ -426,7 +425,6 @@ class _MapScreenState extends State<MapScreen> {
               ),
               PolylineLayer(
                 polylines: _cachedPolylines,
-                useCulling: true,
                 simplificationTolerance: 0.5,
               ),
               if (runTracker.isRecording && runTracker.routePoints.length >= 2)
