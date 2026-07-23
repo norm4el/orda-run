@@ -551,12 +551,13 @@ class _MapScreenState extends State<MapScreen> {
                         color: const Color(0xFF15181E).withValues(alpha: 0.8),
                       ),
                       clipBehavior: Clip.hardEdge,
-                      child: currentUser.avatarUrl != null
+                      child: currentUser.avatarUrl != null && currentUser.avatarUrl!.isNotEmpty
                           ? Image.network(
                               ApiService.baseUrl.replaceAll('/api', '') + currentUser.avatarUrl!,
                               fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.person, size: 28, color: Colors.white)),
                             )
-                          : const Center(child: Text('👤', style: TextStyle(fontSize: 28))),
+                          : const Center(child: Icon(Icons.person, size: 28, color: Colors.white)),
                     ),
                     const SizedBox(width: 16),
                     Expanded(

@@ -47,12 +47,13 @@ class PublicProfileModal extends StatelessWidget {
                       border: Border.all(color: Theme.of(context).colorScheme.primary, width: 2),
                     ),
                     clipBehavior: Clip.hardEdge,
-                    child: profile['avatarUrl'] != null
+                    child: profile['avatarUrl'] != null && profile['avatarUrl'].toString().isNotEmpty
                         ? Image.network(
                             ApiService.baseUrl.replaceAll('/api', '') + profile['avatarUrl'],
                             fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.person, size: 32, color: Colors.white)),
                           )
-                        : const Center(child: Text('👤', style: TextStyle(fontSize: 32))),
+                        : const Center(child: Icon(Icons.person, size: 32, color: Colors.white)),
                   ),
                   const SizedBox(width: 16),
                   Expanded(

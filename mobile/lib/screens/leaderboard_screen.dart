@@ -255,12 +255,13 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                     border: Border.all(color: Theme.of(context).colorScheme.primary, width: 2),
                   ),
                   clipBehavior: Clip.hardEdge,
-                  child: avatarUrl != null
-                      ? Image.network(
-                          ApiService.baseUrl.replaceAll('/api', '') + avatarUrl,
-                          fit: BoxFit.cover,
-                        )
-                      : const Center(child: Icon(Icons.person, color: Colors.white, size: 24)),
+                      child: avatarUrl != null && avatarUrl.toString().isNotEmpty
+                          ? Image.network(
+                              ApiService.baseUrl.replaceAll('/api', '') + avatarUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.person, color: Colors.white, size: 24)),
+                            )
+                          : const Center(child: Icon(Icons.person, color: Colors.white, size: 24)),
                 ),
                 Text(emoji, style: const TextStyle(fontSize: 18)),
               ],
@@ -321,10 +322,11 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                 border: Border.all(color: Theme.of(context).colorScheme.primary, width: 1),
               ),
               clipBehavior: Clip.hardEdge,
-              child: avatarUrl != null
+              child: avatarUrl != null && avatarUrl.toString().isNotEmpty
                   ? Image.network(
                       ApiService.baseUrl.replaceAll('/api', '') + avatarUrl,
                       fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.person, color: Colors.white, size: 20)),
                     )
                   : const Center(child: Icon(Icons.person, color: Colors.white, size: 20)),
             ),

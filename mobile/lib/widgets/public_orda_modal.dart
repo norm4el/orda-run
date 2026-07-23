@@ -50,10 +50,11 @@ class PublicOrdaModal extends StatelessWidget {
                       border: Border.all(color: Theme.of(context).colorScheme.primary, width: 2),
                     ),
                     clipBehavior: Clip.hardEdge,
-                    child: orda['avatar_url'] != null
+                    child: orda['avatar_url'] != null && orda['avatar_url'].toString().isNotEmpty
                         ? Image.network(
                             ApiService.baseUrl.replaceAll('/api', '') + orda['avatar_url'],
                             fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.shield, size: 36, color: Colors.white)),
                           )
                         : const Center(child: Icon(Icons.shield, size: 36, color: Colors.white)),
                   ),
