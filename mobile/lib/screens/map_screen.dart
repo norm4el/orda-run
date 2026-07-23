@@ -421,10 +421,35 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
+  bool _showOrdaMode = false; // State for Orda/Personal toggle
+
+  String _getRankName(int xp) {
+    if (xp < 100) return 'Кочевник';
+    if (xp < 500) return 'Воин I';
+    if (xp < 1000) return 'Воин II';
+    if (xp < 2500) return 'Батыр I';
+    if (xp < 5000) return 'Батыр II';
+    return 'Хан';
+  }
+
+  int _getNextRankXp(int xp) {
+    if (xp < 100) return 100;
+    if (xp < 500) return 500;
+    if (xp < 1000) return 1000;
+    if (xp < 2500) return 2500;
+    if (xp < 5000) return 5000;
+    return xp;
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentUser = context.watch<AppState>().currentUser;
     final runTracker = context.watch<RunTracker>();
+
+    int currentXp = currentUser != null ? (currentUser.influencePoints ~/ 10000) : 0;
+    String rankName = _getRankName(currentXp);
+    int nextRankXp = _getNextRankXp(currentXp);
+    double progress = nextRankXp > currentXp ? currentXp / nextRankXp : 1.0;
 
     return Scaffold(
       body: Stack(
@@ -563,7 +588,7 @@ class _MapScreenState extends State<MapScreen> {
             ),
           
           // Top Dashboard
-          if (currentUser != null)
+          if (currentUser != null && !runTracker.isRecording)
             Positioned(
               top: 50,
               left: 16,
@@ -600,7 +625,7 @@ class _MapScreenState extends State<MapScreen> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Воин II',
+                            rankName,
                             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Theme.of(context).colorScheme.primary),
                           ),
                           const SizedBox(height: 8),
@@ -610,14 +635,14 @@ class _MapScreenState extends State<MapScreen> {
                             decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(2)),
                             child: FractionallySizedBox(
                               alignment: Alignment.centerLeft,
-                              widthFactor: 0.45,
+                              widthFactor: progress,
                               child: Container(
                                 decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary, borderRadius: BorderRadius.circular(2)),
                               ),
                             ),
                           ),
                           const SizedBox(height: 6),
-                          const Text('450 / 1000 XP', style: TextStyle(color: Color(0xFF8A9099), fontSize: 12)),
+                          Text('$currentXp / $nextRankXp XP', style: const TextStyle(color: Color(0xFF8A9099), fontSize: 12)),
                         ],
                       ),
                     ),
@@ -629,7 +654,7 @@ class _MapScreenState extends State<MapScreen> {
                           children: const [
                             Text('🔥', style: TextStyle(fontSize: 16)),
                             SizedBox(width: 4),
-                            Text('17', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
+                            Text('1', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
                           ],
                         ),
                         const Text('серия дней', style: TextStyle(color: Color(0xFF8A9099), fontSize: 12)),
@@ -641,12 +666,19 @@ class _MapScreenState extends State<MapScreen> {
             ),
 
           // Left side buttons
-          if (currentUser != null)
+          if (currentUser != null && !runTracker.isRecording)
             Positioned(
               top: 260,
               left: 16,
               child: Column(
                 children: [
+                  _buildSideButton(
+                    _showOrdaMode ? Icons.groups : Icons.person,
+                    _showOrdaMode ? 'Режим Орд' : 'Личный режим',
+                    () => setState(() => _showOrdaMode = !_showOrdaMode),
+                    isActive: _showOrdaMode,
+                  ),
+                  const SizedBox(height: 12),
                   _buildSideButton(Icons.my_location, 'Центрировать\nкарту', _centerOnUser),
                   const SizedBox(height: 12),
                   _buildSideButton(Icons.shield_outlined, 'Защита\nтерритории', () {}),
@@ -657,7 +689,7 @@ class _MapScreenState extends State<MapScreen> {
             ),
 
           // Bottom HUD panel
-          if (currentUser != null)
+          if (currentUser != null && !runTracker.isRecording)
             Positioned(
               bottom: 90,
               left: 16,
@@ -860,18 +892,18 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  Widget _buildSideButton(IconData icon, String tooltip, VoidCallback onTap) {
+  Widget _buildSideButton(IconData icon, String tooltip, VoidCallback onTap, {bool isActive = false}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: 48,
         height: 48,
         decoration: BoxDecoration(
-          color: const Color(0xFF15181E).withValues(alpha: 0.8),
+          color: isActive ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.9) : const Color(0xFF15181E).withValues(alpha: 0.8),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white10),
+          border: Border.all(color: isActive ? Theme.of(context).colorScheme.primary : Colors.white10),
         ),
-        child: Icon(icon, color: Colors.white, size: 24),
+        child: Icon(icon, color: isActive ? Colors.black : Colors.white, size: 24),
       ),
     );
   }
