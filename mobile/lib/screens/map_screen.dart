@@ -569,83 +569,70 @@ class _MapScreenState extends State<MapScreen> {
               left: 16,
               right: 16,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0D1117).withValues(alpha: 0.95),
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 20, offset: Offset(0, 4))],
+                  color: const Color(0xFF05070A).withValues(alpha: 0.75), // Более прозрачный
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white.withOpacity(0.05)),
                 ),
-                child: Column(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          width: 64,
-                          height: 64,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Theme.of(context).colorScheme.primary, width: 2),
-                            color: const Color(0xFF15181E),
+                    Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Theme.of(context).colorScheme.primary, width: 2),
+                        color: const Color(0xFF15181E).withValues(alpha: 0.8),
+                      ),
+                      child: const Center(child: Text('👤', style: TextStyle(fontSize: 28))),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            currentUser.displayName.toUpperCase(),
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white, letterSpacing: 0.5),
                           ),
-                          child: const Center(child: Text('👤', style: TextStyle(fontSize: 32))),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                currentUser.displayName.toUpperCase(),
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white, letterSpacing: 0.5),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'Воин II',
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Theme.of(context).colorScheme.primary),
-                              ),
-                              const SizedBox(height: 8),
-                              Container(
-                                height: 4,
-                                width: 120,
-                                decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(2)),
-                                child: FractionallySizedBox(
-                                  alignment: Alignment.centerLeft,
-                                  widthFactor: 0.45,
-                                  child: Container(
-                                    decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary, borderRadius: BorderRadius.circular(2)),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              const Text('450 / 1000 XP', style: TextStyle(color: Color(0xFF8A9099), fontSize: 12)),
-                            ],
+                          const SizedBox(height: 2),
+                          Text(
+                            'Воин II',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Theme.of(context).colorScheme.primary),
                           ),
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Row(
-                              children: const [
-                                Text('🔥', style: TextStyle(fontSize: 16)),
-                                SizedBox(width: 4),
-                                Text('17', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
-                              ],
+                          const SizedBox(height: 8),
+                          Container(
+                            height: 4,
+                            width: 120,
+                            decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(2)),
+                            child: FractionallySizedBox(
+                              alignment: Alignment.centerLeft,
+                              widthFactor: 0.45,
+                              child: Container(
+                                decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary, borderRadius: BorderRadius.circular(2)),
+                              ),
                             ),
-                            const Text('серия дней', style: TextStyle(color: Color(0xFF8A9099), fontSize: 12)),
+                          ),
+                          const SizedBox(height: 6),
+                          const Text('450 / 1000 XP', style: TextStyle(color: Color(0xFF8A9099), fontSize: 12)),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          children: const [
+                            Text('🔥', style: TextStyle(fontSize: 16)),
+                            SizedBox(width: 4),
+                            Text('17', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
                           ],
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    Container(height: 1, color: Colors.white.withOpacity(0.05)),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _buildStatCol('${(currentUser.influencePoints / 1000000).toStringAsFixed(1)} км²', 'твоя земля'),
-                        _buildStatCol('245', 'место\nв рейтинге'),
-                        _buildStatCol('1.2k XP', 'до след. ранга'),
+                        const Text('серия дней', style: TextStyle(color: Color(0xFF8A9099), fontSize: 12)),
                       ],
                     ),
                   ],
@@ -678,11 +665,11 @@ class _MapScreenState extends State<MapScreen> {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0D1117),
+                  color: const Color(0xFF0D1117).withValues(alpha: 0.75), // Более прозрачный
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(color: Colors.white.withOpacity(0.05)),
                   boxShadow: const [
-                    BoxShadow(color: Colors.black54, blurRadius: 40, offset: Offset(0, 10)),
+                    BoxShadow(color: Colors.black26, blurRadius: 20, offset: Offset(0, 5)), // Уменьшил тень
                   ],
                 ),
                 child: Column(
