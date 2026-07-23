@@ -663,88 +663,98 @@ class _MapScreenState extends State<MapScreen> {
               left: 16,
               right: 16,
               child: Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0D1117).withValues(alpha: 0.75), // Более прозрачный
-                  borderRadius: BorderRadius.circular(24),
+                  color: const Color(0xFF0D1117).withValues(alpha: 0.85),
+                  borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: Colors.white.withOpacity(0.05)),
-                  boxShadow: const [
-                    BoxShadow(color: Colors.black26, blurRadius: 20, offset: Offset(0, 5)), // Уменьшил тень
-                  ],
+                  boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 20, offset: Offset(0, 5))],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    const Text(
+                      'ТЕРРИТОРИЯ',
+                      style: TextStyle(fontSize: 11, color: Color(0xFF8A9099), letterSpacing: 1),
+                    ),
+                    const SizedBox(height: 8),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'ВАША ОРДА',
-                              style: TextStyle(fontSize: 12, color: Color(0xFF8A9099), letterSpacing: 1),
-                            ),
-                            const SizedBox(height: 4),
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  (currentUser.influencePoints / 1000000).toStringAsFixed(1),
-                                  style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
+                        // Left side: Area
+                        Expanded(
+                          flex: 4,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    (currentUser.influencePoints / 1000000).toStringAsFixed(1),
+                                    style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white, height: 1),
+                                  ),
+                                  const Padding(
+                                    padding: EdgeInsets.only(bottom: 4, left: 4),
+                                    child: Text(
+                                      'км²',
+                                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              const Text(
+                                'площадь владений',
+                                style: TextStyle(fontSize: 11, color: Color(0xFF8A9099)),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Divider
+                        Container(
+                          width: 1,
+                          height: 40,
+                          color: Colors.white.withOpacity(0.1),
+                          margin: const EdgeInsets.symmetric(horizontal: 16),
+                        ),
+                        // Right side: Progress
+                        Expanded(
+                          flex: 5,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 4),
+                              const Text(
+                                'До следующего ранга: 320 XP',
+                                style: TextStyle(fontSize: 11, color: Color(0xFF8A9099)),
+                              ),
+                              const SizedBox(height: 12),
+                              Container(
+                                height: 4,
+                                width: double.infinity,
+                                decoration: BoxDecoration(
+                                  color: Colors.white10,
+                                  borderRadius: BorderRadius.circular(2),
                                 ),
-                                const Padding(
-                                  padding: EdgeInsets.only(bottom: 5, left: 4),
-                                  child: Text(
-                                    'км²',
-                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                                child: FractionallySizedBox(
+                                  alignment: Alignment.centerLeft,
+                                  widthFactor: 0.6,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).colorScheme.primary,
+                                      borderRadius: BorderRadius.circular(2),
+                                    ),
                                   ),
                                 ),
-                              ],
-                            ),
-                            const Text(
-                              'площадь владений',
-                              style: TextStyle(fontSize: 12, color: Color(0xFF8A9099)),
-                            ),
-                          ],
-                        ),
-                        Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white.withOpacity(0.1), width: 1.5),
+                              ),
+                            ],
                           ),
-                          child: const Icon(Icons.flag_outlined, color: Colors.white, size: 24),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
-                    Container(
-                      height: 4,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.white10,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                      child: FractionallySizedBox(
-                        alignment: Alignment.centerLeft,
-                        widthFactor: 0.6,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'До следующего ранга: 320 XP',
-                      style: TextStyle(fontSize: 12, color: Color(0xFF8A9099)),
-                    ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 20),
                     if (_isDrawingMode) ...[
                       Row(
                         children: [
@@ -774,15 +784,15 @@ class _MapScreenState extends State<MapScreen> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Theme.of(context).colorScheme.primary,
                                 foregroundColor: Colors.black,
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
                               onPressed: (_plannedPoints.length >= 3 && !_isSavingPlan) 
                                   ? () => _savePlannedRun(currentUser) 
                                   : null,
                               child: _isSavingPlan 
                                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
-                                  : Text('save'.tr(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                  : Text('save'.tr(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                             ),
                           ),
                         ],
@@ -791,40 +801,44 @@ class _MapScreenState extends State<MapScreen> {
                       Row(
                         children: [
                           Expanded(
+                            flex: 7,
                             child: ElevatedButton.icon(
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Theme.of(context).colorScheme.primary,
                                 foregroundColor: Colors.black,
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
                               onPressed: () {
-                                context.read<AppState>().setTabIndex(1); // Перекидывает во вкладку трекера
+                                context.read<AppState>().setTabIndex(1);
                               },
-                              icon: const Icon(Icons.directions_run),
-                              label: const Text('НАЧАТЬ ЗАХВАТ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                              icon: const Icon(Icons.directions_run, size: 20),
+                              label: const Text('НАЧАТЬ ЗАХВАТ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                             ),
                           ),
                           const SizedBox(width: 12),
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF15181E),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                side: const BorderSide(color: Colors.white10),
+                          Expanded(
+                            flex: 3,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF15181E),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  side: const BorderSide(color: Colors.white10),
+                                ),
                               ),
+                              onPressed: () => setState(() => _isDrawingMode = true),
+                              child: const Text('ПЛАН', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                             ),
-                            onPressed: () => setState(() => _isDrawingMode = true),
-                            child: const Text('ПЛАН', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                           ),
                         ],
                       ),
                     ],
                     const SizedBox(height: 12),
                     const Center(
-                      child: Text('Перейдите в трекер и захватите новую землю', style: TextStyle(color: Color(0xFF8A9099), fontSize: 12)),
+                      child: Text('Перейдите в трекер и захватите новую землю', style: TextStyle(color: Color(0xFF8A9099), fontSize: 11)),
                     ),
                   ],
                 ),
