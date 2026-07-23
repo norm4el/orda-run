@@ -144,16 +144,24 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF0A0B0E),
+        scaffoldBackgroundColor: const Color(0xFF05070A),
         colorScheme: const ColorScheme.dark(
-          primary: Color(0xFFFFD700),
+          primary: Color(0xFFFFD60A),
           secondary: Color(0xFF2C5A5A),
-          surface: Color(0xFF15181E),
-          background: Color(0xFF0A0B0E),
+          surface: Color(0xFF0D1117),
+          background: Color(0xFF05070A),
         ),
         textTheme: GoogleFonts.outfitTextTheme(ThemeData.dark().textTheme).apply(
           bodyColor: Colors.white,
           displayColor: Colors.white,
+        ).copyWith(
+          displayLarge: GoogleFonts.outfit(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
+          headlineMedium: GoogleFonts.outfit(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
+          titleLarge: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w600, color: Colors.white),
+          bodyLarge: GoogleFonts.outfit(fontSize: 16, color: Colors.white),
+          bodyMedium: GoogleFonts.outfit(fontSize: 16, color: Colors.white),
+          bodySmall: GoogleFonts.outfit(fontSize: 13, color: const Color(0xFF8A9099)),
+          labelSmall: GoogleFonts.outfit(fontSize: 13, color: const Color(0xFF8A9099)),
         ),
       ),
       home: Consumer<AppState>(

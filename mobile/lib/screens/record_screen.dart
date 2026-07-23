@@ -120,81 +120,87 @@ class _RecordScreenState extends State<RecordScreen> {
                 ),
                 
                 // Bottom HUD with Glassmorphism
-                ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(40)),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.fromLTRB(30, 40, 30, 100), // extra padding for bottom nav
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0A0B0E).withValues(alpha: 0.65),
-                        border: const Border(
-                          top: BorderSide(color: Colors.white24, width: 1.5),
+                Expanded(
+                  child: Container(
+                    width: double.infinity,
+                    color: const Color(0xFF05070A).withValues(alpha: 0.9), // almost opaque to focus on run
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text(
+                          'ЦЕЛЬ ЗАБЕГА',
+                          style: TextStyle(fontSize: 13, color: Color(0xFF8A9099), letterSpacing: 2, fontWeight: FontWeight.bold),
                         ),
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Main Distance
-                          Text(
-                            distanceKm,
-                            style: const TextStyle(
-                              fontSize: 80,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.white,
-                              height: 1,
-                              letterSpacing: -2,
-                            ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Захватить 1.50 км²',
+                          style: TextStyle(fontSize: 20, color: Color(0xFFFFD60A), fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 40),
+                        
+                        // Large Circle
+                        Container(
+                          width: 280,
+                          height: 280,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Theme.of(context).colorScheme.primary, width: 6),
                           ),
-                          const SizedBox(height: 5),
-                          Text(
-                            'kilometers'.tr().toUpperCase(),
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF8B929C),
-                              letterSpacing: 4,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 40),
-                          
-                          // Secondary Stats Row
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              _buildHudStat('time'.tr(), _formatTime(tracker.elapsedSeconds)),
-                              Container(width: 1, height: 40, color: Colors.white24),
-                              _buildHudStat('pace'.tr(), tracker.distanceKm > 0 ? '$paceMins:${paceSecs.toString().padLeft(2, "0")}' : '0:00'),
-                              Container(width: 1, height: 40, color: Colors.white24),
-                              _buildHudStat('calories'.tr(), calories.toString()),
-                            ],
-                          ),
-                          
-                          const SizedBox(height: 40),
-                          
-                          // Controls
-                          Row(
+                          child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              if (tracker.isRecording) ...[
-                                _buildControlButton(
-                                  icon: Icons.stop_rounded,
-                                  color: Colors.redAccent,
-                                  onTap: () => _finishRun(tracker),
-                                ),
-                              ] else ...[
-                                _buildControlButton(
-                                  icon: Icons.play_arrow_rounded,
-                                  color: Theme.of(context).colorScheme.primary,
-                                  size: 80,
-                                  onTap: () => tracker.startRun(),
-                                ),
-                              ],
+                              Text(
+                                distanceKm,
+                                style: const TextStyle(fontSize: 80, fontWeight: FontWeight.w900, color: Colors.white, height: 1, letterSpacing: -2),
+                              ),
+                              const Text(
+                                'КМ',
+                                style: TextStyle(fontSize: 16, color: Color(0xFF8A9099), letterSpacing: 2, fontWeight: FontWeight.w600),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                '+${(tracker.distanceKm * 0.15).toStringAsFixed(2)} км²',
+                                style: const TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
+                              ),
+                              const Text(
+                                'ЗАХВАЧЕНО',
+                                style: TextStyle(fontSize: 12, color: Color(0xFF8A9099), letterSpacing: 1),
+                              ),
                             ],
                           ),
-                        ],
-                      ),
+                        ),
+                        
+                        const SizedBox(height: 40),
+                        
+                        // Stats Row
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _buildHudStat('темп', tracker.distanceKm > 0 ? '$paceMins:${paceSecs.toString().padLeft(2, "0")}' : '0:00'),
+                            _buildHudStat('время', _formatTime(tracker.elapsedSeconds)),
+                            _buildHudStat('ккал', calories.toString()),
+                          ],
+                        ),
+                        
+                        const SizedBox(height: 40),
+                        
+                        // Controls
+                        if (tracker.isRecording)
+                          _buildControlButton(
+                            icon: Icons.pause_rounded,
+                            color: Theme.of(context).colorScheme.primary,
+                            size: 72,
+                            onTap: () => _finishRun(tracker),
+                          )
+                        else
+                          _buildControlButton(
+                            icon: Icons.play_arrow_rounded,
+                            color: Theme.of(context).colorScheme.primary,
+                            size: 72,
+                            onTap: () => tracker.startRun(),
+                          ),
+                        const SizedBox(height: 40),
+                      ],
                     ),
                   ),
                 ),
@@ -239,7 +245,7 @@ class _RecordScreenState extends State<RecordScreen> {
     );
   }
 
-  Widget _buildControlButton({required IconData icon, required Color color, required VoidCallback onTap, double size = 70}) {
+  Widget _buildControlButton({required IconData icon, required Color color, required VoidCallback onTap, double size = 72}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -248,15 +254,15 @@ class _RecordScreenState extends State<RecordScreen> {
         decoration: BoxDecoration(
           color: color,
           shape: BoxShape.circle,
-          boxShadow: [
+          boxShadow: const [
             BoxShadow(
-              color: color.withValues(alpha: 0.4),
-              blurRadius: 20,
-              spreadRadius: 5,
+              color: Colors.black26,
+              blurRadius: 8,
+              offset: Offset(0, 4),
             ),
           ],
         ),
-        child: Icon(icon, color: Colors.white, size: size * 0.5),
+        child: Icon(icon, color: Colors.black, size: size * 0.5),
       ),
     );
   }

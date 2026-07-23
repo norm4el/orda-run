@@ -29,7 +29,7 @@ async function captureTerritory(userId, polylineString) {
           WHERE geom IS NOT NULL AND ST_NumPoints(geom) >= 2
         ),
         nodes AS (
-          SELECT (ST_Dump(ST_Node(geom))).geom AS geom
+          SELECT (ST_Dump(ST_Node(ST_Multi(geom)))).geom AS geom
           FROM closed_lines
         ),
         enclosed_polys AS (

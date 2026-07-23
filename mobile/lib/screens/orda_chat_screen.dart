@@ -114,13 +114,13 @@ class _OrdaChatScreenState extends State<OrdaChatScreen> {
         margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isMe ? const Color(0xFFFFD700).withValues(alpha: 0.15) : const Color(0xFF1F222A),
+          color: isMe ? const Color(0xFFFFD60A).withValues(alpha: 0.15) : const Color(0xFF15181E),
           borderRadius: BorderRadius.circular(16).copyWith(
             bottomRight: isMe ? const Radius.circular(0) : const Radius.circular(16),
             bottomLeft: isMe ? const Radius.circular(16) : const Radius.circular(0),
           ),
           border: Border.all(
-            color: isMe ? const Color(0xFFFFD700).withValues(alpha: 0.3) : Colors.transparent,
+            color: isMe ? const Color(0xFFFFD60A).withValues(alpha: 0.5) : Colors.transparent,
           ),
         ),
         child: Column(
@@ -131,9 +131,10 @@ class _OrdaChatScreenState extends State<OrdaChatScreen> {
               Text(
                 userName,
                 style: const TextStyle(
-                  color: Color(0xFFFFD700),
-                  fontSize: 12,
+                  color: Color(0xFF8A9099),
+                  fontSize: 11,
                   fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
                 ),
               ),
             if (!isMe) const SizedBox(height: 4),
@@ -158,27 +159,27 @@ class _OrdaChatScreenState extends State<OrdaChatScreen> {
     final currentUserId = user?.id ?? '';
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0B0E),
+      backgroundColor: Colors.black,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF15181E),
+        backgroundColor: Colors.black,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Чат Орды', style: TextStyle(color: Colors.white, fontSize: 14)),
+            const Text('Чат Орды', style: TextStyle(color: Color(0xFF8A9099), fontSize: 12, letterSpacing: 1)),
             Text(
               widget.ordaName.toUpperCase(),
-              style: const TextStyle(color: Color(0xFFFFD700), fontSize: 18, fontWeight: FontWeight.bold),
+              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1),
             ),
           ],
         ),
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(color: Color(0xFFFFD60A)),
       ),
       body: SafeArea(
         child: Column(
           children: [
             Expanded(
               child: _isLoading && _messages.isEmpty
-                  ? const Center(child: CircularProgressIndicator(color: Color(0xFFFFD700)))
+                  ? const Center(child: CircularProgressIndicator(color: Color(0xFFFFD60A)))
                   : ListView.builder(
                       controller: _scrollController,
                       padding: const EdgeInsets.symmetric(vertical: 16),
@@ -216,7 +217,7 @@ class _OrdaChatScreenState extends State<OrdaChatScreen> {
                   ),
                   const SizedBox(width: 8),
                   CircleAvatar(
-                    backgroundColor: const Color(0xFFFFD700),
+                    backgroundColor: const Color(0xFFFFD60A),
                     child: IconButton(
                       icon: const Icon(Icons.send, color: Colors.black),
                       onPressed: _sendMessage,

@@ -38,41 +38,73 @@ class _OrdaScreenState extends State<OrdaScreen> {
     if (user == null) return;
 
     final controller = TextEditingController();
-    final name = await showDialog<String>(
+    String selectedEmoji = '🐺';
+    final emojis = ['🐺', '🦅', '🐻', '🐍', '🦁'];
+
+    final result = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF15181E),
-        title: const Text('Создать Орду', style: TextStyle(color: Colors.white)),
-        content: TextField(
-          controller: controller,
-          style: const TextStyle(color: Colors.white),
-          decoration: InputDecoration(
-            hintText: 'Название вашей Орды',
-            hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
-            enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFFFD700))),
-            focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFFFD700))),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('ОТМЕНА', style: TextStyle(color: Colors.grey)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, controller.text),
-            child: const Text('СОЗДАТЬ', style: TextStyle(color: Color(0xFFFFD700))),
-          ),
-        ],
-      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: const Text('Создать Орду', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: emojis.map((e) => GestureDetector(
+                      onTap: () => setState(() => selectedEmoji = e),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: selectedEmoji == e ? const Color(0xFF15181E) : Colors.transparent,
+                          borderRadius: BorderRadius.circular(12),
+                          border: selectedEmoji == e ? Border.all(color: const Color(0xFFFFD60A)) : null,
+                        ),
+                        child: Text(e, style: const TextStyle(fontSize: 28)),
+                      ),
+                    )).toList(),
+                  ),
+                  const SizedBox(height: 20),
+                  TextField(
+                    controller: controller,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: 'Название',
+                      hintStyle: const TextStyle(color: Color(0xFF8A9099)),
+                      filled: true,
+                      fillColor: const Color(0xFF15181E),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('ОТМЕНА', style: TextStyle(color: Color(0xFF8A9099))),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, '$selectedEmoji ${controller.text.trim()}'),
+                  child: const Text('СОЗДАТЬ', style: TextStyle(color: Color(0xFFFFD60A), fontWeight: FontWeight.bold)),
+                ),
+              ],
+            );
+          }
+        );
+      },
     );
 
-    if (name != null && name.trim().isNotEmpty) {
+    if (result != null && result.length > 2) {
       setState(() => _isLoading = true);
-      final ordaId = await _apiService.createOrda(user.id, name.trim());
+      final ordaId = await _apiService.createOrda(user.id, result);
       if (ordaId != null && mounted) {
         final appState = context.read<AppState>();
         user.ordaId = ordaId;
-        user.ordaName = name.trim();
+        user.ordaName = result;
         appState.setUser(user);
       }
       setState(() => _isLoading = false);
@@ -156,7 +188,8 @@ class _OrdaScreenState extends State<OrdaScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Icon(Icons.shield_outlined, size: 80, color: Colors.grey),
+          const SizedBox(height: 20),
+          const Center(child: Text('🏕️', style: TextStyle(fontSize: 80))),
           const SizedBox(height: 20),
           const Text(
             'Вы — Одиночка',
@@ -165,40 +198,53 @@ class _OrdaScreenState extends State<OrdaScreen> {
           ),
           const SizedBox(height: 10),
           const Text(
-            'Вступите в Орду, чтобы зарабатывать бонусы с друзьями и участвовать в клановых войнах.',
+            'Вступите в Орду или создайте свою, чтобы зарабатывать бонусы с друзьями и участвовать в войнах.',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 16, color: Colors.grey),
+            style: TextStyle(fontSize: 14, color: Color(0xFF8A9099)),
           ),
           const SizedBox(height: 40),
           ElevatedButton.icon(
-            icon: const Icon(Icons.add_moderator),
-            label: const Text('СОЗДАТЬ СВОЮ ОРДУ', style: TextStyle(fontWeight: FontWeight.bold)),
+            icon: const Icon(Icons.add),
+            label: const Text('СОЗДАТЬ СВОЮ ОРДУ', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1)),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFFD700),
+              backgroundColor: const Color(0xFFFFD60A),
               foregroundColor: Colors.black,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: _createOrda,
           ),
-          const SizedBox(height: 30),
-          const Text('ИЛИ ВСТУПИТЕ В СУЩЕСТВУЮЩУЮ:', style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 10),
+          const SizedBox(height: 40),
+          const Text('ИЛИ ВСТУПИТЕ В СУЩЕСТВУЮЩУЮ', style: TextStyle(color: Color(0xFF8A9099), fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1)),
+          const SizedBox(height: 16),
           Expanded(
             child: ListView.builder(
               itemCount: _availableOrdas.length,
               itemBuilder: (context, index) {
                 final orda = _availableOrdas[index];
-                return Card(
-                  color: const Color(0xFF15181E),
+                return Container(
                   margin: const EdgeInsets.only(bottom: 8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   child: ListTile(
-                    leading: const Icon(Icons.shield, color: Color(0xFFFFD700)),
-                    title: Text(orda['name'], style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    subtitle: Text('Участников: ${orda['member_count']}', style: const TextStyle(color: Colors.grey)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    leading: Container(
+                      width: 40, height: 40,
+                      decoration: BoxDecoration(color: const Color(0xFF15181E), borderRadius: BorderRadius.circular(8)),
+                      child: const Center(child: Text('🏴', style: TextStyle(fontSize: 20))),
+                    ),
+                    title: Text(orda['name'].toString().toUpperCase(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                    subtitle: Text('Участников: ${orda['member_count']}', style: const TextStyle(color: Color(0xFF8A9099), fontSize: 12)),
                     trailing: TextButton(
+                      style: TextButton.styleFrom(
+                        backgroundColor: const Color(0xFFFFD60A).withValues(alpha: 0.1),
+                        foregroundColor: const Color(0xFFFFD60A),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
                       onPressed: () => _joinOrda(orda['id'], orda['name']),
-                      child: const Text('ВСТУПИТЬ', style: TextStyle(color: Color(0xFFFFD700))),
+                      child: const Text('ВСТУПИТЬ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                     ),
                   ),
                 );
@@ -216,35 +262,85 @@ class _OrdaScreenState extends State<OrdaScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Icon(Icons.shield, size: 100, color: Color(0xFFFFD700)),
+          const SizedBox(height: 20),
+          const Center(child: Text('🏴', style: TextStyle(fontSize: 80))),
           const SizedBox(height: 20),
           Text(
-            user.ordaName ?? 'Ваша Орда',
+            (user.ordaName ?? 'ВАША ОРДА').toUpperCase(),
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.5),
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 2),
           ),
           const SizedBox(height: 40),
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: const Color(0xFF15181E),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFFFD700).withValues(alpha: 0.3)),
-            ),
-            child: Column(
-              children: [
-                const Text('Здесь скоро появится статистика вашей Орды и список участников.', 
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey, fontSize: 16, height: 1.5),
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.chat),
+          
+          FutureBuilder(
+            future: _apiService.getLeaderboard(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              final allPlayers = snapshot.data as List<dynamic>? ?? [];
+              final myOrdaMembers = allPlayers.where((p) => p['ordaName'] == user.ordaName).toList();
+              
+              double totalScore = 0;
+              for (var p in myOrdaMembers) {
+                final s = p['influencePoints'] ?? p['influence_points'] ?? p['score'] ?? 0;
+                totalScore += (s is int) ? s : (double.tryParse(s.toString())?.toInt() ?? 0);
+              }
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Stat row
+                  Text(
+                    '${(totalScore / 1000000).toStringAsFixed(2)} км²  |  ${myOrdaMembers.length} участников',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF8A9099)),
+                  ),
+                  const SizedBox(height: 40),
+                  
+                  const Text('УЧАСТНИКИ', style: TextStyle(color: Color(0xFF8A9099), fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1)),
+                  const SizedBox(height: 16),
+                  
+                  ...myOrdaMembers.map((m) {
+                    final name = m['displayName'] ?? m['name'] ?? 'Без имени';
+                    final s = m['influencePoints'] ?? m['influence_points'] ?? m['score'] ?? 0;
+                    final score = (s is int) ? s : (double.tryParse(s.toString())?.toInt() ?? 0);
+                    final isMe = m['id'] == user.id;
+
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: isMe ? Border.all(color: const Color(0xFFFFD60A)) : null,
+                      ),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                        leading: CircleAvatar(
+                          backgroundColor: const Color(0xFF15181E),
+                          child: Icon(Icons.person, color: isMe ? const Color(0xFFFFD60A) : Colors.white),
+                        ),
+                        title: Text(name.toString().toUpperCase(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                        trailing: Text('${(score / 1000000).toStringAsFixed(2)} км²', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      ),
+                    );
+                  }),
+                ],
+              );
+            }
+          ),
+
+          const Spacer(),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.chat_bubble_outline),
                   label: const Text('ЧАТ ОРДЫ', style: TextStyle(fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFFD700),
+                    backgroundColor: const Color(0xFFFFD60A),
                     foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   onPressed: () {
@@ -259,20 +355,19 @@ class _OrdaScreenState extends State<OrdaScreen> {
                     );
                   },
                 ),
-              ],
-            ),
-          ),
-          const Spacer(),
-          OutlinedButton.icon(
-            icon: const Icon(Icons.exit_to_app),
-            label: const Text('ПОКИНУТЬ ОРДУ'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.redAccent,
-              side: const BorderSide(color: Colors.redAccent),
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            onPressed: _leaveOrda,
+              ),
+              const SizedBox(width: 12),
+              OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.redAccent,
+                  side: const BorderSide(color: Colors.redAccent),
+                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                onPressed: _leaveOrda,
+                child: const Icon(Icons.exit_to_app),
+              ),
+            ],
           ),
         ],
       ),

@@ -230,7 +230,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   ),
                                 ),
                                 Text(
-                                  '${currentUser.influencePoints} / 500 XP',
+                                  currentUser.influencePoints.toString() + ' / 500 XP',
                                   style: const TextStyle(color: Color(0xFF8B929C), fontSize: 12),
                                 ),
                               ],
@@ -262,33 +262,54 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 40),
 
                   // Stats
-                  Text(
-                    'stats'.tr().toUpperCase(),
-                    style: const TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF8B929C),
-                        letterSpacing: 2,
-                        fontWeight: FontWeight.w500),
-                  ),
-                  const SizedBox(height: 20),
+                  // Stats
                   FutureBuilder<Map<String, dynamic>?>(
                     future: _statsFuture,
                     builder: (context, snapshot) {
                       final stats = snapshot.data;
                       final runs = stats?['runs']?.toString() ?? '0';
                       final km = stats?['distance'] != null ? (stats!['distance'] as num).toStringAsFixed(1) : '0.0';
+                      final sqKm = (currentUser.influencePoints / 1000000).toStringAsFixed(2);
                       
-                      return Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _buildStatItem('runs'.tr().toUpperCase(), runs),
-                          _buildStatItem('km'.tr().toUpperCase(), km),
-                          _buildStatItem(
-                              'sq_km'.tr().toUpperCase(),
-                              (currentUser.influencePoints / 1000000).toStringAsFixed(2)),
-                        ],
+                      return Text(
+                        '$sqKm км²  |  $km км  |  $runs забегов',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          letterSpacing: 1,
+                        ),
                       );
                     },
+                  ),
+                  const SizedBox(height: 30),
+                  
+                  // Achievements Grid
+                  const Text(
+                    'ДОСТИЖЕНИЯ',
+                    style: TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF8A9099),
+                        letterSpacing: 2,
+                        fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 16),
+                  GridView.count(
+                    crossAxisCount: 4,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    children: [
+                      _buildAchievement('🏅', 'Первый шаг'),
+                      _buildAchievement('🔥', '3 дня'),
+                      _buildAchievement('👑', 'Хан'),
+                      _buildAchievement('🏃', '10 км'),
+                      _buildAchievement('⚔', 'Воин'),
+                      _buildAchievement('🛡', 'Оборона'),
+                      _buildAchievement('🏆', 'Топ-10'),
+                      _buildAchievement('🌟', 'Секрет'),
+                    ],
                   ),
                   
                   const SizedBox(height: 20),
@@ -481,6 +502,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
           label,
           style: const TextStyle(fontSize: 12, color: Color(0xFF8B929C)),
         ),
+      ],
+    );
+  }
+
+  Widget _buildAchievement(String emoji, String title) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Center(child: Text(emoji, style: const TextStyle(fontSize: 24))),
+        ),
+        const SizedBox(height: 4),
+        Text(title, style: const TextStyle(fontSize: 10, color: Color(0xFF8A9099)), maxLines: 1, overflow: TextOverflow.ellipsis),
       ],
     );
   }

@@ -82,11 +82,11 @@ class _FeedModalState extends State<FeedModal> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'ЛЕНТА СОБЫТИЙ',
+                'ВОЙНЫ',
                 style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.5,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 2,
                   color: Colors.white,
                 ),
               ),
@@ -107,7 +107,7 @@ class _FeedModalState extends State<FeedModal> {
                     ? const Center(child: Text('Пока в городе тихо...', style: TextStyle(color: Colors.grey)))
                     : ListView.separated(
                         itemCount: _events.length,
-                        separatorBuilder: (context, index) => const Divider(color: Colors.white10),
+                        separatorBuilder: (context, index) => const SizedBox(height: 0),
                         itemBuilder: (context, index) {
                           final event = _events[index];
                           final type = event['event_type'] as String;
@@ -118,27 +118,46 @@ class _FeedModalState extends State<FeedModal> {
                           // Style changes based on event type
                           bool isSteal = type == 'STEAL';
 
-                          return ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            leading: _buildEventIcon(type),
-                            title: Text(
-                              isSteal ? 'КОНФЛИКТ!' : username,
-                              style: TextStyle(
-                                color: isSteal ? Colors.redAccent : const Color(0xFFFFD700),
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                              ),
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.surface,
+                              borderRadius: BorderRadius.circular(16),
+                              border: isSteal ? Border.all(color: Colors.redAccent.withValues(alpha: 0.5), width: 1) : null,
                             ),
-                            subtitle: Padding(
-                              padding: const EdgeInsets.only(top: 4.0),
-                              child: Text(
-                                message,
-                                style: const TextStyle(color: Colors.white, fontSize: 16),
-                              ),
-                            ),
-                            trailing: Text(
-                              timeago.format(date, locale: 'ru'),
-                              style: const TextStyle(color: Colors.grey, fontSize: 12),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildEventIcon(type),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        isSteal ? 'КОНФЛИКТ!' : username.toUpperCase(),
+                                        style: TextStyle(
+                                          color: isSteal ? Colors.redAccent : const Color(0xFF8A9099),
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                          letterSpacing: 1,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        message,
+                                        style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        timeago.format(date, locale: 'ru'),
+                                        style: const TextStyle(color: Color(0xFF8A9099), fontSize: 11),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
                           );
                         },

@@ -55,13 +55,15 @@ class _QuestsScreenState extends State<QuestsScreen> {
     }
   }
 
+  bool _isDaily = true;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(20.0),
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -69,35 +71,75 @@ class _QuestsScreenState extends State<QuestsScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'quests'.tr().toUpperCase(),
+                    'ЗАДАНИЯ',
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
-                      color: Colors.grey,
+                      color: Colors.white,
                       letterSpacing: 2,
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.refresh, color: Colors.grey),
+                    icon: const Icon(Icons.refresh, color: Colors.white),
                     onPressed: _loadQuests,
                   ),
                 ],
               ),
-              const SizedBox(height: 30),
-              Text(
-                'daily_quests'.tr().toUpperCase(),
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
-                  letterSpacing: 2,
-                  fontWeight: FontWeight.bold,
+              const SizedBox(height: 20),
+              
+              // Toggles
+              Container(
+                height: 44,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(22),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setState(() => _isDaily = true),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: _isDaily ? Theme.of(context).colorScheme.primary : Colors.transparent,
+                            borderRadius: BorderRadius.circular(22),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            'Ежедневные',
+                            style: TextStyle(
+                              color: _isDaily ? Colors.black : Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setState(() => _isDaily = false),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: !_isDaily ? Theme.of(context).colorScheme.primary : Colors.transparent,
+                            borderRadius: BorderRadius.circular(22),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            'Квесты орды',
+                            style: TextStyle(
+                              color: !_isDaily ? Colors.black : Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 10),
-              Text(
-                'q_desc'.tr(),
-                style: const TextStyle(color: Colors.white70),
-              ),
+              
               const SizedBox(height: 30),
               Expanded(
                 child: _isLoading
@@ -107,7 +149,7 @@ class _QuestsScreenState extends State<QuestsScreen> {
                     : ListView.separated(
                         padding: const EdgeInsets.only(bottom: 100),
                         itemCount: _quests.length,
-                        separatorBuilder: (context, index) => const SizedBox(height: 16),
+                        separatorBuilder: (context, index) => const SizedBox(height: 12),
                         itemBuilder: (context, index) {
                           final q = _quests[index];
                           final double current = (q['progress'] ?? 0).toDouble();
@@ -121,7 +163,7 @@ class _QuestsScreenState extends State<QuestsScreen> {
                             id: q['id'],
                             title: q['title'] ?? '',
                             description: q['description'] ?? '',
-                            reward: "+ ${q['reward']} XP",
+                            reward: (q['reward'] ?? 0).toString(),
                             progress: ratio,
                             currentVal: current,
                             targetVal: target,
@@ -154,96 +196,89 @@ class _QuestsScreenState extends State<QuestsScreen> {
     final primaryColor = Theme.of(context).colorScheme.primary;
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border(
-          left: BorderSide(
-            color: isCompleted ? primaryColor : Colors.white10,
-            width: 4,
-          ),
-        ),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const Icon(Icons.explore_outlined, color: Colors.white, size: 24),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       description,
-                      style: const TextStyle(color: Color(0xFF8B929C), fontSize: 13),
+                      style: const TextStyle(color: Color(0xFF8A9099), fontSize: 13),
                     ),
+                    const SizedBox(height: 12),
+                    if (!isClaimed) ...[
+                      Text(
+                        '${currentVal.toInt()} / ${targetVal.toInt()}',
+                        style: const TextStyle(fontSize: 11, color: Color(0xFF8A9099)),
+                      ),
+                      const SizedBox(height: 4),
+                      Container(
+                        height: 2,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.white10,
+                          borderRadius: BorderRadius.circular(1),
+                        ),
+                        child: FractionallySizedBox(
+                          alignment: Alignment.centerLeft,
+                          widthFactor: progress,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: isCompleted ? primaryColor : Colors.white,
+                              borderRadius: BorderRadius.circular(1),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: isClaimed ? Colors.white10 : const Color.fromRGBO(216, 167, 96, 0.2),
-                  borderRadius: BorderRadius.circular(8),
+              const SizedBox(width: 16),
+              if (isClaimed)
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white10),
+                  child: const Icon(Icons.check, color: Colors.white54, size: 16),
+                )
+              else
+                Column(
+                  children: [
+                    CircleAvatar(
+                      radius: 14,
+                      backgroundColor: Colors.white10,
+                      child: const Text('XP', style: TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      reward,
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                  ],
                 ),
-                child: Text(
-                  isClaimed ? 'Выполнено' : reward,
-                  style: TextStyle(
-                    color: isClaimed ? Colors.grey : primaryColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
             ],
           ),
-          const SizedBox(height: 15),
-          
-          if (!isClaimed) ...[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('q_prog'.tr(), style: const TextStyle(fontSize: 12, color: Color(0xFF8B929C))),
-                Text('${currentVal.toInt()} / ${targetVal.toInt()}', style: const TextStyle(fontSize: 12, color: Color(0xFF8B929C))),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Container(
-              height: 8,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.white10,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: FractionallySizedBox(
-                alignment: Alignment.centerLeft,
-                widthFactor: progress,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: isCompleted ? primaryColor : const Color(0xFF4CAF50),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-              ),
-            ),
-          ],
-
           if (canClaim) ...[
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
+              height: 36,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primaryColor,

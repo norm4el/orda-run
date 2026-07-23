@@ -31,6 +31,7 @@ class _MapScreenState extends State<MapScreen> {
   
   List<Polygon> _cachedPolygons = [];
   List<Polyline> _cachedPolylines = [];
+  List<Marker> _cachedCenterMarkers = [];
   List<LootDrop> _drops = [];
   final Distance _distance = const Distance();
   int _lastRefresh = 0;
@@ -88,17 +89,45 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
+  LatLng _computeCenter(List<LatLng> points) {
+    if (points.isEmpty) return const LatLng(0, 0);
+    double lat = 0, lng = 0;
+    for (var p in points) {
+      lat += p.latitude;
+      lng += p.longitude;
+    }
+    return LatLng(lat / points.length, lng / points.length);
+  }
+
   void _buildMapObjects(AuthenticatedUser? currentUser) {
     _cachedPolygons = _territories.expand((t) {
       final color = _getTerritoryColor(t, currentUser);
       final double healthRatio = t.health / 100.0;
-      final double fillAlpha = 0.2 + (0.6 * healthRatio);
+      final double fillAlpha = 0.2 + (0.1 * healthRatio);
       return t.polygons.map((points) => Polygon(
         points: points,
         color: color.withValues(alpha: fillAlpha),
-        borderColor: color.withValues(alpha: 0.3 + (0.7 * healthRatio)),
-        borderStrokeWidth: 4.5 * healthRatio.clamp(0.5, 1.0),
+        borderColor: color,
+        borderStrokeWidth: 2.0,
       ));
+    }).toList();
+
+    _cachedCenterMarkers = _territories.expand((t) {
+      final isSelf = currentUser != null && t.ownerId == currentUser.id;
+      final String icon = isSelf ? '🏴' : '🏕';
+      return t.polygons.map((points) {
+        return Marker(
+          point: _computeCenter(points),
+          width: 30,
+          height: 30,
+          child: Center(
+            child: Text(
+              icon,
+              style: const TextStyle(fontSize: 16),
+            ),
+          ),
+        );
+      });
     }).toList();
 
     _cachedPolylines = _routes.map((r) {
@@ -384,12 +413,21 @@ class _MapScreenState extends State<MapScreen> {
                 subdomains: const ['a', 'b', 'c', 'd'],
                 userAgentPackageName: 'com.ordarun.app',
                 retinaMode: true,
+                panBuffer: 1,
+                keepBuffer: 3,
               ),
               PolygonLayer(
                 polygons: _cachedPolygons,
+                useCulling: true,
+                simplificationTolerance: 0.5,
+              ),
+              MarkerLayer(
+                markers: _cachedCenterMarkers,
               ),
               PolylineLayer(
                 polylines: _cachedPolylines,
+                useCulling: true,
+                simplificationTolerance: 0.5,
               ),
               if (runTracker.isRecording && runTracker.routePoints.length >= 2)
                 PolylineLayer(
@@ -577,41 +615,60 @@ class _MapScreenState extends State<MapScreen> {
               child: Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF15181E),
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white10),
                   boxShadow: const [
                     BoxShadow(color: Colors.black45, blurRadius: 32, offset: Offset(0, 8)),
                   ],
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'your_area'.tr().toUpperCase(),
-                          style: const TextStyle(fontSize: 12, color: Color(0xFF8B929C), letterSpacing: 1),
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.baseline,
-                          textBaseline: TextBaseline.alphabetic,
-                          children: [
-                            Text(
-                              (currentUser.influencePoints / 1000000).toStringAsFixed(2),
-                              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            'ВАША ОРДА',
+                            style: TextStyle(fontSize: 12, color: Color(0xFF8A9099), letterSpacing: 1, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '${(currentUser.influencePoints / 1000000).toStringAsFixed(2)} км²',
+                            style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
+                          const Text(
+                            'площадь владений',
+                            style: TextStyle(fontSize: 13, color: Color(0xFF8A9099)),
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'До следующего ранга: 320 XP',
+                            style: TextStyle(fontSize: 13, color: Colors.white),
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            height: 4,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: Colors.white10,
+                              borderRadius: BorderRadius.circular(2),
                             ),
-                            const SizedBox(width: 4),
-                            const Text(
-                              'км²',
-                              style: TextStyle(fontSize: 16, color: Color(0xFF8B929C)),
+                            child: FractionallySizedBox(
+                              alignment: Alignment.centerLeft,
+                              widthFactor: 0.6,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  borderRadius: BorderRadius.circular(2),
+                                ),
+                              ),
                             ),
-                          ],
-                        ),
-                      ],
+                          ),
+                        ],
+                      ),
                     ),
                     if (_isDrawingMode) ...[
                       Row(

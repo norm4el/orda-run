@@ -267,15 +267,16 @@ exports.apiRouter.post('/auth/mobile/poll', async (req, res) => {
 exports.apiRouter.get('/territories', async (_req, res) => {
     const result = await (0, db_1.query)(`
             SELECT
-                t.owner_id AS id,
+                MAX(t.id::text) AS id,
                 t.owner_id,
+                t.health,
                 MAX(u.orda_id::text)::uuid AS owner_orda_id,
                 MAX(u.display_name) AS owner_display_name,
                 MAX(u.influence_points) AS owner_influence_points,
                 ST_AsGeoJSON(ST_Union(t.polygon))::json AS polygon
             FROM territories t
             JOIN users u ON t.owner_id = u.id
-            GROUP BY t.owner_id
+            GROUP BY t.owner_id, t.health
         `);
     res.json(result.rows);
 });
@@ -392,7 +393,7 @@ exports.apiRouter.post('/runs/manual', async (req, res) => {
                 INSERT INTO routes (user_id, strava_activity_id, coordinates, distance, duration)
                 VALUES ($1, $2, $3, $4, $5)
                 ON CONFLICT (strava_activity_id) DO NOTHING
-            `, [userId, Date.now(), JSON.stringify(decodedPoints), distance, duration]);
+            `, [userId, Date.now(), JSON.stringify(decodedPoints), distance, Math.round(duration)]);
         const result = await (0, territory_1.captureTerritory)(userId, polylineString);
         await (0, db_1.query)(`INSERT INTO game_events (user_id, event_type, message) VALUES ($1, 'CAPTURE', 'захватил новую территорию')`, [userId]);
         if (result.stolen_victims_telegram_ids && result.stolen_victims_telegram_ids.length > 0) {
@@ -772,5 +773,89 @@ exports.apiRouter.post('/orda/leave', async (req, res) => {
     catch (e) {
         console.error(e);
         res.status(500).json({ error: 'Failed to leave orda' });
+    }
+});
+exports.apiRouter.get('/drops', async (req, res) => {
+    try {
+        const result = await (0, db_1.query)(`SELECT id, lat, lng, type, value, is_active FROM loot_drops WHERE is_active = true`);
+        res.json(result.rows);
+    }
+    catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Failed to get drops' });
+    }
+});
+exports.apiRouter.post('/drops/claim', async (req, res) => {
+    const { telegram_id, user_id, drop_id } = req.body;
+    const targetId = user_id || telegram_id;
+    if (!targetId || !drop_id)
+        return res.status(400).json({ error: 'Missing fields' });
+    try {
+        let userId = targetId;
+        const isUuid = String(targetId).includes('-');
+        if (!isUuid) {
+            const userRes = await (0, db_1.query)('SELECT id FROM users WHERE telegram_id = $1', [String(targetId)]);
+            if (userRes.rowCount === 0)
+                return res.status(404).json({ error: 'User not found' });
+            userId = userRes.rows[0].id;
+        }
+        // Check if active
+        const dropRes = await (0, db_1.query)('SELECT type, value, is_active FROM loot_drops WHERE id = $1 FOR UPDATE', [drop_id]);
+        if (dropRes.rowCount === 0)
+            return res.status(404).json({ error: 'Drop not found' });
+        const drop = dropRes.rows[0];
+        if (!drop.is_active) {
+            return res.status(400).json({ error: 'Drop already claimed' });
+        }
+        // Deactivate drop
+        await (0, db_1.query)('UPDATE loot_drops SET is_active = false WHERE id = $1', [drop_id]);
+        // Reward user
+        if (drop.type === 'XP_BOOST') {
+            await (0, db_1.query)('UPDATE users SET influence_points = influence_points + $1 WHERE id = $2', [drop.value, userId]);
+            await (0, db_1.query)(`INSERT INTO game_events (user_id, event_type, message) VALUES ($1, 'QUEST_CLAIM', 'нашел сундук с Ордой и получил +' || $2 || ' XP!')`, [userId, drop.value]);
+        }
+        res.json({ ok: true, type: drop.type, value: drop.value });
+    }
+    catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Failed to claim drop' });
+    }
+});
+exports.apiRouter.get('/orda/:ordaId/messages', async (req, res) => {
+    const { ordaId } = req.params;
+    try {
+        const result = await (0, db_1.query)(`SELECT m.id, m.message, m.created_at, u.display_name as user_name 
+             FROM orda_messages m 
+             JOIN users u ON m.user_id = u.id 
+             WHERE m.orda_id = $1 
+             ORDER BY m.created_at ASC LIMIT 100`, [ordaId]);
+        res.json(result.rows);
+    }
+    catch (e) {
+        console.error('orda messages error:', e);
+        res.status(500).json({ error: 'Failed to get messages' });
+    }
+});
+exports.apiRouter.post('/orda/:ordaId/messages', async (req, res) => {
+    const { ordaId } = req.params;
+    const { telegram_id, user_id, message } = req.body;
+    const targetId = user_id || telegram_id;
+    if (!targetId || !message)
+        return res.status(400).json({ error: 'Missing fields' });
+    try {
+        let userId = targetId;
+        const isUuid = String(targetId).includes('-');
+        if (!isUuid) {
+            const userRes = await (0, db_1.query)('SELECT id FROM users WHERE telegram_id = $1', [String(targetId)]);
+            if (userRes.rowCount === 0)
+                return res.status(404).json({ error: 'User not found' });
+            userId = userRes.rows[0].id;
+        }
+        await (0, db_1.query)(`INSERT INTO orda_messages (orda_id, user_id, message) VALUES ($1, $2, $3)`, [ordaId, userId, message]);
+        res.json({ ok: true });
+    }
+    catch (e) {
+        console.error('orda message error:', e);
+        res.status(500).json({ error: 'Failed to send message' });
     }
 });
