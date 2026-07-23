@@ -7,10 +7,12 @@ import 'package:easy_localization/easy_localization.dart';
 import '../models/models.dart';
 import '../services/api_service.dart';
 import '../services/run_tracker.dart';
-import '../main.dart';
 import 'feed_modal.dart';
+import '../widgets/public_profile_modal.dart';
+import '../widgets/public_orda_modal.dart';
 import 'package:google_polyline_algorithm/google_polyline_algorithm.dart';
 import 'package:geolocator/geolocator.dart';
+
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
 
@@ -87,6 +89,11 @@ class _MapScreenState extends State<MapScreen> {
         _buildMapObjects(context.read<AppState>().currentUser);
       });
     }
+  }
+
+  void _updatePolygons() {
+    _buildMapObjects(context.read<AppState>().currentUser);
+    setState(() {});
   }
 
   LatLng _computeCenter(List<LatLng> points) {
@@ -177,23 +184,14 @@ class _MapScreenState extends State<MapScreen> {
     }
     
     if (_isOrdaMode) {
-      // Color by Orda
-      int hash = 0;
-      final ordaId = t.ownerOrdaId ?? 'none';
-      for (int i = 0; i < ordaId.length; i++) {
-        hash = ordaId.codeUnitAt(i) + ((hash << 5) - hash);
-      }
-      final hue = (hash.abs() % 360).toDouble();
-      return HSVColor.fromAHSV(1.0, hue, 0.7, 0.6).toColor();
+      if (t.ownerOrdaId == null) return const Color(0xFF222222);
+      int hash = t.ownerOrdaId.hashCode;
+      return Color((hash & 0xFFFFFF) + 0xFF000000).withValues(alpha: 1.0);
     } else {
       if (currentUser != null && t.ownerId == currentUser.id) {
-        return const Color(0xFFFFD700); // Primary color for self
+        return Color(int.parse(currentUser.colorSelf?.replaceFirst('#', '0xff') ?? '0xffd8a760'));
       }
-      // Color by ownerId
-      int hash = 0;
-      for (int i = 0; i < t.ownerId.length; i++) {
-        hash = t.ownerId.codeUnitAt(i) + ((hash << 5) - hash);
-      }
+      int hash = t.ownerId.hashCode;
       final hue = (hash.abs() % 360).toDouble();
       return HSVColor.fromAHSV(1.0, hue, 0.65, 0.45).toColor();
     }
@@ -223,85 +221,25 @@ class _MapScreenState extends State<MapScreen> {
       return;
     }
 
-    // Show a bottom sheet with public profile
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF15181E),
-      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) {
-        return FutureBuilder(
-          future: _apiService.getUserPublicProfile(userId),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const SizedBox(height: 200, child: Center(child: CircularProgressIndicator()));
-            }
-            if (!snapshot.hasData || snapshot.data == null) {
-              return const SizedBox(height: 200, child: Center(child: Text('Ошибка загрузки профиля')));
-            }
-            final profile = snapshot.data as Map<String, dynamic>;
-            return Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    (profile['displayName'] ?? 'Без имени').toUpperCase(),
-                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Орда: ${profile["ordaName"] ?? "Нет"}',
-                    style: const TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _buildStatColumn('ТЕРРИТОРИЯ', "${((profile['influencePoints'] ?? 0) / 1000000).toStringAsFixed(2)} км²"),
-                      _buildStatColumn('ПРОБЕЖКИ', '${profile["runs"] ?? 0}'),
-                      _buildStatColumn('ДИСТАНЦИЯ', '${profile["distance"]?.toStringAsFixed(1) ?? "0.0"} км'),
-                    ],
-                  ),
-                  const SizedBox(height: 30),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1F222A),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: territory.health < 50 ? Colors.redAccent.withValues(alpha: 0.5) : const Color(0xFFFFD700).withValues(alpha: 0.3)),
-                    ),
-                    child: Column(
-                      children: [
-                        const Text('СОСТОЯНИЕ ТЕРРИТОРИИ', style: TextStyle(fontSize: 12, color: Colors.grey, letterSpacing: 1)),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Прочность: ${territory.health}%',
-                          style: TextStyle(
-                            fontSize: 18, 
-                            fontWeight: FontWeight.bold, 
-                            color: territory.health < 50 ? Colors.redAccent : const Color(0xFFFFD700),
-                          ),
-                        ),
-                        if (territory.health < 100)
-                          const Padding(
-                            padding: EdgeInsets.only(top: 8.0),
-                            child: Text('Территория разрушается из-за бездействия.', style: TextStyle(fontSize: 12, color: Colors.white70)),
-                          ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 30),
-                ],
-              ),
-            );
-          },
-        );
-      },
+      builder: (context) => PublicProfileModal(userId: userId, territory: territory),
+    );
+  }
+
+  void _showOrdaProfile(Territory territory) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => PublicOrdaModal(
+        ordaId: territory.ownerOrdaId!,
+        ordaName: territory.ownerOrdaName ?? 'Орда',
+      ),
     );
   }
 
@@ -340,7 +278,11 @@ class _MapScreenState extends State<MapScreen> {
     for (var territory in _territories) {
       for (var poly in territory.polygons) {
         if (_isPointInPolygon(point, poly)) {
-          _showUserProfile(territory);
+          if (_isOrdaMode && territory.ownerOrdaId != null) {
+            _showOrdaProfile(territory);
+          } else {
+            _showUserProfile(territory);
+          }
           return;
         }
       }
@@ -359,7 +301,6 @@ class _MapScreenState extends State<MapScreen> {
     distance += dist.distance(_plannedPoints.last, _plannedPoints.first);
     
     final pointsList = _plannedPoints.map((p) => [p.latitude, p.longitude]).toList();
-    // Do not artificially close the loop to prevent duplicate points that break ST_Node on the backend
     
     final encoded = encodePolyline(pointsList);
     
@@ -367,7 +308,7 @@ class _MapScreenState extends State<MapScreen> {
       userId: currentUser.id,
       polyline: encoded,
       distance: distance,
-      duration: distance / 2.5, // fake duration
+      duration: distance / 2.5,
     );
     
     setState(() => _isSavingPlan = false);
@@ -421,8 +362,6 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
-  bool _showOrdaMode = false; // State for Orda/Personal toggle
-
   String _getRankName(int xp) {
     if (xp < 100) return 'Кочевник';
     if (xp < 500) return 'Воин I';
@@ -457,7 +396,7 @@ class _MapScreenState extends State<MapScreen> {
           FlutterMap(
             mapController: _mapController,
             options: MapOptions(
-              initialCenter: const LatLng(51.13, 71.43), // Astana coordinates
+              initialCenter: const LatLng(51.13, 71.43),
               initialZoom: 13.0,
               onTap: _handleMapTap,
               interactionOptions: InteractionOptions(
@@ -516,7 +455,7 @@ class _MapScreenState extends State<MapScreen> {
                     polygons: [
                       Polygon(
                         points: _plannedPoints,
-                        color: const Color(0xFFFFD700).withValues(alpha: 0.5), // Gold for own plan
+                        color: const Color(0xFFFFD700).withValues(alpha: 0.5),
                         borderColor: const Color(0xFFFFD700),
                         borderStrokeWidth: 3.5,
                       ),
@@ -587,7 +526,6 @@ class _MapScreenState extends State<MapScreen> {
               child: CircularProgressIndicator(),
             ),
           
-          // Top Dashboard
           if (currentUser != null && !runTracker.isRecording)
             Positioned(
               top: 50,
@@ -596,7 +534,7 @@ class _MapScreenState extends State<MapScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF05070A).withValues(alpha: 0.75), // Более прозрачный
+                  color: const Color(0xFF05070A).withValues(alpha: 0.75),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: Colors.white.withOpacity(0.05)),
                 ),
@@ -611,7 +549,13 @@ class _MapScreenState extends State<MapScreen> {
                         border: Border.all(color: Theme.of(context).colorScheme.primary, width: 2),
                         color: const Color(0xFF15181E).withValues(alpha: 0.8),
                       ),
-                      child: const Center(child: Text('👤', style: TextStyle(fontSize: 28))),
+                      clipBehavior: Clip.hardEdge,
+                      child: currentUser.avatarUrl != null
+                          ? Image.network(
+                              ApiService.baseUrl.replaceAll('/api', '') + currentUser.avatarUrl!,
+                              fit: BoxFit.cover,
+                            )
+                          : const Center(child: Text('👤', style: TextStyle(fontSize: 28))),
                     ),
                     const SizedBox(width: 16),
                     Expanded(

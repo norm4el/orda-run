@@ -5,6 +5,9 @@ class Territory {
   final String ownerId;
   final String? ownerOrdaId;
   final String? ownerDisplayName;
+  final String? ownerAvatarUrl;
+  final String? ownerOrdaName;
+  final String? ownerOrdaAvatarUrl;
   final int ownerInfluencePoints;
   final int health; // Add health
   // Simplifying polygon for now to a list of points per polygon ring
@@ -15,6 +18,9 @@ class Territory {
     required this.ownerId,
     this.ownerOrdaId,
     this.ownerDisplayName,
+    this.ownerAvatarUrl,
+    this.ownerOrdaName,
+    this.ownerOrdaAvatarUrl,
     required this.ownerInfluencePoints,
     required this.health,
     required this.polygons,
@@ -56,6 +62,9 @@ class Territory {
       ownerId: json['owner_id'],
       ownerOrdaId: json['owner_orda_id'],
       ownerDisplayName: json['owner_display_name'],
+      ownerAvatarUrl: json['owner_avatar_url'],
+      ownerOrdaName: json['owner_orda_name'],
+      ownerOrdaAvatarUrl: json['owner_orda_avatar_url'],
       ownerInfluencePoints: (json['owner_influence_points'] as num?)?.toInt() ?? 0,
       health: (json['health'] as num?)?.toInt() ?? 100,
       polygons: multiPolygons,

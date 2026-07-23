@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../main.dart';
 import '../services/api_service.dart';
 import '../utils/title_helper.dart';
+import '../widgets/public_profile_modal.dart';
+import '../widgets/public_orda_modal.dart';
 
 class LeaderboardScreen extends StatefulWidget {
   const LeaderboardScreen({super.key});
@@ -40,72 +42,34 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     }
   }
 
-  void _showUserProfile(String userId) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF15181E),
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return FutureBuilder(
-          future: _apiService.getUserPublicProfile(userId),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const SizedBox(height: 200, child: Center(child: CircularProgressIndicator()));
-            }
-            if (!snapshot.hasData || snapshot.data == null) {
-              return const SizedBox(height: 200, child: Center(child: Text('Ошибка загрузки профиля')));
-            }
-            final profile = snapshot.data as Map<String, dynamic>;
-            return Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    (profile['displayName'] ?? 'Без имени').toUpperCase(),
-                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
-                  ),
-                  const SizedBox(height: 4),
-                  Builder(
-                    builder: (context) {
-                      final titleInfo = TitleHelper.getTitleForInfluence(profile['influencePoints'] ?? 0);
-                      return Text(
-                        titleInfo.title,
-                        style: TextStyle(
-                          color: titleInfo.color,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1,
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Орда: ${profile["ordaName"] ?? "Нет"}',
-                    style: const TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _buildStatColumn('ТЕРРИТОРИЯ', "${((profile['influencePoints'] ?? 0) / 1000000).toStringAsFixed(2)} км²"),
-                      _buildStatColumn('ПРОБЕЖКИ', '${profile["runs"] ?? 0}'),
-                      _buildStatColumn('ДИСТАНЦИЯ', '${profile["distance"]?.toStringAsFixed(1) ?? "0.0"} км'),
-                    ],
-                  ),
-                  const SizedBox(height: 30),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
+  void _showProfile(dynamic item) {
+    if (_isOrdaMode) {
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: Colors.transparent,
+        isScrollControlled: true,
+        builder: (context) => PublicOrdaModal(
+          ordaId: item['id'],
+          ordaName: item['name'] ?? 'Орда',
+        ),
+      );
+    } else {
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: const Color(0xFF15181E),
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+        builder: (context) => PublicProfileModal(
+          userId: item['id'],
+          territory: Territory(
+            id: 'leaderboard', 
+            ownerId: item['id'], 
+            ownerInfluencePoints: item['influencePoints'] ?? item['score'] ?? 0, 
+            health: 100, 
+            polygons: []
+          ),
+        ),
+      );
+    }
   }
 
   Widget _buildStatColumn(String label, String value) {
@@ -261,11 +225,12 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     final score = (scoreRaw is int) ? scoreRaw : (double.tryParse(scoreRaw.toString())?.toInt() ?? 0);
     final name = item['displayName'] ?? item['name'] ?? 'Без имени';
     final isMe = currentUserId != null && item['id'] == currentUserId;
+    final avatarUrl = item['avatarUrl'] ?? item['avatar_url'];
     
     String emoji = rank == 1 ? '🥇' : rank == 2 ? '🥈' : '🥉';
 
     return GestureDetector(
-      onTap: (!_isOrdaMode && item['id'] != null) ? () => _showUserProfile(item['id']) : null,
+      onTap: item['id'] != null ? () => _showProfile(item) : null,
       child: Container(
         height: height,
         padding: const EdgeInsets.all(8),
@@ -277,7 +242,28 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            Text(emoji, style: const TextStyle(fontSize: 28)),
+            Stack(
+              alignment: Alignment.topRight,
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xFF15181E),
+                    border: Border.all(color: Theme.of(context).colorScheme.primary, width: 2),
+                  ),
+                  clipBehavior: Clip.hardEdge,
+                  child: avatarUrl != null
+                      ? Image.network(
+                          ApiService.baseUrl.replaceAll('/api', '') + avatarUrl,
+                          fit: BoxFit.cover,
+                        )
+                      : const Center(child: Icon(Icons.person, color: Colors.white, size: 24)),
+                ),
+                Text(emoji, style: const TextStyle(fontSize: 18)),
+              ],
+            ),
             const SizedBox(height: 8),
             Text(
               name.toString().toUpperCase(),
@@ -301,6 +287,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     final score = (scoreRaw is int) ? scoreRaw : (double.tryParse(scoreRaw.toString())?.toInt() ?? 0);
     final name = item['displayName'] ?? item['name'] ?? 'Без имени';
     final isMe = currentUserId != null && item['id'] == currentUserId;
+    final avatarUrl = item['avatarUrl'] ?? item['avatar_url'];
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -311,14 +298,36 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        onTap: (!_isOrdaMode && item['id'] != null) ? () => _showUserProfile(item['id']) : null,
-        leading: SizedBox(
-          width: 30,
-          child: Text(
-            rank.toString(),
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF8A9099)),
-            textAlign: TextAlign.center,
-          ),
+        onTap: item['id'] != null ? () => _showProfile(item) : null,
+        leading: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 30,
+              child: Text(
+                rank.toString(),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF8A9099)),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFF15181E),
+                border: Border.all(color: Theme.of(context).colorScheme.primary, width: 1),
+              ),
+              clipBehavior: Clip.hardEdge,
+              child: avatarUrl != null
+                  ? Image.network(
+                      ApiService.baseUrl.replaceAll('/api', '') + avatarUrl,
+                      fit: BoxFit.cover,
+                    )
+                  : const Center(child: Icon(Icons.person, color: Colors.white, size: 20)),
+            ),
+          ],
         ),
         title: Text(
           name.toString().toUpperCase(),

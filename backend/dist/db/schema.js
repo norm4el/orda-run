@@ -89,7 +89,10 @@ async function ensureDatabaseSchema() {
   `);
     await _1.pool.query(`
     ALTER TABLE users
-      ADD COLUMN IF NOT EXISTS bonus_points INT NOT NULL DEFAULT 0
+      ADD COLUMN IF NOT EXISTS bonus_points INT NOT NULL DEFAULT 0;
+
+    ALTER TABLE territories
+      ADD COLUMN IF NOT EXISTS health INT NOT NULL DEFAULT 100;
   `);
     await _1.pool.query(`
     CREATE OR REPLACE FUNCTION recalculate_influence_points()
@@ -164,6 +167,23 @@ async function ensureDatabaseSchema() {
       quest_id TEXT NOT NULL,
       claimed_at DATE NOT NULL DEFAULT CURRENT_DATE,
       UNIQUE (user_id, quest_id, claimed_at)
+    )
+  `);
+    await _1.pool.query(`
+    ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS avatar_url TEXT,
+      ADD COLUMN IF NOT EXISTS social_links JSONB;
+
+    ALTER TABLE ordas
+      ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+  `);
+    await _1.pool.query(`
+    CREATE TABLE IF NOT EXISTS orda_messages (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      orda_id UUID NOT NULL REFERENCES ordas(id) ON DELETE CASCADE,
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      message TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
 }

@@ -44,7 +44,9 @@ const territory_1 = require("../db/territory");
 const google_auth_library_1 = require("google-auth-library");
 const apple_signin_auth_1 = __importDefault(require("apple-signin-auth"));
 const crypto_1 = require("crypto");
+const profile_1 = require("./profile");
 exports.apiRouter = (0, express_1.Router)();
+exports.apiRouter.use(profile_1.profileRouter);
 const googleClient = new google_auth_library_1.OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const INIT_DATA_MAX_AGE_SECONDS = 24 * 60 * 60;
 function mapUserRow(row) {
@@ -108,6 +110,8 @@ exports.apiRouter.post('/auth', async (req, res) => {
                     u.color_self AS "colorSelf",
                     u.color_others AS "colorOthers",
                     u.orda_id AS "ordaId",
+                    u.avatar_url AS "avatarUrl",
+                    u.social_links AS "socialLinks",
                     o.name AS "ordaName",
                     u.created_at AS "createdAt",
                     u.updated_at AS "updatedAt"
@@ -159,6 +163,7 @@ exports.apiRouter.post('/auth/google', async (req, res) => {
                     u.strava_refresh_token AS "stravaRefreshToken", u.strava_expires_at AS "stravaExpiresAt",
                     u.influence_points AS "influencePoints", u.color_self AS "colorSelf",
                     u.color_others AS "colorOthers", u.orda_id AS "ordaId", o.name AS "ordaName",
+                    u.avatar_url AS "avatarUrl", u.social_links AS "socialLinks",
                     u.created_at AS "createdAt", u.updated_at AS "updatedAt"
                 FROM upsert u LEFT JOIN ordas o ON u.orda_id = o.id
             `, [googleId, email || null, name]);
@@ -201,6 +206,7 @@ exports.apiRouter.post('/auth/apple', async (req, res) => {
                     u.strava_refresh_token AS "stravaRefreshToken", u.strava_expires_at AS "stravaExpiresAt",
                     u.influence_points AS "influencePoints", u.color_self AS "colorSelf",
                     u.color_others AS "colorOthers", u.orda_id AS "ordaId", o.name AS "ordaName",
+                    u.avatar_url AS "avatarUrl", u.social_links AS "socialLinks",
                     u.created_at AS "createdAt", u.updated_at AS "updatedAt"
                 FROM upsert u LEFT JOIN ordas o ON u.orda_id = o.id
             `, [appleId, email || null, name]);
@@ -251,6 +257,7 @@ exports.apiRouter.post('/auth/mobile/poll', async (req, res) => {
                     u.strava_refresh_token AS "stravaRefreshToken", u.strava_expires_at AS "stravaExpiresAt",
                     u.influence_points AS "influencePoints", u.color_self AS "colorSelf",
                     u.color_others AS "colorOthers", u.orda_id AS "ordaId", o.name AS "ordaName",
+                    u.avatar_url AS "avatarUrl", u.social_links AS "socialLinks",
                     u.created_at AS "createdAt", u.updated_at AS "updatedAt"
                 FROM users u LEFT JOIN ordas o ON u.orda_id = o.id
                 WHERE u.id = $1
@@ -273,9 +280,13 @@ exports.apiRouter.get('/territories', async (_req, res) => {
                 MAX(u.orda_id::text)::uuid AS owner_orda_id,
                 MAX(u.display_name) AS owner_display_name,
                 MAX(u.influence_points) AS owner_influence_points,
+                MAX(u.avatar_url) AS owner_avatar_url,
+                MAX(o.name) AS owner_orda_name,
+                MAX(o.avatar_url) AS owner_orda_avatar_url,
                 ST_AsGeoJSON(ST_Union(t.polygon))::json AS polygon
             FROM territories t
             JOIN users u ON t.owner_id = u.id
+            LEFT JOIN ordas o ON u.orda_id = o.id
             GROUP BY t.owner_id, t.health
         `);
     res.json(result.rows);
@@ -472,11 +483,12 @@ exports.apiRouter.put('/user/update', async (req, res) => {
 });
 exports.apiRouter.get('/leaderboard', async (req, res) => {
     try {
-        const result = await (0, db_1.query)(`SELECT id, display_name, influence_points FROM users ORDER BY influence_points DESC, created_at ASC LIMIT 10`);
+        const result = await (0, db_1.query)(`SELECT id, display_name, influence_points, avatar_url FROM users ORDER BY influence_points DESC, created_at ASC LIMIT 10`);
         const mapped = result.rows.map((u) => ({
             id: u.id,
             displayName: u.display_name || 'Без имени',
-            score: u.influence_points
+            score: u.influence_points,
+            avatarUrl: u.avatar_url
         }));
         res.json(mapped);
     }
@@ -510,7 +522,7 @@ exports.apiRouter.get('/user/public/:id', async (req, res) => {
     const userId = req.params.id;
     try {
         const userRes = await (0, db_1.query)(`
-            SELECT u.id, u.display_name, u.influence_points, u.color_self, o.name as orda_name
+            SELECT u.id, u.display_name, u.influence_points, u.color_self, u.avatar_url, u.social_links, o.name as orda_name
             FROM users u
             LEFT JOIN ordas o ON u.orda_id = o.id
             WHERE u.id = $1
@@ -527,6 +539,8 @@ exports.apiRouter.get('/user/public/:id', async (req, res) => {
             influencePoints: user.influence_points,
             color: user.color_self,
             ordaName: user.orda_name,
+            avatarUrl: user.avatar_url,
+            socialLinks: user.social_links,
             runs,
             distance
         });
@@ -682,12 +696,31 @@ exports.apiRouter.get('/orda/leaderboard', async (req, res) => {
 });
 exports.apiRouter.get('/orda/list', async (_req, res) => {
     try {
-        const result = await (0, db_1.query)(`SELECT id, name, khan_id, created_at, (SELECT count(*) FROM users WHERE orda_id = ordas.id) as member_count FROM ordas ORDER BY member_count DESC`);
+        const result = await (0, db_1.query)(`SELECT id, name, khan_id, avatar_url, created_at, (SELECT count(*) FROM users WHERE orda_id = ordas.id) as member_count FROM ordas ORDER BY member_count DESC`);
         res.json(result.rows);
     }
     catch (e) {
         console.error(e);
         res.status(500).json({ error: 'Failed to list ordas' });
+    }
+});
+exports.apiRouter.get('/orda/public/:id', async (req, res) => {
+    const ordaId = req.params.id;
+    try {
+        const ordaRes = await (0, db_1.query)(`SELECT o.id, o.name, o.avatar_url, o.created_at,
+                    k.display_name as khan_name,
+                    (SELECT count(*) FROM users WHERE orda_id = o.id) as member_count,
+                    COALESCE((SELECT SUM(influence_points) FROM users WHERE orda_id = o.id), 0) as total_influence
+             FROM ordas o
+             LEFT JOIN users k ON o.khan_id = k.id
+             WHERE o.id = $1`, [ordaId]);
+        if (ordaRes.rowCount === 0)
+            return res.status(404).json({ error: 'Orda not found' });
+        res.json(ordaRes.rows[0]);
+    }
+    catch (e) {
+        console.error('orda/public error:', e);
+        res.status(500).json({ error: 'Failed to get public orda info' });
     }
 });
 exports.apiRouter.post('/orda/create', async (req, res) => {
@@ -775,6 +808,43 @@ exports.apiRouter.post('/orda/leave', async (req, res) => {
         res.status(500).json({ error: 'Failed to leave orda' });
     }
 });
+exports.apiRouter.get('/orda/:id/messages', async (req, res) => {
+    const ordaId = req.params.id;
+    try {
+        const result = await (0, db_1.query)(`SELECT m.id, m.user_id, u.telegram_id as frontend_user_id, m.message, m.created_at, u.display_name as user_name
+             FROM orda_messages m
+             JOIN users u ON m.user_id = u.id
+             WHERE m.orda_id = $1
+             ORDER BY m.created_at ASC
+             LIMIT 100`, [ordaId]);
+        res.json(result.rows);
+    }
+    catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Failed to get messages' });
+    }
+});
+exports.apiRouter.post('/orda/:id/messages', async (req, res) => {
+    const ordaId = req.params.id;
+    let { user_id, message } = req.body;
+    if (!user_id || !message)
+        return res.status(400).json({ error: 'Missing fields' });
+    try {
+        const isUuid = String(user_id).includes('-');
+        if (!isUuid) {
+            const userRes = await (0, db_1.query)('SELECT id FROM users WHERE telegram_id = $1', [String(user_id)]);
+            if (userRes.rowCount === 0)
+                return res.status(404).json({ error: 'User not found' });
+            user_id = userRes.rows[0].id;
+        }
+        await (0, db_1.query)(`INSERT INTO orda_messages (orda_id, user_id, message) VALUES ($1, $2, $3)`, [ordaId, user_id, message]);
+        res.json({ ok: true });
+    }
+    catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Failed to send message' });
+    }
+});
 exports.apiRouter.get('/drops', async (req, res) => {
     try {
         const result = await (0, db_1.query)(`SELECT id, lat, lng, type, value, is_active FROM loot_drops WHERE is_active = true`);
@@ -819,43 +889,5 @@ exports.apiRouter.post('/drops/claim', async (req, res) => {
     catch (e) {
         console.error(e);
         res.status(500).json({ error: 'Failed to claim drop' });
-    }
-});
-exports.apiRouter.get('/orda/:ordaId/messages', async (req, res) => {
-    const { ordaId } = req.params;
-    try {
-        const result = await (0, db_1.query)(`SELECT m.id, m.message, m.created_at, u.display_name as user_name 
-             FROM orda_messages m 
-             JOIN users u ON m.user_id = u.id 
-             WHERE m.orda_id = $1 
-             ORDER BY m.created_at ASC LIMIT 100`, [ordaId]);
-        res.json(result.rows);
-    }
-    catch (e) {
-        console.error('orda messages error:', e);
-        res.status(500).json({ error: 'Failed to get messages' });
-    }
-});
-exports.apiRouter.post('/orda/:ordaId/messages', async (req, res) => {
-    const { ordaId } = req.params;
-    const { telegram_id, user_id, message } = req.body;
-    const targetId = user_id || telegram_id;
-    if (!targetId || !message)
-        return res.status(400).json({ error: 'Missing fields' });
-    try {
-        let userId = targetId;
-        const isUuid = String(targetId).includes('-');
-        if (!isUuid) {
-            const userRes = await (0, db_1.query)('SELECT id FROM users WHERE telegram_id = $1', [String(targetId)]);
-            if (userRes.rowCount === 0)
-                return res.status(404).json({ error: 'User not found' });
-            userId = userRes.rows[0].id;
-        }
-        await (0, db_1.query)(`INSERT INTO orda_messages (orda_id, user_id, message) VALUES ($1, $2, $3)`, [ordaId, userId, message]);
-        res.json({ ok: true });
-    }
-    catch (e) {
-        console.error('orda message error:', e);
-        res.status(500).json({ error: 'Failed to send message' });
     }
 });

@@ -102,7 +102,8 @@ class _OrdaChatScreenState extends State<OrdaChatScreen> {
   }
 
   Widget _buildMessageBubble(Map<String, dynamic> msg, String currentUserId) {
-    final isMe = msg['user_id'] == currentUserId;
+    final String senderId = (msg['frontend_user_id'] ?? msg['user_id']).toString();
+    final isMe = senderId == currentUserId;
 
     final DateTime dt = DateTime.parse(msg['created_at']).toLocal();
     final String timeStr = DateFormat('HH:mm').format(dt);

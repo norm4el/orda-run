@@ -369,9 +369,23 @@ class ApiService {
   Future<Map<String, dynamic>?> getUserPublicProfile(String id) async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/user/public/$id')).timeout(timeoutDuration);
-      if (response.statusCode == 200) return jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
     } catch (e) {
       print('getUserPublicProfile error: $e');
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> getOrdaPublicProfile(String ordaId) async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/orda/public/$ordaId')).timeout(timeoutDuration);
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      print('getOrdaPublicProfile error: $e');
     }
     return null;
   }

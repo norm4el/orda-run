@@ -58,6 +58,7 @@ const spaDirectoryCandidates = [
 const spaDirectory = spaDirectoryCandidates.find((candidate) => fs_1.default.existsSync(path_1.default.join(candidate, 'index.html')));
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
+app.use('/uploads', express_1.default.static(path_1.default.join(process.cwd(), 'uploads')));
 if (spaDirectory) {
     app.use(express_1.default.static(spaDirectory));
 }
